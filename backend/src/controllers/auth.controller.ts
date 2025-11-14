@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import pool from '../config/db.js';
 import {hashPassword,comparePassword} from '../utils/hash.js';
-import {createUser, findUserByEmail} from '../models/users.model.js';
+import {createUser, findUserByEmail, findUserByName} from '../models/users.model.js';
 
 dotenv.config();
 
@@ -12,9 +12,13 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export const registerUser = async (req: Request,res: Response)=>{
     try{
         const {name, email, password} = req.body;
-        const existingUser = await findUserByEmail(email);
-        if(existingUser){
+        const existingEmail = await findUserByEmail(email);
+        if(existingEmail){
             return res.status(500).json({message:"User with this email already exists"});
+        }
+        const existingUser = await findUserByName(name);
+        if(existingUser){
+            return res.status(500).json({message:"Username already taken"});
         }
         const hashed = await hashPassword(password);
         const result = await createUser(name,email,hashed);

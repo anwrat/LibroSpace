@@ -17,3 +17,8 @@ export const findUserByEmail = async (email:string): Promise<User> =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE email = $1', [email]);
     return result.rows[0];
 }
+
+export const findUserByName = async (name:string): Promise<User> =>{
+    const result = await pool.query('SELECT * FROM auth.users WHERE name = $1', [name]);
+    return result.rows[0];
+}
