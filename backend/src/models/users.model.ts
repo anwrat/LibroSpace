@@ -22,3 +22,9 @@ export const findUserByName = async (name:string): Promise<User> =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE name = $1', [name]);
     return result.rows[0];
 }
+
+//A function to login by either email or name
+export const loginByEmailorName = async (login:string): Promise<User> =>{
+    const result = await pool.query('SELECT * FROM auth.users WHERE name = $1 OR email = $1', [login]);
+    return result.rows[0];
+}
