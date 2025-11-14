@@ -1,0 +1,1 @@
+ALTER SEQUENCE auth.users_id_seq RESTART WITH 1;
