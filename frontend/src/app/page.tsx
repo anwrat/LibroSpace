@@ -36,8 +36,9 @@ export default function Home() {
           height={20}
           priority
         />
-        <h1 className="text-4xl">Because books are better when shared!</h1>
-        <p>Track your reads, join discussions and celebrate the joy of reading</p>
+        {/* font-main uses Inter font */}
+        <h1 className="text-4xl font-bold font-main">Because books are better when shared!</h1>
+        <p className="italic text-xl font-main">Track your reads, join discussions and celebrate the joy of reading</p>
       </main>
     </div>
   );
