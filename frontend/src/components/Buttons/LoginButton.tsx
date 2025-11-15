@@ -1,9 +1,9 @@
 'use client';
+import Button from '@mui/material/Button';//Importing MUI Button component
 
-export function ButtonDemo() {
+export default function ButtonDemo() {
   return (
-    <div className="flex flex-wrap items-center gap-2 md:flex-row">
-      <Button variant="outline">Button</Button>
-    </div>
+    //sx prop is used to apply custom styles
+    <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}}>Login</Button>
   )
 }
