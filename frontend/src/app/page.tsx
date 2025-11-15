@@ -36,6 +36,8 @@ export default function Home() {
           height={20}
           priority
         />
+        <h1 className="text-4xl">Because books are better when shared!</h1>
+        <p>Track your reads, join discussions and celebrate the joy of reading</p>
       </main>
     </div>
   );
