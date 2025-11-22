@@ -51,9 +51,16 @@ export const loginUser = async (req:Request,res:Response)=>{
             JWT_SECRET,
             {expiresIn: '2h'}
         );
+        //Using http only cookies to store JWT token
+        res.cookie("token",token,{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 2 * 60 * 60 * 1000 //2 hours
+        });
         return res.status(200).json({
             message: "User logged in successfully",
-            token
+            user
         })
     }catch(err){
         console.error("Error while logging in: ",err);

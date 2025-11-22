@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 export default function ButtonDemo() {
     const router = useRouter();
     const handleLoginClick = () =>{
-        router.push('/login'); //Navigating to login page on button click
+        router.push('/register'); 
     }
   return (
     //sx prop is used to apply custom styles
-    <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}} onClick={handleLoginClick}>Login</Button>
+    <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}} onClick={handleLoginClick}>Sign Up with Email</Button>
   )
 }
