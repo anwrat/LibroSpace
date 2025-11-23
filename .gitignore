@@ -29,3 +29,6 @@ Thumbs.db
 
 # Ignore logs folder
 logs/
+
+#Ignore client jsons
+**/clientjsons/
