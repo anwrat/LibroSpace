@@ -1,0 +1,2 @@
+ALTER TABLE auth.users
+ALTER COLUMN password DROP NOT NULL;

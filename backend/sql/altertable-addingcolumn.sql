@@ -1,0 +1,2 @@
+ALTER TABLE auth.users
+ADD COLUMN google_id VARCHAR(255) UNIQUE;
