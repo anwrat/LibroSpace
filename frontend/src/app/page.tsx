@@ -3,6 +3,7 @@ import Image from "next/image";
 import LandingNav from "@/components/Navbar/LandingNav";
 import RegisterEmailButton from "@/components/Buttons/RegisterEmailButton";
 import {motion} from 'framer-motion';
+import GoogleButton from "@/components/Buttons/GoogleButton";
 
 export default function Home() {
   return (
@@ -51,6 +52,7 @@ export default function Home() {
           <h1 className="text-5xl font-semibold font-main">Because books are better when shared!</h1>
           <p className="italic text-lg font-main">Track your reads, join discussions and celebrate the joy of reading</p>
           <RegisterEmailButton />
+          <GoogleButton />
         </div>
       </main>
     </div>
