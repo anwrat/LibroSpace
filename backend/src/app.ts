@@ -1,5 +1,6 @@
 import express from 'express';
 import authRoutes from './routes/auth.routes.js';
+import oauthRoutes from './routes/oauth.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -16,5 +17,7 @@ app.use(cors({
 
 //Authentication
 app.use('/api/auth',authRoutes); 
+//OAuth Routes
+app.use('/api/oauth',oauthRoutes); 
 
 export default app;
