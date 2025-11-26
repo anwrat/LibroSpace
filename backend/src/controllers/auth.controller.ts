@@ -1,12 +1,7 @@
 import type{Request, Response} from 'express'; //This is a type-only import
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import {hashPassword,comparePassword} from '../utils/hash.js';
+import { signToken } from '../utils/jwt.js';
 import {createUser, findUserByEmail, findUserByName, loginByEmailorName} from '../models/users.model.js';
-
-dotenv.config();
-
-const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -32,7 +27,7 @@ export const registerUser = async (req: Request,res: Response)=>{
 
 }
 
-export const loginUser = async (req:Request,res:Response)=>{
+export const loginUser = async (req:Request, res:Response)=>{
     try{
         const {loginID, password} = req.body;
         if(!loginID){
@@ -46,11 +41,7 @@ export const loginUser = async (req:Request,res:Response)=>{
         if(!checkPassword){
             return res.status(401).json({messaage:"Invalid credentials. Incorrect password."})
         }
-        const token = jwt.sign(
-            {id:user.id,email:user.email},
-            JWT_SECRET,
-            {expiresIn: '2h'}
-        );
+        const token = signToken({id:user.id,email:user.email});
         //Using http only cookies to store JWT token
         res.cookie("token",token,{
             httpOnly: true,

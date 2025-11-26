@@ -1,5 +1,6 @@
 import type{ Request, Response } from "express";
 import dotenv from 'dotenv';
+dotenv.config();
 
 //Redirect to google
 export const googleOAuthHandler = async (req: Request, res: Response)=>{
