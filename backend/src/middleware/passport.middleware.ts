@@ -31,7 +31,7 @@ passport.use(new GoogleStrategy(
             email:user.email,
             name: user.name
         });
-        done(null, {user,token});
+        done(null, {...user,token});
     })
 );
 
