@@ -28,3 +28,9 @@ export const loginByEmailorName = async (login:string): Promise<User> =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE name = $1 OR email = $1', [login]);
     return result.rows[0];
 }
+
+//Creating google user after OAuth login
+export const createGoogleUser = async (name: string, email: string, google_id:string, picture_url:string | null): Promise<User>=>{
+    const result = await pool.query('INSERT INTO auth.users (name,email,google_id,picture_url) VALUES ($1,$2,$3,$4) RETURNING *',[name,email,google_id,picture_url]);
+    return result.rows[0];
+};
