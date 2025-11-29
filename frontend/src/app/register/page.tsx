@@ -9,19 +9,17 @@ export default function Register(){
         <div className="flex min-h-screen items-center justify-center bg-white">
             <LandingNav />
             {/* Image and form section */}
-            <div className="w-full max-w-5xl flex flex-row items-center">
-                <motion.div initial={{y:-100, opacity:0}} animate={{opacity:1,y:0}}>
-                    <Image
-                    className=""
-                    src="/Register/boyundertree.png"
-                    alt="Boy Under Tree"
-                    width={500}
-                    height={20}
-                    priority
-                    />
-                </motion.div>
+            <motion.div className="w-full max-w-5xl flex flex-row items-center gap-20" initial={{y:-100, opacity:0}} animate={{opacity:1,y:0}}>
+                <Image
+                className=""
+                src="/Register/boyundertree.png"
+                alt="Boy Under Tree"
+                width={450}
+                height={20}
+                priority
+                />
                 <RegisterForm/>
-            </div>
+            </motion.div>
         </div>
     )
 }

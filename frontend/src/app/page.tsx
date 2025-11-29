@@ -47,13 +47,13 @@ export default function Home() {
           />
         </motion.div>
         {/* Text and Register Section */}
-        <div className="mt-30 flex flex-col items-center gap-5">
+        <motion.div className="mt-30 flex flex-col items-center gap-5" initial={{y:-100, opacity:0}} animate={{opacity:1,y:0}}>
           {/* font-main uses Inter font */}
           <h1 className="text-5xl font-semibold font-main">Because books are better when shared!</h1>
           <p className="italic text-lg font-main">Track your reads, join discussions and celebrate the joy of reading</p>
           <RegisterEmailButton />
           <GoogleButton />
-        </div>
+        </motion.div>
       </main>
     </div>
   );
