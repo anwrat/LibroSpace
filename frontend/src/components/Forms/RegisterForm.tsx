@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {User,Lock, Eye, EyeOff} from 'lucide-react';
+import {User,Lock, Eye, EyeOff, Mail} from 'lucide-react';
 import GoogleButton from "../Buttons/GoogleButton";
 import { Button } from "@mui/material";
 import { registerUser } from "@/lib/auth";
@@ -20,7 +20,7 @@ export default function RegisterForm(){
 
     async function handleRegister(e:any){
         e.preventDefault();
-        if(password ! == confirmPassword){
+        if(password != confirmPassword){
             alert("Passwords do not match");
             return;
         }
@@ -42,7 +42,7 @@ export default function RegisterForm(){
             </div>
             {/* Email */}
             <div className="flex border-b gap-2 py-3">
-                <User/>
+                <Mail/>
                 <input type = "email" placeholder ="Enter Your Email" value={email} onChange={(e)=>{setEmail(e.target.value)}} required className="w-full font-main"/>
             </div>
             {/* Password */}
