@@ -1,0 +1,7 @@
+CREATE TABLE auth.otp (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    otp VARCHAR(10) NOT NULL,
+    purpose VARCHAR(20) NOT NULL, -- "REGISTER" or "RESET"
+    expires_at TIMESTAMPTZ NOT NULL
+);
