@@ -13,6 +13,7 @@ export async function sendOTPMail(email: string, otp: string){
         from: `"LibroSpace" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: "Verification Code",
-        text: `<b>Hello there,</b><br><p>Your OTP is ${otp}</p>`,
+        text:`Hello there,\n\nYour OTP is ${otp}`,
+        html: `<b>Hello there,</b><br><p>Your OTP is ${otp}</p>`,
     });
 }
