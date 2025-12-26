@@ -20,10 +20,11 @@ export const registerUser = async (req: Request,res: Response)=>{
         const otp = generateOTP();
         await saveOTP(email,otp,"REGISTER");
         await sendOTPMail(email,otp);
-        // const hashed = await hashPassword(password);
+        const hashed = await hashPassword(password);
         // const result = await createUser(name,email,hashed);
         return res.status(201).json({
             message:"OTP sent to email",
+            tempUser: {name,email,hashed}, // Sending the user data to frontend
         })
     }catch(err){
         console.error("Error while registering user: ",err);
