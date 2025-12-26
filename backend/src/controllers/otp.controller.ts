@@ -1,19 +1,23 @@
 import type{ Request,Response } from "express";
 import { verifyOTP,deleteOTP } from "../models/otp.model.js";
 import { createUser } from "../models/users.model.js";
+import { findRegisterSession } from "../models/registerSessions.model.js";
 
 export const verifyRegisterOTP = async (req: Request, res: Response)=>{
     try{
-        const {name,email,password,otp} = req.body;
-        const valid = await verifyOTP(email,otp,"REGISTER");
+        const {sessionId,otp} = req.body;
+        const session = await findRegisterSession(sessionId);
+        if(!session){
+            return res.status(400).json({message:"Invalid registration session"});
+        }
+        const valid = await verifyOTP(session.email,otp,"REGISTER");
         if(!valid){
             return res.status(400).json({message:"Invalid or expired OTP"});
         }
-        await deleteOTP(email,"REGISTER");
-        const user = await createUser(name,email,password);
+        await deleteOTP(session.email,"REGISTER");
+        const user = await createUser(session.name,session.email,session.password);//Creating the user in users table
         return res.status(201).json({
             message: "Registration successful",
-            user,
         });
     }catch(err){
         console.error("Error while verifying register otp: ",err);

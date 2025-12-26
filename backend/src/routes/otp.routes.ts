@@ -3,6 +3,6 @@ import { verifyRegisterOTP } from "../controllers/otp.controller.js";
 
 const router = Router();
 
-router.post('/verify/register',verifyRegisterOTP);
+router.post('/register/verify',verifyRegisterOTP);
 
 export default router;
