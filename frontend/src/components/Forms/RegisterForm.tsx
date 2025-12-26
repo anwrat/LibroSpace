@@ -25,8 +25,8 @@ export default function RegisterForm(){
             return;
         }
         try{
-            await registerUser({name,email,password});
-            window.location.href = '/login';
+            const res = await registerUser({name,email,password});
+            window.location.href = `/register/verify?sessionId=${res.data.sessionId}`;
         }catch(err){
             console.error("Login failed", err);
         }
