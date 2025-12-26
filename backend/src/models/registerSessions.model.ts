@@ -12,6 +12,6 @@ export const findRegisterSession = async(id:string)=>{
     return res.rows[0];
 }
 
-export const deleteRegisterSession = async(id:string)=>{
-    await pool.query(`DELETE FROM auth.register_sessions WHERE id = $1`,[id]);
+export const deleteRegisterSession = async(id:string, name:string)=>{
+    await pool.query(`DELETE FROM auth.register_sessions WHERE id = $1 AND name =$2`,[id,name]);
 }

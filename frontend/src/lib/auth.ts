@@ -10,3 +10,7 @@ export function loginUser(data: LoginPayload){
 export function registerUser(data: RegisterPayload){
     return api.post('/api/auth/register',data);
 }
+
+export function verifyRegisterOTP(sessionId: string, otp: string){
+    return api.post('/api/otp/register/verify',{sessionId, otp});
+}
