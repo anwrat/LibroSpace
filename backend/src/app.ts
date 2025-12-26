@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './routes/auth.routes.js';
 import oauthRoutes from './routes/oauth.routes.js';
+import otpRoutes from './routes/otp.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middleware/passport.middleware.js';
@@ -21,5 +22,7 @@ app.use(cors({
 app.use('/api/auth',authRoutes); 
 //OAuth Routes
 app.use('/api/oauth',oauthRoutes); 
+//OTP Routes
+app.use('/api/otp',otpRoutes);
 
 export default app;

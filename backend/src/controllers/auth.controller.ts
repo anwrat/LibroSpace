@@ -1,7 +1,11 @@
 import type{Request, Response} from 'express'; //This is a type-only import
 import {hashPassword,comparePassword} from '../utils/hash.js';
 import { signToken } from '../utils/jwt.js';
-import {createUser, findUserByEmail, findUserByName, loginByEmailorName} from '../models/users.model.js';
+import {findUserByEmail, findUserByName, loginByEmailorName} from '../models/users.model.js';
+import { generateOTP } from '../utils/otp.js';
+import { saveOTP } from '../models/otp.model.js';
+import { sendOTPMail } from '../utils/email.js';
+import { createRegisterSession } from '../models/registerSessions.model.js';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -14,11 +18,14 @@ export const registerUser = async (req: Request,res: Response)=>{
         if(existingUser){
             return res.status(500).json({message:"Username already taken"});
         }
+        const otp = generateOTP();
+        await saveOTP(email,otp,"REGISTER");
+        await sendOTPMail(email,otp);
         const hashed = await hashPassword(password);
-        const result = await createUser(name,email,hashed);
+        const sessionId = await createRegisterSession(name,email,hashed);
         return res.status(201).json({
-            message:"User registered successfully",
-            result
+            message:"OTP sent to email",
+            sessionId
         })
     }catch(err){
         console.error("Error while registering user: ",err);
