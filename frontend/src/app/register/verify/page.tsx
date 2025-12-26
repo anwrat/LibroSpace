@@ -3,6 +3,7 @@ import LandingNav from "@/components/Navbar/LandingNav";
 import { useSearchParams } from "next/navigation";
 import { verifyRegisterOTP } from "@/lib/auth";
 import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function VerifyOtpPage(){
     const sessionId = useSearchParams().get('sessionId');
@@ -19,7 +20,10 @@ export default function VerifyOtpPage(){
             const response = await verifyRegisterOTP(sessionId!, otp);
             // Check if response indicates success
             if (response.data.success) {
-                window.location.href = '/login';
+                toast.success('Registration successful! Redirecting to login...');
+                setTimeout(()=>{
+                    window.location.href = '/login';
+                },1500);
             } else {
                 // Show error from backend
                 setError(response.data.message || 'Invalid OTP');
@@ -35,6 +39,7 @@ export default function VerifyOtpPage(){
 
     return(
         <div className="flex min-h-screen items-center justify-center bg-white">
+            <Toaster position="top-center"/>
             <LandingNav showLoginButton={false}/>
             
             <div className="flex flex-col gap-4 max-w-md w-full p-6">
