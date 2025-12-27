@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"; //Importing inter font
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 
 //Setting up inter font
 const inter = Inter({
@@ -23,7 +24,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}//Applying inter font to entire app
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
