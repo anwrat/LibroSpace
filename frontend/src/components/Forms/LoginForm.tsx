@@ -5,12 +5,14 @@ import { Button } from "@mui/material";
 import GoogleButton from "../Buttons/GoogleButton";
 import { useRouter } from "next/navigation";
 import {User, Lock, Eye, EyeOff} from 'lucide-react';
+import { getCurrentUser } from "@/lib/auth";
 
 export default function LoginForm(){
     const [userID,setuserID] = useState('');
     const [password,setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+
     const gotoRegister = () =>{
         router.push('/register');
     };
@@ -19,7 +21,13 @@ export default function LoginForm(){
         e.preventDefault();
         try{
             await loginUser({loginID:userID,password});
-            window.location.href = '/dashboard';
+            const res = await getCurrentUser();
+            if(res.data.user.role === 'admin'){
+                window.location.href = '/admin/dashboard';
+            }
+            else{
+                window.location.href = '/dashboard';
+            }
         }catch(err){
             console.error("Login failed", err);
         }

@@ -1,7 +1,7 @@
 //Context for accessing the current logged in user
 'use client';
 import { createContext, useContext, useState, useEffect } from "react";
-import { api } from "@/lib/axios";
+import { getCurrentUser,logOut } from "@/lib/auth";
 import { User } from "@/types/user";
 
 // This defines the shape of the data to be shared through the AuthContext
@@ -20,7 +20,7 @@ export function AuthProvider({children}:{children: React.ReactNode}){
     useEffect(()=>{
         const loadUser = async() =>{
             try{
-                const res = await api.get("/api/auth/me");
+                const res = await getCurrentUser();
                 setUser(res.data.user);
             }catch{
                 setUser(null); //If request fails (token invalid or missing), set user to null
@@ -33,7 +33,7 @@ export function AuthProvider({children}:{children: React.ReactNode}){
 
     //For logging out the user
     const logout = async() =>{
-        await api.post("/api/auth/logout");
+        await logOut();
         setUser(null);
         window.location.href = '/';
     };

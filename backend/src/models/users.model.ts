@@ -1,36 +1,28 @@
 import pool from '../config/db.js';
 
-export interface User{
-    id: number;
-    name: string;
-    email: string;
-    password: string;
-    created_at: Date;
-}
-
-export const createUser = async (name: string, email: string, password: string): Promise<User>=>{
+export const createUser = async (name: string, email: string, password: string)=>{
     const result = await pool.query('INSERT INTO auth.users (name, email, password) VALUES ($1,$2,$3) RETURNING *', [name, email, password]);
     return result.rows[0];
 }
 
-export const findUserByEmail = async (email:string): Promise<User> =>{
+export const findUserByEmail = async (email:string) =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE email = $1', [email]);
     return result.rows[0];
 }
 
-export const findUserByName = async (name:string): Promise<User> =>{
+export const findUserByName = async (name:string) =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE name = $1', [name]);
     return result.rows[0];
 }
 
 //A function to login by either email or name
-export const loginByEmailorName = async (login:string): Promise<User> =>{
+export const loginByEmailorName = async (login:string) =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE name = $1 OR email = $1', [login]);
     return result.rows[0];
 }
 
 //Creating google user after OAuth login
-export const createGoogleUser = async (name: string, email: string, google_id:string, picture_url:string | null): Promise<User>=>{
+export const createGoogleUser = async (name: string, email: string, google_id:string, picture_url:string | null)=>{
     const result = await pool.query('INSERT INTO auth.users (name,email,google_id,picture_url) VALUES ($1,$2,$3,$4) RETURNING *',[name,email,google_id,picture_url]);
     return result.rows[0];
 };

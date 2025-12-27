@@ -49,7 +49,7 @@ export const loginUser = async (req:Request, res:Response)=>{
         if(!checkPassword){
             return res.status(401).json({messaage:"Invalid credentials. Incorrect password."})
         }
-        const token = signToken({id:user.id,name:user.name,email:user.email});
+        const token = signToken({id:user.id,name:user.name,email:user.email,role:user.role});
         //Using http only cookies to store JWT token
         res.cookie("token",token,{
             httpOnly: true,

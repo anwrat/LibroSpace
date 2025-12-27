@@ -14,3 +14,11 @@ export function registerUser(data: RegisterPayload){
 export function verifyRegisterOTP(sessionId: string, otp: string){
     return api.post('/api/otp/register/verify',{sessionId, otp});
 }
+
+export function getCurrentUser(){
+    return api.get('/api/auth/me');
+}
+
+export function logOut(){
+    return api.post('/api/auth/logout');
+}
