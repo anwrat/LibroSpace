@@ -6,6 +6,7 @@ import { generateOTP } from '../utils/otp.js';
 import { saveOTP } from '../models/otp.model.js';
 import { sendOTPMail } from '../utils/email.js';
 import { createRegisterSession } from '../models/registerSessions.model.js';
+import strict from 'assert/strict';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -82,4 +83,13 @@ export const getCurrentUser = async (req: Request, res: Response) =>{
         console.error("Error while fetching current user: ",err);
         res.status(500).json({message:'Internal Server Error while fetching current user'});
     }
+}
+
+export const logOutUser = async (req: Request, res: Response) =>{
+    res.clearCookie('token',{
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+    });
+    return res.status(200).json({message: 'User logged out successfully'});
 }
