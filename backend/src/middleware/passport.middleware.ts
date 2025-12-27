@@ -2,7 +2,6 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from 'dotenv';
 import { findUserByEmail, createGoogleUser } from '../models/users.model.js';
-import { signToken } from '../utils/jwt.js';
 
 dotenv.config();
 
@@ -26,12 +25,7 @@ passport.use(new GoogleStrategy(
                 picture
             );
         }
-        const token = signToken({
-            id: user.id,
-            email:user.email,
-            name: user.name
-        });
-        done(null, {...user,token});
+        done(null, user);
     })
 );
 

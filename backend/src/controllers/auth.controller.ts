@@ -6,6 +6,7 @@ import { generateOTP } from '../utils/otp.js';
 import { saveOTP } from '../models/otp.model.js';
 import { sendOTPMail } from '../utils/email.js';
 import { createRegisterSession } from '../models/registerSessions.model.js';
+import strict from 'assert/strict';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -48,7 +49,7 @@ export const loginUser = async (req:Request, res:Response)=>{
         if(!checkPassword){
             return res.status(401).json({messaage:"Invalid credentials. Incorrect password."})
         }
-        const token = signToken({id:user.id,email:user.email});
+        const token = signToken({id:user.id,name:user.name,email:user.email});
         //Using http only cookies to store JWT token
         res.cookie("token",token,{
             httpOnly: true,
@@ -58,10 +59,37 @@ export const loginUser = async (req:Request, res:Response)=>{
         });
         return res.status(200).json({
             message: "User logged in successfully",
-            user
+            user:{
+                id: user.id,
+                name: user.name,
+                email: user.email
+            }
         })
     }catch(err){
         console.error("Error while logging in: ",err);
         res.status(500).json({message: "Internal Server Error while logging user"});
     }
+}
+
+export const getCurrentUser = async (req: Request, res: Response) =>{
+    try{
+        const user = await findUserByEmail(req.user!.email);
+        if(!user){
+            return res.status(404).json({message:'User not found'});
+        }
+        const {password, ...userwithoutPassword} = user;
+        return res.status(200).json({user: userwithoutPassword});
+    }catch(err){
+        console.error("Error while fetching current user: ",err);
+        res.status(500).json({message:'Internal Server Error while fetching current user'});
+    }
+}
+
+export const logOutUser = async (req: Request, res: Response) =>{
+    res.clearCookie('token',{
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+    });
+    return res.status(200).json({message: 'User logged out successfully'});
 }
