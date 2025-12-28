@@ -6,7 +6,6 @@ import { generateOTP } from '../utils/otp.js';
 import { saveOTP } from '../models/otp.model.js';
 import { sendOTPMail } from '../utils/email.js';
 import { createRegisterSession } from '../models/registerSessions.model.js';
-import strict from 'assert/strict';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -49,7 +48,7 @@ export const loginUser = async (req:Request, res:Response)=>{
         if(!checkPassword){
             return res.status(401).json({messaage:"Invalid credentials. Incorrect password."})
         }
-        const token = signToken({id:user.id,name:user.name,email:user.email});
+        const token = signToken({id:user.id,name:user.name,email:user.email,role:user.role});
         //Using http only cookies to store JWT token
         res.cookie("token",token,{
             httpOnly: true,

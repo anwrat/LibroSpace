@@ -5,5 +5,6 @@ CREATE TABLE auth.users (
   password VARCHAR(255),              -- nullable for Google users
   google_id VARCHAR(255) UNIQUE,      -- only for Google OAuth
   picture_url TEXT,
+  role VARCHAR(20),
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
