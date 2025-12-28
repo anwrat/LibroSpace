@@ -6,7 +6,6 @@ import { generateOTP } from '../utils/otp.js';
 import { saveOTP } from '../models/otp.model.js';
 import { sendOTPMail } from '../utils/email.js';
 import { createRegisterSession } from '../models/registerSessions.model.js';
-import strict from 'assert/strict';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{

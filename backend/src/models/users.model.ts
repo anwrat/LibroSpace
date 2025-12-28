@@ -26,3 +26,8 @@ export const createGoogleUser = async (name: string, email: string, google_id:st
     const result = await pool.query('INSERT INTO auth.users (name,email,google_id,picture_url) VALUES ($1,$2,$3,$4) RETURNING *',[name,email,google_id,picture_url]);
     return result.rows[0];
 };
+
+export const getAllUsers = async()=>{
+    const result = await pool.query('SELECT id, name, email, created_at FROM auth.users WHERE role != $1',['admin']);
+    return result.rows;
+}
