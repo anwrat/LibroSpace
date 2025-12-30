@@ -1,7 +1,7 @@
 import type{ Request,Response } from "express";
-import { verifyOTP,deleteOTP } from "../models/otp.model.js";
-import { createUser } from "../models/users.model.js";
-import { findRegisterSession,deleteRegisterSession } from "../models/registerSessions.model.js";
+import { verifyOTP,deleteOTP } from "../../models/auth/otp.model.js";
+import { createUser } from "../../models/auth/users.model.js";
+import { findRegisterSession,deleteRegisterSession } from "../../models/auth/registerSessions.model.js";
 
 export const verifyRegisterOTP = async (req: Request, res: Response)=>{
     try{

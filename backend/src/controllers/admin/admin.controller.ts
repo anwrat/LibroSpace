@@ -1,6 +1,6 @@
 import type{ Request, Response } from "express";
-import { getAllUsers } from "../models/users.model.js";
-import { createBook } from "../models/booklist.model.js";
+import { getAllUsers } from "../../models/auth/users.model.js";
+import { createBook } from "../../models/books/booklist.model.js";
 
 export const fetchAllUsers = async (req: Request, res: Response) =>{
     try{

@@ -1,6 +1,6 @@
 import {Router} from 'express';
-import { googleAuthRedirect } from '../controllers/oauth.controller.js';
-import passport from '../middleware/passport.middleware.js';
+import { googleAuthRedirect } from '../../controllers/auth/oauth.controller.js';
+import passport from '../../middleware/auth/passport.middleware.js';
 
 const router = Router();
 

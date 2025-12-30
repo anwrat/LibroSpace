@@ -1,5 +1,5 @@
 import type{ Request, Response } from "express";
-import { signToken } from "../utils/jwt.js";
+import { signToken } from "../../utils/jwt.js";
 
 //Redirect after succesful Google OAuth Login
 export const googleAuthRedirect = async (req: Request, res: Response)=>{
