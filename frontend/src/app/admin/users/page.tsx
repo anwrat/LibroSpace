@@ -107,7 +107,7 @@ export default function Users() {
                 </div>
                 
                 {/* Stats Card */}
-                <div className="bg-gradient-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg mb-6">
+                <div className="bg-linear-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg mb-6">
                     <div className="flex items-center gap-4">
                         <div className="bg-white/20 p-4 rounded-lg">
                             <User size={32} className="text-white" />

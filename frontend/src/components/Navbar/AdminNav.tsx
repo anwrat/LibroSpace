@@ -50,7 +50,7 @@ export default function AdminNav(){
         <>
         {/* Collapsible Sidebar */}
         <div className={`
-            fixed top-0 left-0 h-screen bg-gradient-to-b from-[#14919B] to-[#0d6169] text-white
+            fixed top-0 left-0 h-screen bg-linear-to-b from-[#14919B] to-[#0d6169] text-white
             shadow-2xl flex flex-col justify-between py-6 transition-all duration-300
             ${collapsed ? 'w-20' : 'w-64'}
         `}>
