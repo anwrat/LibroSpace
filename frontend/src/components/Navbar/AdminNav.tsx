@@ -73,13 +73,28 @@ export default function AdminNav(){
             <LogOut className="cursor-pointer bottom-0" onClick={()=>{setShowLogOutConfirm(true)}}/>
         </div>
         {showLogOutConfirm &&(
-            <div className="fixed items-center">
-                <p className="font-main">Are you sure you want to log out?</p>
-                <div>
-                    <button className="cursor-pointer font-main" onClick={confirmLogOut}>{isLoggingOut? 'Logging Out...': 'LogOut'}</button>
-                    <button className="cursor-pointer font-main" onClick={()=>{setShowLogOutConfirm(false)}}>Cancel</button>
+            <>
+                {/* The black transparent bg for dimming effect */}
+                <div className="fixed flex items-center inset-0 z-40 bg-black opacity-50 justify-center" onClick={()=>{setShowLogOutConfirm(false)}}/>
+                {/* The confirmation dialog */}
+                <div className="fixed bg-white rounded-lg shadow-xl bg-opacity-100 z-50">
+                    <p className="font-main">Are you sure you want to log out?</p>
+                    <div className="flex justify-center gap-6">
+                        <button 
+                            className="cursor-pointer font-main bg-red-500 px-6 py-2 hover:bg-red-700" 
+                            onClick={confirmLogOut} 
+                            disabled={isLoggingOut}>
+                                {isLoggingOut? 'Logging Out...': 'LogOut'}
+                        </button>
+                        <button 
+                            className="cursor-pointer font-main px-6 py-2 bg-gray-30 hover:bg-gray-400" 
+                            onClick={()=>{setShowLogOutConfirm(false)}} 
+                            disabled={isLoggingOut}>
+                                Cancel
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </>
         )}
         </>
     );

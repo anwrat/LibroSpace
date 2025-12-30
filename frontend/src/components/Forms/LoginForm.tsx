@@ -23,7 +23,7 @@ export default function LoginForm(){
             await loginUser({loginID:userID,password});
             const res = await getCurrentUser();
             if(res.data.user.role === 'admin'){
-                window.location.href = '/admin/dashboard';
+                window.location.href = '/admin';
             }
             else{
                 window.location.href = '/dashboard';

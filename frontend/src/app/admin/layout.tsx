@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/context/AuthContext";
+import { Backdrop,CircularProgress } from "@mui/material";
 
 export default function AdminLayout({
   children,
@@ -21,7 +22,16 @@ export default function AdminLayout({
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <p>Checking permissions...</p>;
+    return(
+      <div>
+        <Backdrop
+          sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+          open={true}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      </div>
+    );
   }
 
   return <>{children}</>;
