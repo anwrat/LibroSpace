@@ -1,11 +1,11 @@
 import type{Request, Response} from 'express'; //This is a type-only import
-import {hashPassword,comparePassword} from '../utils/hash.js';
-import { signToken } from '../utils/jwt.js';
-import {findUserByEmail, findUserByName, loginByEmailorName} from '../models/users.model.js';
-import { generateOTP } from '../utils/otp.js';
-import { saveOTP } from '../models/otp.model.js';
-import { sendOTPMail } from '../utils/email.js';
-import { createRegisterSession } from '../models/registerSessions.model.js';
+import {hashPassword,comparePassword} from '../../utils/hash.js';
+import { signToken } from '../../utils/jwt.js';
+import {findUserByEmail, findUserByName, loginByEmailorName} from '../../models/auth/users.model.js';
+import { generateOTP } from '../../utils/otp.js';
+import { saveOTP } from '../../models/auth/otp.model.js';
+import { sendOTPMail } from '../../utils/email.js';
+import { createRegisterSession } from '../../models/auth/registerSessions.model.js';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{

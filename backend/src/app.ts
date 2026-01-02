@@ -1,11 +1,11 @@
 import express from 'express';
-import authRoutes from './routes/auth.routes.js';
-import oauthRoutes from './routes/oauth.routes.js';
-import otpRoutes from './routes/otp.routes.js';
-import adminRoutes from './routes/admin.routes.js';
+import authRoutes from './routes/auth/auth.routes.js';
+import oauthRoutes from './routes/auth/oauth.routes.js';
+import otpRoutes from './routes/auth/otp.routes.js';
+import adminRoutes from './routes/admin/admin.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import passport from './middleware/passport.middleware.js';
+import passport from './middleware/auth/passport.middleware.js';
 
 const app = express();
 app.use(express.json());

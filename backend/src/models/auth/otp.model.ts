@@ -1,4 +1,4 @@
-import pool from "../config/db.js";
+import pool from "../../config/db.js";
 
 export const saveOTP = async(email:string, otp: string, purpose: string)=>{
     await pool.query(`INSERT into auth.otp (email, otp, purpose, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '10 minutes')`,[email,otp,purpose]);
