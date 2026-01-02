@@ -1,53 +1,60 @@
 'use client';
 import AdminNav from "@/components/Navbar/AdminNav";
-import { getAllUsers } from "@/lib/admin";
+import { getAllBooks } from "@/lib/admin";
 import { useEffect, useState } from "react";
-import { User, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Button } from "@mui/material";
 
-interface UserType {
+interface BookType {
     id: number;
-    name: string;
-    email: string;
+    title: string;
+    author: string;
+    description: string;
+    cover_url: string;
+    published_date: string;
+    language: string;
+    created_by: number;
     created_at: string;
+    updated_at: string;
 }
 
 export default function Books() {
-    const [users, setUsers] = useState<UserType[]>([]);
+    const [books, setBooks] = useState<BookType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     
-    const usersPerPage = 5;
+    const booksPerPage = 5;
     
-    // Fetch users on component mount
+    // Fetch books on component mount
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchBooks = async () => {
             try {
-                const response = await getAllUsers();
-                setUsers(response.data.users);
+                const response = await getAllBooks();
+                setBooks(response.data.books);
             } catch (err: any) {
-                setError(err.response?.data?.message || 'Failed to load users');
+                setError(err.response?.data?.message || 'Failed to load books');
             } finally {
                 setLoading(false);
             }
         };
         
-        fetchUsers();
+        fetchBooks();
     }, []);
     
-    // Filter users based on search
-    const filteredUsers = users.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    // Filter books based on search
+    const filteredBooks = books.filter(book => 
+        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
     // Calculate pagination
-    const totalUsers = filteredUsers.length;
-    const totalPages = Math.ceil(totalUsers / usersPerPage);
-    const startIndex = (currentPage - 1) * usersPerPage;
-    const endIndex = startIndex + usersPerPage;
-    const currentUsers = filteredUsers.slice(startIndex, endIndex);
+    const totalBooks = filteredBooks.length;
+    const totalPages = Math.ceil(totalBooks / booksPerPage);
+    const startIndex = (currentPage - 1) * booksPerPage;
+    const endIndex = startIndex + booksPerPage;
+    const currentBooks = filteredBooks.slice(startIndex, endIndex);
     
     // Pagination handlers
     const goToNextPage = () => {
@@ -110,11 +117,11 @@ export default function Books() {
                 <div className="bg-linear-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg mb-6">
                     <div className="flex items-center gap-4">
                         <div className="bg-white/20 p-4 rounded-lg">
-                            <User size={32} className="text-white" />
+                            <BookOpen size={32} className="text-white" />
                         </div>
                         <div>
                             <p className="text-white/80 font-main text-sm">Total Books</p>
-                            <p className="text-white font-bold text-4xl font-main">{totalUsers}</p>
+                            <p className="text-white font-bold text-4xl font-main">{totalBooks}</p>
                         </div>
                     </div>
                 </div>
@@ -125,7 +132,7 @@ export default function Books() {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
+                            placeholder="Search by name of book or author..."
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
@@ -136,7 +143,9 @@ export default function Books() {
                     </div>
                 </div>
                 
-                {/* Users Table */}
+                <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}}>Add a book</Button>
+
+                {/* Books Table */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b">
@@ -145,38 +154,38 @@ export default function Books() {
                                     ID
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
-                                    Name
+                                    Title
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
-                                    Email
+                                    Author
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
-                                    Joined Date
+                                    Published Date
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {currentUsers.length > 0 ? (
-                                currentUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                            {currentBooks.length > 0 ? (
+                                currentBooks.map((book) => (
+                                    <tr key={book.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 text-sm text-gray-700 font-main">
-                                            {user.id}
+                                            {book.id}
                                         </td>
                                         <td className="px-6 py-4 text-sm font-medium text-gray-900 font-main">
-                                            {user.name}
+                                            {book.title}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-700 font-main">
-                                            {user.email}
+                                            {book.author}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-700 font-main">
-                                            {new Date(user.created_at).toLocaleDateString()}
+                                            {new Date(book.published_date).toLocaleDateString()}
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-main">
-                                        No users found
+                                        No books found
                                     </td>
                                 </tr>
                             )}
@@ -189,8 +198,8 @@ export default function Books() {
                     <div className="mt-6 flex items-center justify-between">
                         <p className="text-sm text-gray-700 font-main">
                             Showing <span className="font-semibold">{startIndex + 1}</span> to{' '}
-                            <span className="font-semibold">{Math.min(endIndex, totalUsers)}</span> of{' '}
-                            <span className="font-semibold">{totalUsers}</span> users
+                            <span className="font-semibold">{Math.min(endIndex, totalBooks)}</span> of{' '}
+                            <span className="font-semibold">{totalBooks}</span> books
                         </p>
                         
                         <div className="flex items-center gap-2">
