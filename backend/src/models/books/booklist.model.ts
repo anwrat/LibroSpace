@@ -9,3 +9,8 @@ export const getAllBooks = async () =>{
     const result = await pool.query('SELECT * FROM books.booklist ORDER BY title ASC');
     return result.rows;
 }
+
+export const findBookByTitleandAuthor = async(title: string, author: string)=>{
+    const result = await pool.query('SELECT * FROM books.booklist WHERE LOWER(title)=LOWER($1) AND LOWER(author)= LOWER($2)',[title,author]);
+    return result.rows[0];
+}
