@@ -15,6 +15,9 @@
 **/.env.*
 !**/.env.example
 
+# Ignore npmrc
+**/.npmrc
+
 # Ignore Next.js build and export directories
 **/.next/
 **/out/

@@ -69,7 +69,7 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
       </Typography>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex flex-col gap-4 mx-auto">
+        <div className="flex flex-col gap-4">
           <TextField
             fullWidth
             label="Book Title"

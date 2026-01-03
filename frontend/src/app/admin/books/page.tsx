@@ -145,7 +145,7 @@ export default function Books() {
                     </div>
                 </div>
                 
-                <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}} onClick={()=>setShowAddBookForm(true)}>Add a book</Button>
+                <Button variant="contained" size="large" sx={{bgcolor:'#13b020', '&:hover':{bgcolor:'#0c7515'}, fontFamily:'var(--font-main)'}} onClick={()=>setShowAddBookForm(true)}>Add a book</Button>
 
                 {/* Books Table */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -247,7 +247,7 @@ export default function Books() {
                 {showAddBookForm && (
                     <>
                         <div className="fixed inset-0 z-40 bg-black opacity-50 flex items-center justify-center backdrop-blur-sm"/>
-                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-50">
+                        <div className="w-1/2 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-50">
                             <AddBookForm onClose={()=>setShowAddBookForm(false)}/>
                         </div>
                     </>
