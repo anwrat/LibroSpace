@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { addNewBook } from "@/lib/admin";
+import { addNewBook,checkifBookExists } from "@/lib/admin";
 import { Button, TextField, Typography, Box } from "@mui/material";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -29,7 +29,6 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
     if (!cover) return toast.error("Please upload a cover image");
 
     setLoading(true);
-    console.log(cover);
     const data = new FormData();
     data.append("title", form.title);
     data.append("author", form.author);
@@ -39,6 +38,10 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
     data.append("cover", cover); 
 
     try {
+      const exists = await checkifBookExists(form.title, form.author);
+      if(exists){
+        return toast.error("This book already exists");
+      }
       const res = await addNewBook(data);
       if (res.status === 201) {
         toast.success("Book added successfully!");
@@ -51,12 +54,7 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
         toast.error("Failed to add book");
       }
     } catch (error:any) {
-      if(error.response?.status === 409){
-        toast.error("This book already exists");
-      }
-      else{
         toast.error("An error occurred during upload");
-      }
     } finally {
       setLoading(false);
     }
