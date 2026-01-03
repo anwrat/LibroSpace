@@ -16,7 +16,10 @@ export const addNewBook = async (req: Request, res: Response) =>{
         }
         const newBook = await createBook(title, author, description, cover_url, published_date, language, created_by);
         return res.status(201).json({message: "New book added successfully", details: newBook});
-    }catch(err){
+    }catch(err: any){
+        if(err.code === '23505' || err.message.includes('unique constraint')){
+            return res.status(409).json({message:"This books already exists"});
+        }
         console.error(err);
         res.status(500).json({message:  "Internal Server Error while adding new book"});
     }

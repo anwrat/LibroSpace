@@ -50,8 +50,13 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
       } else {
         toast.error("Failed to add book");
       }
-    } catch (error) {
-      toast.error("An error occurred during upload");
+    } catch (error:any) {
+      if(error.response?.status === 409){
+        toast.error("This book already exists");
+      }
+      else{
+        toast.error("An error occurred during upload");
+      }
     } finally {
       setLoading(false);
     }
