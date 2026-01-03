@@ -4,6 +4,7 @@ import { getAllBooks } from "@/lib/admin";
 import { useEffect, useState } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@mui/material";
+import AddBookForm from "@/components/Forms/AddBookForm";
 
 interface BookType {
     id: number;
@@ -24,6 +25,7 @@ export default function Books() {
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showAddBookForm, setShowAddBookForm] = useState(false);
     
     const booksPerPage = 5;
     
@@ -143,7 +145,7 @@ export default function Books() {
                     </div>
                 </div>
                 
-                <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}}>Add a book</Button>
+                <Button variant="contained" size="large" sx={{bgcolor:'#14919B', '&:hover':{bgcolor:'#155C62'}, fontFamily:'var(--font-main)'}} onClick={()=>setShowAddBookForm(true)}>Add a book</Button>
 
                 {/* Books Table */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -219,7 +221,7 @@ export default function Books() {
                                         key={page}
                                         onClick={() => goToPage(page)}
                                         className={`
-                                            px-4 py-2 rounded-lg font-main text-sm font-medium transition-colors
+                                            px-4 py-2 rounded-lg font-main text-sm font-medium transition-colors cursor-pointer
                                             ${currentPage === page
                                                 ? 'bg-[#14919B] text-white'
                                                 : 'border border-gray-300 hover:bg-gray-50'
@@ -241,6 +243,14 @@ export default function Books() {
                             </button>
                         </div>
                     </div>
+                )}
+                {showAddBookForm && (
+                    <>
+                        <div className="fixed inset-0 z-40 bg-black opacity-50 flex items-center justify-center backdrop-blur-sm"/>
+                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-50">
+                            <AddBookForm onClose={()=>setShowAddBookForm(false)}/>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

@@ -210,7 +210,7 @@ export default function Users() {
                                         key={page}
                                         onClick={() => goToPage(page)}
                                         className={`
-                                            px-4 py-2 rounded-lg font-main text-sm font-medium transition-colors
+                                            px-4 py-2 rounded-lg font-main text-sm font-medium transition-colors cursor-pointer
                                             ${currentPage === page
                                                 ? 'bg-[#14919B] text-white'
                                                 : 'border border-gray-300 hover:bg-gray-50'
