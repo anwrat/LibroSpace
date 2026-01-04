@@ -37,9 +37,6 @@ export const registerUser = async (req: Request,res: Response)=>{
 export const loginUser = async (req:Request, res:Response)=>{
     try{
         const {loginID, password} = req.body;
-        if(!loginID){
-            return res.status(400).json({message:"Login ID is required"});
-        }
         const user = await loginByEmailorName(loginID);
         if(!user){
             return res.status(401).json({message: "Invalid credentials. User not found."});
