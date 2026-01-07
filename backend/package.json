@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -31,7 +34,9 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.16.3",
-    "uuid": "^13.0.0"
+    "tsx": "^4.21.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
