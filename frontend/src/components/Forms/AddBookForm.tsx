@@ -6,16 +6,17 @@ import toast, { Toaster } from "react-hot-toast";
 
 interface AddBookFormProps {
   onClose: () => void;
+  onRefresh: ()=>void;
 }
 
-export default function AddBookForm({ onClose }: AddBookFormProps) {
+export default function AddBookForm({ onClose, onRefresh }: AddBookFormProps) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: "",
     author: "",
     description: "",
     published_date: "",
-    language: "",
+    pageCount: 0,
   });
   const [cover, setCover] = useState<File | null>(null);
 
@@ -34,12 +35,12 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
     data.append("author", form.author);
     data.append("description", form.description);
     data.append("published_date", form.published_date);
-    data.append("language", form.language);
+    data.append("pageCount", form.pageCount.toString());
     data.append("cover", cover); 
 
     try {
       const exists = await checkifBookExists(form.title, form.author);
-      if(exists){
+      if(exists.data.exists){
         return toast.error("This book already exists");
       }
       const res = await addNewBook(data);
@@ -47,8 +48,8 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
         toast.success("Book added successfully!");
         // Small delay so user sees the success message before closing
         setTimeout(() => {
+          onRefresh(); // Refresh table by fetching books again
           onClose();
-          window.location.reload(); // Refresh table
         }, 1500);
       } else {
         toast.error("Failed to add book");
@@ -97,9 +98,11 @@ export default function AddBookForm({ onClose }: AddBookFormProps) {
 
           <TextField
             fullWidth
-            label="Language"
-            placeholder="e.g. English"
-            onChange={(e) => setForm({ ...form, language: e.target.value })}
+            label="Page Count"
+            type="number"
+            placeholder="e.g. 235"
+            required
+            onChange={(e) => setForm({ ...form, pageCount: parseInt(e.target.value) })}
           />
 
           <TextField

@@ -3,7 +3,7 @@ import { createBook,getAllBooks, findBookByTitleandAuthor } from "../../models/b
 
 export const addNewBook = async (req: Request, res: Response) =>{
     try{
-        const {title, author, description, published_date, language} = req.body;
+        const {title, author, description, published_date, pageCount} = req.body;
         const file = req.file;
         if(!file){
             return res.status(400).json({message:"Book cover is required"});
@@ -13,7 +13,7 @@ export const addNewBook = async (req: Request, res: Response) =>{
         if(!created_by){
             return res.status(400).json({message: "Invalid user"});
         }
-        const newBook = await createBook(title, author, description, cover_url, published_date, language, created_by);
+        const newBook = await createBook(title, author, description, cover_url, published_date, pageCount, created_by);
         return res.status(201).json({message: "New book added successfully", details: newBook});
     }catch(err: any){
         console.error(err);
@@ -26,9 +26,9 @@ export const checkifBookExists = async(req: Request, res: Response)=>{
         const {title,author} = req.body;
         const book = await findBookByTitleandAuthor(title,author);
         if(book){
-            return res.status(200).json({message: "Book already exists"});
+            return res.status(200).json({message: "Book already exists", exists: book});
         }
-        return res.status(404).json({message: "Book does not exist"});
+        return res.status(200).json({message: "Book does not exist" ,exists: !!book});
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while checking if book exists"});
