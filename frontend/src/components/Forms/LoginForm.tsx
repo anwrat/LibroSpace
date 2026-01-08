@@ -26,7 +26,7 @@ export default function LoginForm(){
                 window.location.href = '/admin';
             }
             else{
-                window.location.href = '/dashboard';
+                window.location.href = '/user';
             }
         }catch(err){
             console.error("Login failed", err);

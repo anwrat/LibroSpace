@@ -29,19 +29,18 @@ export default function Books() {
     
     const booksPerPage = 5;
     
+    const fetchBooks = async () => {
+        try {
+            const response = await getAllBooks();
+            setBooks(response.data.books);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to load books');
+        } finally {
+            setLoading(false);
+        }
+    };
     // Fetch books on component mount
-    useEffect(() => {
-        const fetchBooks = async () => {
-            try {
-                const response = await getAllBooks();
-                setBooks(response.data.books);
-            } catch (err: any) {
-                setError(err.response?.data?.message || 'Failed to load books');
-            } finally {
-                setLoading(false);
-            }
-        };
-        
+    useEffect(() => {        
         fetchBooks();
     }, []);
     
@@ -248,7 +247,7 @@ export default function Books() {
                     <>
                         <div className="fixed inset-0 z-40 bg-black opacity-50 flex items-center justify-center backdrop-blur-sm"/>
                         <div className="w-1/2 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-50">
-                            <AddBookForm onClose={()=>setShowAddBookForm(false)}/>
+                            <AddBookForm onClose={()=>setShowAddBookForm(false)} onRefresh={fetchBooks}/>
                         </div>
                     </>
                 )}
