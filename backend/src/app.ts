@@ -3,6 +3,7 @@ import authRoutes from './routes/auth/auth.routes.js';
 import oauthRoutes from './routes/auth/oauth.routes.js';
 import otpRoutes from './routes/auth/otp.routes.js';
 import adminRoutes from './routes/admin/admin.routes.js';
+import userShelfRoutes from './routes/users/shelf.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middleware/auth/passport.middleware.js';
@@ -27,5 +28,7 @@ app.use('/api/oauth',oauthRoutes);
 app.use('/api/otp',otpRoutes);
 //Admin Routes
 app.use('/api/admin',adminRoutes);
+//User Shelf Routes
+app.use('/api/users/shelf',userShelfRoutes);
 
 export default app;

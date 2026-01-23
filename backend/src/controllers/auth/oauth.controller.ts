@@ -17,7 +17,7 @@ export const googleAuthRedirect = async (req: Request, res: Response)=>{
             secure: false,
             sameSite: "lax",
         });
-        return res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+        return res.redirect(`${process.env.CLIENT_URL}/user`);
     }catch(err){
         console.error("Error while redirecting from google",err);
         res.status(500).json({message:"Internal Server Error while redirecting from google"});
