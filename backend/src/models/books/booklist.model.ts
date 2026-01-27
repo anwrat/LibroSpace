@@ -14,3 +14,9 @@ export const findBookByTitleandAuthor = async(title: string, author: string)=>{
     const result = await pool.query('SELECT * FROM books.booklist WHERE LOWER(title)=LOWER($1) AND LOWER(author)= LOWER($2)',[title,author]);
     return result.rows[0];
 }
+
+//Function to get only partial data of all books
+export const getAllBooksPartialData = async() =>{
+    const result = await pool.query('SELECT id,title,author,cover_url FROM books.booklist ORDER BY title ASC');
+    return result.rows;
+}
