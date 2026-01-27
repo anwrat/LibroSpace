@@ -9,7 +9,7 @@ export const getMyShelves = async(req:Request, res:Response) =>{
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
         const shelves = await getUserShelves(userId);
-        return res.status(201).json(shelves);
+        return res.status(200).json(shelves);
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while getting shelves"});
