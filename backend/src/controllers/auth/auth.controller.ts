@@ -51,7 +51,7 @@ export const loginUser = async (req:Request, res:Response)=>{
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
-            maxAge: 2 * 60 * 60 * 1000 //2 hours
+            maxAge:  2 * 24 * 60 * 60 * 1000 //2 days in milliseconds
         });
         return res.status(200).json({
             message: "User logged in successfully",
