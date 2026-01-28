@@ -6,3 +6,7 @@ export const getAllBooksPartialDataSchema = z.array(z.object({
     author: z.string(),
     cover_url: z.string().url().nullable(), // Nullable in case some books don't have a cover URL
 }));
+
+export const BookIdParamSchema = z.object({
+  id: z.string().regex(/^\d+$/, "ID must be a number").transform(Number)
+});
