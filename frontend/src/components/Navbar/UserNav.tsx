@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useAuthContext } from "@/context/AuthContext"; 
 import Image from 'next/image';
+import { Search } from 'lucide-react';
 
 export default function UserNav() {
   const { user, loading, logout } = useAuthContext();
@@ -11,8 +12,8 @@ export default function UserNav() {
       <div className="flex items-center justify-between h-full w-full gap-4">
         
         {/* Left Side: Logo */}
-        <div className="flex-shrink-0">
-          <Link href="/" className="font-bold text-xl tracking-tight flex items-center">
+        <div className="shrink-0">
+          <Link href="/user" className="font-bold text-xl tracking-tight flex items-center">
             <Image src="/Logo/Logonobgcropped.png" 
                    width={40} 
                    height={40} 
@@ -27,34 +28,34 @@ export default function UserNav() {
           {/* SEARCH BAR */}
           <div className="relative w-full hidden md:block">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search className='h-5 w-5'/>
             </div>
             <input
               type="text"
-              placeholder="Search books, projects..."
+              placeholder="Search books,users..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full bg-gray-50 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
 
           {/* Navigation Links */}
           <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600">
-            <Link href="/dashboard" className="hover:text-blue-600 transition">Explore</Link>
-            <Link href="/projects" className="hover:text-blue-600 transition">Projects</Link>
+            <Link href="/user/explore" className="hover:text-[#14919B] transition">Explore</Link>
+            <Link href="/stats" className="hover:text-[#14919B] transition">Stats</Link>
+            <Link href="/stats" className="hover:text-[#14919B] transition">Challenges</Link>
+            <Link href="/stats" className="hover:text-[#14919B] transition">Community</Link>
           </div>
         </div>
 
         {/* Right Side: Auth Status */}
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           {loading ? (
             <div className="h-8 w-20 bg-gray-100 animate-pulse rounded-full" />
           ) : user ? (
             <>
-              <div className="hidden sm:block text-right">
+              <Link href="/user/profile" className="hidden sm:block text-right">
                 <p className="text-sm font-semibold leading-none">{user.name}</p>
                 <p className="text-xs text-gray-500">{user.email}</p>
-              </div>
+              </Link>
               <button 
                 onClick={logout}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-full hover:bg-red-600 transition-colors"
