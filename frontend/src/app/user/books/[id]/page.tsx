@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { getBookbyID, addBooktoShelf } from "@/lib/user";
+import { getBookbyID, addBooktoShelf, checkBookInShelf } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import toast,{Toaster} from "react-hot-toast";
 
@@ -23,8 +23,10 @@ export default function BookDetailsPage() {
             try {
                 const response = await getBookbyID(Number(bookId));
                 setBook(response.data);
-                // If your backend returns the user's current shelf for this book, set it here:
-                // setCurrentShelf(response.data.user_shelf); 
+                const shelfCheck = await checkBookInShelf(Number(bookId));
+                if(shelfCheck.data.inShelf){
+                  setCurrentShelf(shelfCheck.data.shelf); 
+                }
             } catch (error) {
                 console.error("Error fetching books details: ", error);
             } finally {

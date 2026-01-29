@@ -24,7 +24,7 @@ export const checkBookInShelf = async(req: Request, res: Response)=>{
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
         const result = await checkIfBookInShelf(userId,Number(id));
-        return res.status(200).json({inShelf: !!result});
+        return res.status(200).json({inShelf: !!result, shelf: result?.shelf || null});
     }catch(err){
         console.error(err);
         res.status(500).json({message:"Internal Server Error while checking book in shelf"});
