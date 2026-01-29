@@ -8,5 +8,5 @@ export const getAllBooksPartialDataSchema = z.array(z.object({
 }));
 
 export const BookIdParamSchema = z.object({
-  id: z.string().regex(/^\d+$/, "ID must be a number").transform(Number)
+  id: z.string().regex(/^\d+$/, "Book ID must be a number").transform(Number)
 });

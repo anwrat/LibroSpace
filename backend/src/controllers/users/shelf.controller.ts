@@ -1,6 +1,6 @@
 import type{ Request,Response } from "express";
-
-import { addtoShelf,updateProgress,getUserShelves } from "../../models/books/user_shelves.model.js";
+import { addtoShelf,updateProgress,getUserShelves, checkIfBookInShelf } from "../../models/books/user_shelves.model.js";
+import { BookIdParamSchema } from "../../schemas/book.schema.js";
 
 export const getMyShelves = async(req:Request, res:Response) =>{
     try{
@@ -13,6 +13,21 @@ export const getMyShelves = async(req:Request, res:Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while getting shelves"});
+    }
+}
+
+export const checkBookInShelf = async(req: Request, res: Response)=>{
+    try{
+        const userId = req.user?.id;
+        const {id} = BookIdParamSchema.parse(req.params);
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const result = await checkIfBookInShelf(userId,Number(id));
+        return res.status(200).json({inShelf: !!result});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message:"Internal Server Error while checking book in shelf"});
     }
 }
 
