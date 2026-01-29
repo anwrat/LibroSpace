@@ -11,7 +11,7 @@ interface BookCardProps {
 export default function BookCard({ id, title, author, cover_url }: BookCardProps) {
   return (
     <div className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 flex flex-col h-full">
-      <Link href={`/books/${id}`} className="flex flex-col h-full">
+      <Link href={`/user/books/${id}`} className="flex flex-col h-full">
         {/* Aspect ratio 2/3 is standard for book covers */}
         <div className="relative aspect-2/3 w-full overflow-hidden bg-gray-100">
           <Image

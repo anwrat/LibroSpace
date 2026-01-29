@@ -20,3 +20,9 @@ export const getAllBooksPartialData = async() =>{
     const result = await pool.query('SELECT id,title,author,cover_url FROM books.booklist ORDER BY title ASC');
     return result.rows;
 }
+
+//Get book by ID
+export const getBookbyID = async(id: number) =>{
+    const result = await pool.query('SELECT * FROM books.booklist WHERE id=$1',[id]);
+    return result.rows[0];
+}

@@ -8,6 +8,6 @@ export function signToken(payload: object){
     return jwt.sign(
         payload,
         JWT_SECRET,
-        {expiresIn:'2h'}
+        {expiresIn:'2d'}
     );
 }
