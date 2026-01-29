@@ -24,7 +24,7 @@ export const addBooktoShelf = async(req: Request, res:Response) =>{
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
         const result = await addtoShelf(userId,bookId,shelf);
-        return res.status(201).json({message: "Book added to shelf", data: result.rows[0]});
+        return res.status(201).json({message: "Book added to shelf"});
     }catch(err){
         console.error(err);
         res.status(500).json({message:"Internal Server Error while adding book to shelf"});

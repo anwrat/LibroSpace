@@ -25,7 +25,7 @@ export default function ExplorePage() {
   return (
     <main className="min-h-screen bg-white pt-24 px-4 sm:px-8 pb-12">
         <UserNav />
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
         <div className="mb-10">
