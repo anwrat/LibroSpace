@@ -12,7 +12,8 @@ export const updateProgress = async(userId: number, bookId: number, progress: nu
 }
 
 export const getUserShelves = async(userId: number) =>{
-    return pool.query("SELECT us.*,b.title,b.author,b.cover_url FROM books.user_shelves us JOIN books.booklist b ON b.id = us.book_id WHERE us.user_id = $1 ",[userId]);
+    const result = await pool.query("SELECT us.*,b.title,b.author,b.cover_url FROM books.user_shelves us JOIN books.booklist b ON b.id = us.book_id WHERE us.user_id = $1 ",[userId]);
+    return result.rows;
 }
 
 export const checkIfBookInShelf = async(userId: number, bookId: number)=>{
