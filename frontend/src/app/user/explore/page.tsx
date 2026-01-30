@@ -23,7 +23,7 @@ export default function ExplorePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white pt-24 px-4 sm:px-8 pb-12">
+    <main className="min-h-screen bg-white pt-24 px-4 sm:px-8 pb-12 font-main">
         <UserNav />
       <div className="max-w-7xl mx-auto">
         
