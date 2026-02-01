@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest } from "../../models/friends/friendships.model.js";
+import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
@@ -52,5 +52,19 @@ export const deleteFriendRequest = async(req:Request, res:Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while deleting friend request"});
+    }
+}
+
+export const getPendingFriendRequests = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const result = await getPendingRequests(userId);
+        return res.status(200).json({pendingRequests: result});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching pending requests count"});
     }
 }

@@ -6,6 +6,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
 import { Search, User, UserPlus, LogOut, X, Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { getPendingFriendRequests } from '@/lib/user';
 
 export default function UserNav() {
   const { user, loading, logout } = useAuthContext();

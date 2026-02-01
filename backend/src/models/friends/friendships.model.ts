@@ -19,3 +19,8 @@ export const cancelFriendRequest = async(requester_id: number, addressee_id: num
     const result = await pool.query('DELETE FROM friends.friendships WHERE status = 0 AND ((requester_id = $1 AND addressee_id = $2) OR (requester_id = $2 AND addressee_id = $1)) RETURNING *;',[requester_id, addressee_id]);
     return result;
 }
+
+export const getPendingRequests = async(userId: number) =>{
+    const result = await pool.query('SELECT u.id,u.name,u.email,u.picture_url FROM auth.users u JOIN friends.friendships f ON u.id = f.requester_id WHERE f.addressee_id = $1 AND f.status = 0 ORDER BY f.created_at DESC;',[userId]);
+    return result.rows;
+}

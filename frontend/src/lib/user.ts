@@ -19,3 +19,7 @@ export function checkBookInShelf(bookId: number){
 export function addBooktoShelf(bookId: number, shelf: string){
     return api.post('/api/users/shelf',{bookId, shelf});
 }
+
+export function getPendingFriendRequests(userId: number){
+    return api.get('/api/users/friends/pending');
+}
