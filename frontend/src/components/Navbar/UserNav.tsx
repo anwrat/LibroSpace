@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
@@ -10,12 +10,30 @@ import { getPendingFriendRequests } from '@/lib/user';
 
 export default function UserNav() {
   const { user, loading, logout } = useAuthContext();
-  console.log(user);
   const pathname = usePathname();
   
   // State for UI toggles
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  //State for pending friend requests
+  const [pendingCount, setPendingCount] = useState(0);
+
+  //Fetch pending friend requests
+  const fetchPendingRequests = useCallback(async()=>{
+    if(!user) return;
+    try{
+      const data = await getPendingFriendRequests(Number(user.id));
+      setPendingCount(data.data.pendingRequests.length);
+    }catch(err){
+      console.error("Error fetching pending friend requests: ",err);
+    }
+  },[user])
+  
+  //Fetch pending requests on mount and when user changes
+  useEffect(()=>{
+    fetchPendingRequests();
+  },[pathname, fetchPendingRequests]);
   
   // Ref to detect clicks outside the dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -94,6 +112,10 @@ export default function UserNav() {
                   ) : (
                     <User className="text-[#14919B]" size={20} />
                   )}
+                  {/* Red Dot on Profile Icon */}
+                  {pendingCount > 0 && (
+                    <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white" />
+                  )}
                 </button>
 
                 {/* Popover Menu */}
@@ -106,12 +128,23 @@ export default function UserNav() {
                     
                     <div className="py-2">
                       <Link 
-                        href="/user/friends" 
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        href="/user/friends/requests" 
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <UserPlus size={18} className="text-gray-400" />
-                        Friend Requests
+                        <div className="flex items-center gap-3">
+                          <UserPlus size={18} className="text-gray-400" />
+                          Friend Requests
+                        </div>
+                        
+                        {/* Notification Badge in Menu */}
+                        {pendingCount > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {pendingCount}
+                          </span>
+                        )}
                       </Link>
                       
                       <button
