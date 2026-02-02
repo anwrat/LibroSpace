@@ -4,4 +4,5 @@ export interface User{
     email: string;
     role:string;
     picture_url: string;
+    created_at: string;
 }
