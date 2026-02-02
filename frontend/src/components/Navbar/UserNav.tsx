@@ -1,19 +1,55 @@
 'use client';
 
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
-import { Search } from 'lucide-react';
+import { Search, User, UserPlus, LogOut, X, Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { getPendingFriendRequests } from '@/lib/user';
 
 export default function UserNav() {
   const { user, loading, logout } = useAuthContext();
   const pathname = usePathname();
+  
+  // State for UI toggles
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Helper component for navigation links
+  //State for pending friend requests
+  const [pendingCount, setPendingCount] = useState(0);
+
+  //Fetch pending friend requests
+  const fetchPendingRequests = useCallback(async()=>{
+    if(!user) return;
+    try{
+      const data = await getPendingFriendRequests(Number(user.id));
+      setPendingCount(data.data.pendingRequests.length);
+    }catch(err){
+      console.error("Error fetching pending friend requests: ",err);
+    }
+  },[user])
+  
+  //Fetch pending requests on mount and when user changes
+  useEffect(()=>{
+    fetchPendingRequests();
+  },[pathname, fetchPendingRequests]);
+  
+  // Ref to detect clicks outside the dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
     const active = pathname === href;
-
     return (
       <Link
         href={href}
@@ -22,83 +58,147 @@ export default function UserNav() {
         `}
       >
         {children}
-        {/* Animated Underline */}
-        <span
-          className={`absolute left-0 bottom-0 h-0.5 bg-[#14919B] transition-all duration-300 ease-in-out
+        <span className={`absolute left-0 bottom-0 h-0.5 bg-[#14919B] transition-all duration-300 ease-in-out
             ${active ? 'w-full' : 'w-0 group-hover:w-full'}
-          `}
-        />
+        `} />
       </Link>
     );
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full h-16 bg-white border-b border-gray-200 z-50 px-6 font-main">
-      <div className="flex items-center justify-between h-full w-full gap-4">
-        
-        {/* Left Side: Logo */}
-        <div className="shrink-0">
-          <Link href="/user" className="flex items-center">
-            <Image 
-              src="/Logo/Logonobgcropped.png" 
-              width={40} 
-              height={40} 
-              alt="LibroSpace Logo"
-              className="rounded-lg"
-            />
-          </Link>
-        </div>
-
-        {/* Middle Section: Search Bar & Links */}
-        <div className="flex flex-1 items-center justify-center max-w-2xl gap-8">
-          {/* SEARCH BAR */}
-          <div className="relative w-full hidden md:block">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className='h-4 w-4 text-gray-400'/>
-            </div>
-            <input
-              type="text"
-              placeholder="Search books, users..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#14919B] focus:border-transparent transition-all"
-            />
-          </div>
-
-          {/* Navigation Links */}
-          <div className="hidden lg:flex items-center gap-8">
-            <NavLink href="/user/explore">Explore</NavLink>
-            <NavLink href="/stats">Stats</NavLink>
-            <NavLink href="/challenges">Challenges</NavLink>
-            <NavLink href="/community">Community</NavLink>
-          </div>
-        </div>
-
-        {/* Right Side: Auth Status */}
-        <div className="flex items-center gap-4 shrink-0">
-          {loading ? (
-            <div className="h-8 w-20 bg-gray-100 animate-pulse rounded-full" />
-          ) : user ? (
-            <>
-              <Link href="/user/profile" className="hidden sm:block text-right">
-                <p className="text-sm font-semibold text-gray-900 leading-none">{user.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{user.email}</p>
-              </Link>
-              <button 
-                onClick={logout}
-                className="px-5 py-2 text-sm font-medium text-white bg-red-500 rounded-full hover:bg-red-600 transition-all shadow-sm hover:shadow-md"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link 
-              href="/login" 
-              className="px-5 py-2 text-sm font-medium text-white bg-[#14919B] rounded-full hover:bg-[#0f7178] transition-all"
-            >
-              Sign In
+    <>
+      <nav className="fixed top-0 left-0 w-full h-16 bg-white border-b border-gray-200 z-50 px-6 font-main">
+        <div className="flex items-center justify-between h-full w-full gap-4">
+          
+          {/* Logo */}
+          <div className="shrink-0">
+            <Link href="/user" className="flex items-center">
+              <Image src="/Logo/Logonobgcropped.png" width={40} height={40} alt="Logo" className="rounded-lg" />
             </Link>
-          )}
+          </div>
+
+          {/* Search & Links */}
+          <div className="flex flex-1 items-center justify-center max-w-2xl gap-8">
+            <div className="relative w-full hidden md:block">
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400'/>
+              <input
+                type="text"
+                placeholder="Search books, users..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full bg-gray-50 text-sm focus:ring-2 focus:ring-[#14919B] outline-none transition-all"
+              />
+            </div>
+
+            <div className="hidden lg:flex items-center gap-8">
+              <NavLink href="/user/explore">Explore</NavLink>
+              <NavLink href="/stats">Stats</NavLink>
+              <NavLink href="/challenges">Challenges</NavLink>
+              <NavLink href="/community">Community</NavLink>
+            </div>
+          </div>
+
+          {/* Right Side: Profile & Dropdown */}
+          <div className="flex items-center gap-4 shrink-0 relative" ref={dropdownRef}>
+            {loading ? (
+              <div className="h-10 w-10 bg-gray-100 animate-pulse rounded-full" />
+            ) : user ? (
+              <div className="relative">
+                {/* Profile Circle */}
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center justify-center h-10 w-10 rounded-full border-2 border-transparent hover:border-[#14919B] bg-gray-100 overflow-hidden transition-all focus:outline-none cursor-pointer"
+                >
+                  {user.picture_url ? (
+                    <Image src={user.picture_url} alt="User" width={40} height={40} className="object-cover" />
+                  ) : (
+                    <User className="text-[#14919B]" size={20} />
+                  )}
+                  {/* Red Dot on Profile Icon */}
+                  {pendingCount > 0 && (
+                    <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white" />
+                  )}
+                </button>
+
+                {/* Popover Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-64 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200">
+                    <div className="px-4 py-3 border-b border-gray-50">
+                      <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                    
+                    <div className="py-2">
+                      <Link 
+                        href="/user/friends/requests" 
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <UserPlus size={18} className="text-gray-400" />
+                          Friend Requests
+                        </div>
+                        
+                        {/* Notification Badge in Menu */}
+                        {pendingCount > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {pendingCount}
+                          </span>
+                        )}
+                      </Link>
+                      
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setShowLogoutConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut size={18} />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link href="/login" className="px-5 py-2 text-sm font-medium text-white bg-[#14919B] rounded-full">
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-100 p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl animate-in zoom-in duration-300">
+            <div className="flex flex-col items-center text-center">
+              <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <LogOut className="text-red-500" size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Sign Out?</h3>
+              <p className="text-gray-500 mb-8">Are you sure you want to log out? You will need to sign back in to access your library.</p>
+              
+              <div className="flex w-full gap-3">
+                <button 
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={logout}
+                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-all"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

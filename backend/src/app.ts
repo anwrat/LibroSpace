@@ -5,6 +5,7 @@ import otpRoutes from './routes/auth/otp.routes.js';
 import adminRoutes from './routes/admin/admin.routes.js';
 import userBookRoutes from './routes/users/books.routes.js';
 import userShelfRoutes from './routes/users/shelf.routes.js';
+import friendRoutes from './routes/users/friends.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middleware/auth/passport.middleware.js';
@@ -33,5 +34,7 @@ app.use('/api/admin',adminRoutes);
 app.use('/api/users/books',userBookRoutes);
 //User Shelf Routes
 app.use('/api/users/shelf',userShelfRoutes);
+//Friend Routes
+app.use('/api/users/friends',friendRoutes);
 
 export default app;

@@ -1,0 +1,19 @@
+import { z } from 'zod';
+
+export const sendFriendRequestSchema = z.object({
+  body: z.object({
+    addresseeId: z.number().int().positive({message: "Addressee ID must be a positive integer"}),
+  })
+});
+
+export const acceptRequestSchema = z.object({
+  body: z.object({
+    requesterId: z.number().int().positive({message: "Requester ID must be a positive integer"}),
+  })
+});
+
+export const deleteRequestSchema = z.object({
+  body: z.object({
+    targetId: z.number().int().positive({message: "Target ID must be a positive integer"}),
+  })
+});
