@@ -1,12 +1,12 @@
 import UserNav from "@/components/Navbar/UserNav";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function UserProfile(){
+    const {user} = useAuthContext();
     return(
-        <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div>
             <UserNav />
-            <div>
-                <h1 className="text-3xl font-main text-[#14919B]">User Profile</h1>
-            </div>
+
         </div>
     );
 }

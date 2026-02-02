@@ -19,6 +19,20 @@ export const sendFriendRequest = async(req:Request, res: Response)=>{
     }
 }
 
+export const getFriendsList = async(req:Request, res:Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const friends = await getAllFriends(userId);
+        return res.status(200).json({friends});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching friends list"});
+    }
+}
+
 export const acceptAndUpdateFriendRequest = async (req: Request, res: Response) =>{
     try{
         const addresseeId = req.user?.id;

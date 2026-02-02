@@ -1,7 +1,7 @@
 import pool from "../../config/db.js";
 
 export const getAllFriends = async(userId: number) =>{
-    const result = await pool.query('SELECT id,name,email,picture_url FROM auth.users WHERE id IN (SELECT addressee_id FROM friends.friendships WHERE requester_id = $1 AND status = 1 UNION SELECT requester_id FROM friends.friendships WHERE addressee_id = $1 AND status = 1);');
+    const result = await pool.query('SELECT id,name,email,picture_url FROM auth.users WHERE id IN (SELECT addressee_id FROM friends.friendships WHERE requester_id = $1 AND status = 1 UNION SELECT requester_id FROM friends.friendships WHERE addressee_id = $1 AND status = 1);',[userId]);
     return result.rows;
 }
 
