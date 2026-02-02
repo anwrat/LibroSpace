@@ -23,3 +23,11 @@ export function addBooktoShelf(bookId: number, shelf: string){
 export function getPendingFriendRequests(userId: number){
     return api.get('/api/users/friends/pending');
 }
+
+export function acceptFriendRequest(requesterId: number){
+    return api.put('/api/users/friends',{requesterId});
+}
+
+export function deleteFriendRequest(targetId: number){
+    return api.delete('/api/users/friends',{data: {targetId}});
+}
