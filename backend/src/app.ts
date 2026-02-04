@@ -6,6 +6,7 @@ import adminRoutes from './routes/admin/admin.routes.js';
 import userBookRoutes from './routes/users/books.routes.js';
 import userShelfRoutes from './routes/users/shelf.routes.js';
 import friendRoutes from './routes/users/friends.routes.js';
+import communityRoutes from './routes/users/communities.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middleware/auth/passport.middleware.js';
@@ -36,5 +37,7 @@ app.use('/api/users/books',userBookRoutes);
 app.use('/api/users/shelf',userShelfRoutes);
 //Friend Routes
 app.use('/api/users/friends',friendRoutes);
+//Community Routes
+app.use('/api/users/communities',communityRoutes);
 
 export default app;
