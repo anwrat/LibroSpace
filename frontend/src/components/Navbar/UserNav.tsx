@@ -92,7 +92,7 @@ export default function UserNav() {
               <NavLink href="/user/explore">Explore</NavLink>
               <NavLink href="/stats">Stats</NavLink>
               <NavLink href="/challenges">Challenges</NavLink>
-              <NavLink href="/community">Community</NavLink>
+              <NavLink href="/user/community">Community</NavLink>
             </div>
           </div>
 
