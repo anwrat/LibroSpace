@@ -6,6 +6,7 @@ export const createCommunity = async (name: string, description: string, photo_u
     return result.rows[0];
 }
 
-export const addToCommunity = async(community_id: number, mentor_id: number, role: string) =>{
-
+export const getAllCommunities = async () =>{
+    const result = await pool.query('SELECT * FROM communities.communities');
+    return result.rows;
 }
