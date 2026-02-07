@@ -10,3 +10,8 @@ export const getAllCommunities = async () =>{
     const result = await pool.query('SELECT * FROM communities.communities');
     return result.rows;
 }
+
+export const joinedCommunities = async(user_id: number)=>{
+    const result = await pool.query('SELECT c.*, cm.role FROM communities.communities c JOIN communities.community_members cm ON c.id = cm.community_id WHERE cm.user_id = $1',[user_id]);
+    return result.rows;
+}
