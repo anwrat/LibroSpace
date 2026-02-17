@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { createCommunity } from "../../models/communities/communities.model.js";
+import { createCommunity,getAllCommunities, joinedCommunities } from "../../models/communities/communities.model.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -19,4 +19,29 @@ export const addNewCommunity = async(req: Request, res: Response) =>{
         console.error(err);
         res.status(500).json({message: "Internal Server Error while adding new community"});
     }
+}
+
+export const fetchAllCommunities = async(req:Request, res: Response)=>{
+    try{
+        const communities = await getAllCommunities();
+        return res.status(200).json(communities);
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching communities"});
+    }
+}
+
+export const fetchJoinedCommunities = async(req: Request, res: Response)=>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const communities = await joinedCommunities(user_id);
+        return res.status(200).json(communities);
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching joined communities"});
+    }
+
 }
