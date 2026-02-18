@@ -92,6 +92,7 @@ export default function UserNav() {
               <NavLink href="/user/explore">Explore</NavLink>
               <NavLink href="/stats">Stats</NavLink>
               <NavLink href="/challenges">Challenges</NavLink>
+              <NavLink href="/events">Events</NavLink>
               <NavLink href="/user/community">Community</NavLink>
             </div>
           </div>

@@ -35,3 +35,15 @@ export function acceptFriendRequest(requesterId: number){
 export function deleteFriendRequest(targetId: number){
     return api.delete('/api/users/friends',{data: {targetId}});
 }
+
+export function getAllCommunities(){
+    return api.get('/api/users/communities');
+}
+
+export function getJoinedCommunities(){
+    return api.get('/api/users/communities/joined');
+}
+
+export function createCommunity(data: FormData){
+    return api.post('/api/users/communities', data);
+}
