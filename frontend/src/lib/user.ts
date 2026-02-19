@@ -47,3 +47,7 @@ export function getJoinedCommunities(){
 export function createCommunity(data: FormData){
     return api.post('/api/users/communities', data);
 }
+
+export function getCommunitybyId(id: number){
+    return api.get(`/api/users/communities/${id}`);
+}

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getJoinedCommunities } from "@/lib/user";
 import Image from "next/image";
+import Link from "next/link";
 import { Users } from "lucide-react";
 
 export default function JoinedCommunities() {
@@ -27,7 +28,7 @@ export default function JoinedCommunities() {
   return communities.length > 0 ? (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {communities.map((community:any) => (
-        <div key={community.id} className="group bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer">
+        <Link href={`/user/community/${community.id}`} key={community.id} className="group bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-2xl overflow-hidden relative border border-gray-50">
               <Image src={community.photo_url} alt={community.name} fill className="object-cover" />
@@ -40,7 +41,7 @@ export default function JoinedCommunities() {
             </div>
           </div>
           <p className="text-sm text-gray-600 mt-4 line-clamp-2">{community.description}</p>
-        </div>
+        </Link>
       ))}
     </div>
   ) : (
