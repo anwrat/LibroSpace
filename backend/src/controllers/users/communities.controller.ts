@@ -1,5 +1,6 @@
 import type{ Request,Response } from "express";
-import { createCommunity,getAllCommunities, joinedCommunities } from "../../models/communities/communities.model.js";
+import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID } from "../../models/communities/communities.model.js";
+import { CommunityIdParamSchema } from "../../schemas/communities.schema.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -44,4 +45,18 @@ export const fetchJoinedCommunities = async(req: Request, res: Response)=>{
         res.status(500).json({message: "Internal Server Error while fetching joined communities"});
     }
 
+}
+
+export const getCommunityDetailsbyID = async(req: Request, res: Response) =>{
+    try{
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const community = await getCommunitybyID(id);
+        if(!community){
+            return res.status(404).json({message: "Community not found"});
+        }
+        return res.status(200).json(community);
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching community details"});
+    }
 }

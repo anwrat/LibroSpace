@@ -10,3 +10,7 @@ export const CreateCommunitySchema = z.object({
       .max(500, "Description is too long"),
   }),
 });
+
+export const CommunityIdParamSchema = z.object({
+  id: z.string().regex(/^\d+$/, "Community ID must be a number").transform(Number)
+});
