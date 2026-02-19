@@ -60,7 +60,7 @@ export default function ExploreCommunities() {
                 </div>
                 
                 <Link 
-                  href={`/community/${community.id}`}
+                  href={`/user/community/${community.id}`}
                   className="p-2 bg-gray-50 text-gray-400 rounded-full hover:bg-[#14919B] hover:text-white transition-colors"
                 >
                   <ArrowUpRight size={20} />
