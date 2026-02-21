@@ -1,7 +1,8 @@
 import type{ Request,Response } from "express";
-import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration } from "../../models/reading/reading_sessions.model.js";
+import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails } from "../../models/reading/reading_sessions.model.js";
 import { updateProgress } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
+import { success } from "zod";
 
 export const startReadingSession = async(req: Request, res: Response)=>{
     try{
@@ -57,5 +58,26 @@ export const endReadingSession = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         return res.status(500).json({success: false, message: "Internal Server Error while ending session"});
+    }
+}
+
+export const getSession = async(req: Request, res: Response)=>{
+    try{
+        const { session_id } = req.params;
+        if(!session_id){
+            return res.status(401).json({success: false, message: "Session Id is missing"});
+        }
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(401).json({success: false, message: "Unauthorized: User not found"});
+        }
+        const session = await getSessionDetails(Number(session_id), user_id);
+        if(session.rows.length === 0){
+            return res.status(404).json({success: false, message: "Session not found"});
+        }
+        return res.status(201).json({success: true, message: "Session found", data: session.rows[0]});
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({success: false, message: "Internal Server Error while fetching session details"});
     }
 }
