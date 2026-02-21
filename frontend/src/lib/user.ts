@@ -51,3 +51,19 @@ export function createCommunity(data: FormData){
 export function getCommunitybyId(id: number){
     return api.get(`/api/users/communities/${id}`);
 }
+
+export function startReadingSession(book_id: number, start_page: number){
+    return api.post('/api/users/reading/start', {book_id, start_page});
+}
+
+export function updateSessionNotes(session_id: number, notes: string){
+    return api.patch('/api/users/reading/notes',{session_id,notes});
+}
+
+export function endReadingSession(session_id: number, end_page: number, notes: string, book_id: number){
+    return api.post('/api/users/reading/end',{session_id,end_page,notes,book_id});
+}
+
+export function getSessionDetails(session_id: number){
+    return api.get(`/api/users/reading/${session_id}`);
+}

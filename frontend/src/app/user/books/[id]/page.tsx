@@ -1,15 +1,23 @@
 'use client';
+
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { getBookbyID, addBooktoShelf, checkBookInShelf } from "@/lib/user";
+import { 
+  getBookbyID, 
+  addBooktoShelf, 
+  checkBookInShelf, 
+  startReadingSession 
+} from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
-import toast,{Toaster} from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { Play, Loader2, BookmarkPlus } from "lucide-react";
 
 type ShelfType = "read" | "currently_reading" | "to_read" | null;
 
 export default function BookDetailsPage() {
     const params = useParams();
+    const router = useRouter();
     const bookId = params.id;
     
     const [book, setBook] = useState<any>(null);
@@ -23,6 +31,7 @@ export default function BookDetailsPage() {
             try {
                 const response = await getBookbyID(Number(bookId));
                 setBook(response.data);
+                
                 const shelfCheck = await checkBookInShelf(Number(bookId));
                 if(shelfCheck.data.inShelf){
                   setCurrentShelf(shelfCheck.data.shelf); 
@@ -36,6 +45,22 @@ export default function BookDetailsPage() {
         if (bookId) fetchBook();
     }, [bookId]);
 
+    const handleStartSession = async () => {
+        setUpdating(true);
+        try {
+            const res = await startReadingSession(Number(bookId), 0);
+            if (res.data.data.id) {
+                toast.success("Opening notebook...");
+                router.push(`/user/books/${bookId}/session/${res.data.data.id}`);
+            }
+        } catch (error: any) {
+            console.error("Session start error:", error);
+            toast.error(error.response?.data?.message || "Could not start session.");
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     const handleAddToShelf = async (shelf: ShelfType) => {
         if (!shelf || !bookId) return;
         
@@ -47,7 +72,7 @@ export default function BookDetailsPage() {
             toast.success(`Book moved to ${shelf.replace('_', ' ')}`);
         } catch (error) {
             console.error("Error updating shelf:", error);
-            toast.error("Failed to update shelf. Are you logged in?");
+            toast.error("Failed to update shelf.");
         } finally {
             setUpdating(false);
         }
@@ -59,30 +84,81 @@ export default function BookDetailsPage() {
         return `Shelf: ${currentShelf.replace('_', ' ').toUpperCase()}`;
     };
 
-    if (loading) return <div className="font-main pt-24 text-center">Loading....</div>;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="animate-spin text-[#14919B]" size={40} />
+        </div>
+    );
+    
     if (!book) return <div className="pt-24 text-center font-main">Book not found</div>;
 
     return (
-        <main className="min-h-screen pt-24 px-6 max-w-7xl mx-auto font-main relative">
+        <main className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto font-main relative">
             <UserNav />
-            <Toaster position = "top-center" reverseOrder={false}/>
-            <div className="flex flex-col md:flex-row gap-10">
-                <div className="relative w-full max-w-[300px] aspect-2/3 shadow-xl rounded-lg overflow-hidden">
-                    <Image
-                        src={book.cover_url || '/Placeholders/book-placeholder.png'}
-                        alt={book.title}
-                        fill
-                        className="object-cover"
-                    />
+            <Toaster position="top-center" reverseOrder={false}/>
+            
+            <div className="flex flex-col md:flex-row gap-12">
+                {/* --- LEFT COLUMN: COVER & PRIMARY ACTIONS --- */}
+                <div className="flex flex-col items-center gap-6 w-full max-w-[320px] mx-auto md:mx-0">
+                    <div className="relative w-full aspect-2/3 shadow-2xl rounded-[2rem] overflow-hidden border-8 border-white">
+                        <Image
+                            src={book.cover_url || '/Placeholders/book-placeholder.png'}
+                            alt={book.title}
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                    </div>
+
+                    {/* Start Reading Session Button (Only for currently_reading) */}
+                    {currentShelf === 'currently_reading' && (
+                        <button 
+                            onClick={handleStartSession}
+                            disabled={updating}
+                            className="w-full flex items-center justify-center gap-3 bg-gray-900 text-white py-5 rounded-[1.5rem] font-bold hover:bg-[#14919B] transition-all shadow-xl hover:-translate-y-1 active:scale-95 disabled:opacity-70"
+                        >
+                            {updating ? (
+                                <Loader2 className="animate-spin" size={20} />
+                            ) : (
+                                <>
+                                    <div className="bg-[#14919B] p-1.5 rounded-full">
+                                        <Play size={16} fill="white" className="ml-0.5" />
+                                    </div>
+                                    Start Reading Session
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
+                {/* --- RIGHT COLUMN: DETAILS --- */}
                 <div className="flex-1">
-                    <h1 className="text-4xl font-bold text-gray-900">{book.title}</h1>
-                    <p className="text-xl text-gray-600 mt-2">By {book.author}</p>
+                    <div className="mb-8">
+                        <span className="text-[#14919B] font-bold text-sm uppercase tracking-widest bg-[#14919B]/10 px-4 py-1.5 rounded-full">
+                            {book.genre || "Book Details"}
+                        </span>
+                        <h1 className="text-5xl font-black text-gray-900 mt-4 tracking-tight leading-tight">
+                            {book.title}
+                        </h1>
+                        <p className="text-2xl text-gray-500 mt-2 font-medium">By {book.author}</p>
+                    </div>
                     
-                    <div className="mt-8">
-                        <h2 className="text-lg font-semibold border-b pb-2">Description</h2>
-                        <p className="mt-4 text-gray-700 leading-relaxed">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
+                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Pages</p>
+                            <p className="text-xl font-black text-gray-900">{book.pagecount || "N/A"}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Language</p>
+                            <p className="text-xl font-black text-gray-900">English</p>
+                        </div>
+                    </div>
+
+                    <div className="mb-10">
+                        <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
+                           Description
+                        </h2>
+                        <p className="text-gray-600 leading-relaxed text-lg italic">
                             {book.description || "No description available for this book."}
                         </p>
                     </div>
@@ -90,10 +166,13 @@ export default function BookDetailsPage() {
                     <button 
                         onClick={() => setShowModal(true)}
                         disabled={updating}
-                        className={`mt-10 px-6 py-3 rounded-lg font-semibold transition-all cursor-pointer
-                            ${currentShelf ? 'bg-gray-100 text-[#14919B] border-2 border-[#14919B]' : 'bg-[#14919B] text-white hover:bg-[#0f7178]'}
+                        className={`px-10 py-4 rounded-[1.5rem] font-bold text-lg transition-all shadow-lg flex items-center gap-3
+                            ${currentShelf 
+                                ? 'bg-white text-[#14919B] border-2 border-[#14919B] hover:bg-[#14919B]/5' 
+                                : 'bg-[#14919B] text-white hover:bg-[#0f7178] shadow-[#14919B]/20'}
                         `}
                     >
+                        <BookmarkPlus size={22} />
                         {getButtonText()}
                     </button>
                 </div>
@@ -101,18 +180,17 @@ export default function BookDetailsPage() {
 
             {/* --- SHELF SELECTION MODAL --- */}
             {showModal && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center">
-                    {/* Backdrop */}
+                <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                     <div 
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-                        onClick={() => setShowModal(false)}
+                        className="absolute inset-0 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300" 
+                        onClick={() => !updating && setShowModal(false)}
                     />
                     
-                    {/* Modal Content */}
-                    <div className="relative bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Select a Shelf</h3>
+                    <div className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl animate-in zoom-in slide-in-from-bottom-4 duration-300">
+                        <h3 className="text-2xl font-black text-gray-900 mb-2 text-center">Move to Shelf</h3>
+                        <p className="text-gray-500 text-sm text-center mb-8">Where are you in your reading journey?</p>
                         
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
                             {[
                                 { id: 'to_read', label: 'Want to Read' },
                                 { id: 'currently_reading', label: 'Currently Reading' },
@@ -120,11 +198,12 @@ export default function BookDetailsPage() {
                             ].map((option) => (
                                 <button
                                     key={option.id}
+                                    disabled={updating}
                                     onClick={() => handleAddToShelf(option.id as ShelfType)}
-                                    className={`w-full py-3 rounded-xl font-medium transition-all border cursor-pointer
+                                    className={`w-full py-4 rounded-2xl font-bold transition-all border-2 
                                         ${currentShelf === option.id 
-                                            ? 'bg-[#14919B] text-white border-[#14919B]' 
-                                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#14919B] hover:text-[#14919B]'}
+                                            ? 'bg-[#14919B] text-white border-[#14919B] shadow-lg shadow-[#14919B]/20' 
+                                            : 'bg-gray-50 text-gray-700 border-transparent hover:border-[#14919B] hover:bg-white'}
                                     `}
                                 >
                                     {option.label}
@@ -134,9 +213,9 @@ export default function BookDetailsPage() {
 
                         <button 
                             onClick={() => setShowModal(false)}
-                            className="mt-6 w-full text-gray-400 text-sm hover:text-gray-600 transition-colors cursor-pointer"
+                            className="mt-8 w-full text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors uppercase tracking-widest"
                         >
-                            Cancel
+                            Nevermind
                         </button>
                     </div>
                 </div>
