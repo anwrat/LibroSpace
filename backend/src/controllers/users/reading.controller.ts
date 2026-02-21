@@ -2,7 +2,6 @@ import type{ Request,Response } from "express";
 import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails } from "../../models/reading/reading_sessions.model.js";
 import { updateProgress } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
-import { success } from "zod";
 
 export const startReadingSession = async(req: Request, res: Response)=>{
     try{
@@ -48,6 +47,9 @@ export const endReadingSession = async(req: Request, res: Response) =>{
         }
         const sessionUpdate = await endAndCalculateDuration(end_page, notes, session_id, user_id);
         const bookData = await getBookbyID(book_id);
+        if(!bookData){
+            return res.status(404).json({success: false, message: `Book with id ${book_id} not found`});
+        }
         const totalPages = bookData.pagecount;
         if(end_page>totalPages){
             return res.status(400).json({success: false, message: `End page (${end_page}) cannot exceed total page(${totalPages})`});

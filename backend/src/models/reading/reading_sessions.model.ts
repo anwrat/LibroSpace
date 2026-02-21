@@ -24,7 +24,7 @@ export const getSessionDetails=async(session_id: number, user_id: number)=>{
     const result = await pool.query(
             `SELECT rs.*, b.title as book_title 
              FROM reading.reading_sessions rs
-             JOIN books.user_shelves b ON rs.book_id = b.id
+             JOIN books.booklist b ON rs.book_id = b.id
              WHERE rs.id = $1 AND rs.user_id = $2`,
             [session_id, user_id]);
     return result;
