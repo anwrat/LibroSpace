@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage} from "../../models/reading/reading_sessions.model.js";
+import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions} from "../../models/reading/reading_sessions.model.js";
 import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
 
@@ -101,5 +101,19 @@ export const getSession = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         return res.status(500).json({success: false, message: "Internal Server Error while fetching session details"});
+    }
+}
+
+export const fetchAllUserSessions = async(req: Request, res: Response)=>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(401).json({success: false, message: "Unauthorized: User not found"});
+        }
+        const sessions = await getAllUserSessions(user_id);
+        return res.status(201).json({success: true, message: "User sessions fetched successfully", data: sessions});
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({success: false, message: "Internal Server Error while fetching user sessions"});
     }
 }
