@@ -67,3 +67,7 @@ export function endReadingSession(session_id: number, end_page: number, notes: s
 export function getSessionDetails(session_id: number){
     return api.get(`/api/users/reading/${session_id}`);
 }
+
+export function getAllReadingSessions(){
+    return api.get('/api/users/reading/sessions/all');
+}
