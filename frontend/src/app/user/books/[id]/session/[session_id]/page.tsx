@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import ReadingEditor from "@/components/Editor/ReadingEditor";
 import EndSessionModal from "@/components/User/Reading/EndSesssionModal";
-import { getSessionDetails, endReadingSession } from "@/lib/user";
+import { getSessionDetails, endReadingSession, getBookbyID } from "@/lib/user";
 import { 
   Play, 
   Pause, 
@@ -42,9 +42,10 @@ export default function ReadingSessionPage() {
       try {
         // Fetch specific session details using the ID from the URL
         const res = await getSessionDetails(sessionId);
+        const bookData = await getBookbyID(bookId);
         
         if (res.data.data) {
-          setSessionData(res.data.data);
+          setSessionData({...res.data.data, total_pages: bookData.data.pagecount});
           // Note: useReadingSession handles setting initial notes via an internal useEffect
         } else {
           toast.error("Session not found");
@@ -183,6 +184,7 @@ export default function ReadingSessionPage() {
           onConfirm={handleFinishSession}
           loading={submitting}
           startPage={sessionData?.start_page || 0}
+          totalPage={sessionData?.total_pages || 0}
         />
       )}
     </div>

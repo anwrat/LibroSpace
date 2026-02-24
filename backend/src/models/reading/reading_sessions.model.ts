@@ -29,3 +29,32 @@ export const getSessionDetails=async(session_id: number, user_id: number)=>{
             [session_id, user_id]);
     return result;
 }
+
+export const getLatestSessionEndPage = async (user_id: number, book_id: number) => {
+    const result = await pool.query(
+        `SELECT end_page 
+         FROM reading.reading_sessions 
+         WHERE user_id = $1 AND book_id = $2 AND status = $3
+         ORDER BY end_time DESC 
+         LIMIT 1`,
+        [user_id, book_id, 'completed']
+    );
+    // If a previous session exists, return end_page. If not, return null.
+    return result.rows.length > 0 ? result.rows[0].end_page : null;
+};
+
+export const getAllUserSessions = async(user_id: number)=>{
+    const result = await pool.query(
+            `SELECT 
+                rs.*, 
+                b.title as book_title, 
+                b.cover_url,
+                b.author
+             FROM reading.reading_sessions rs
+             JOIN books.booklist b ON rs.book_id = b.id
+             WHERE rs.user_id = $1
+             ORDER BY rs.end_time DESC`,
+            [user_id]
+        );
+    return result.rows;
+}

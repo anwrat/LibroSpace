@@ -9,6 +9,7 @@ interface EndSessionModalProps {
   onConfirm: (endPage: number) => void;
   loading: boolean;
   startPage: number;
+  totalPage: number;
 }
 
 export default function EndSessionModal({ 
@@ -16,7 +17,8 @@ export default function EndSessionModal({
   onClose, 
   onConfirm, 
   loading, 
-  startPage 
+  startPage,
+  totalPage 
 }: EndSessionModalProps) {
   const [endPage, setEndPage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,11 @@ export default function EndSessionModal({
 
     if (pageNum < startPage) {
       setError(`You started at page ${startPage}. Did you read backwards?`);
+      return;
+    }
+
+    if (pageNum > totalPage) {
+      setError(`There are only ${totalPage} pages in this book.`);
       return;
     }
 
@@ -97,6 +104,14 @@ export default function EndSessionModal({
                 </p>
               )}
             </div>
+            
+            {Number(endPage) === totalPage && !error && (
+              <div className="bg-green-50 border border-green-100 rounded-2xl p-4 mb-4 animate-bounce">
+                <p className="text-green-600 text-xs font-bold uppercase tracking-wider">
+                  🎉 You finished the book!
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"

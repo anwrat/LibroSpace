@@ -1,25 +1,41 @@
 import type{ Request,Response } from "express";
-import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails } from "../../models/reading/reading_sessions.model.js";
-import { updateProgress } from "../../models/books/user_shelves.model.js";
+import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions} from "../../models/reading/reading_sessions.model.js";
+import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
 
-export const startReadingSession = async(req: Request, res: Response)=>{
-    try{
-        const {book_id,start_page} = req.body;
+export const startReadingSession = async (req: Request, res: Response) => {
+    try {
+        const { book_id } = req.body;
         const user_id = req.user?.id;
-        if(!user_id){
-            return res.status(401).json({success: false, message: "Unauthorized: User not found"});
+
+        if (!user_id) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
         }
+
+        // Check for active sessions first
         const active = await checkforActiveSession(user_id);
-        if(active.length>0){
-            return res.status(400).json({success: false, message: "You already have an active reading session"}); 
+        if (active.length > 0) {
+            return res.status(400).json({ success: false, message: "You already have an active session" });
         }
-        const session = await insertInReadingSession(user_id,book_id,start_page);
-        return res.status(201).json({success: true, message: "New reading session started", data: session});
-    }
-    catch(err){
+
+        // Determine start page from latest session
+        const lastEndPage = await getLatestSessionEndPage(user_id, book_id);
+        
+        // If lastEndPage exists, start at lastEndPage + 1. Otherwise, start at 1.
+        const start_page = lastEndPage !== null ? lastEndPage + 1 : 1;
+
+        // Start the session
+        const session = await insertInReadingSession(user_id, book_id, start_page);
+
+        return res.status(201).json({ 
+            success: true, 
+            message: lastEndPage ? `Resuming from page ${start_page}` : "Starting fresh session", 
+            data: session 
+        });
+
+    } catch (err) {
         console.error(err);
-        return res.status(500).json({success: false, message: "Internal Server Error while starting session"});
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
 
@@ -55,6 +71,10 @@ export const endReadingSession = async(req: Request, res: Response) =>{
             return res.status(400).json({success: false, message: `End page (${end_page}) cannot exceed total page(${totalPages})`});
         }
         const progressPercentage = Math.min(Math.round((end_page/totalPages)*100),100);
+        //If end page is equal to total page, move the book to "read" shelf
+        if(end_page === totalPages){
+            await addtoShelf(user_id, book_id, 'read');
+        }
         await updateProgress(user_id,book_id,progressPercentage);
         return res.status(201).json({success: true, message: "Session ended and progress saved", data: sessionUpdate});
     }catch(err){
@@ -81,5 +101,19 @@ export const getSession = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         return res.status(500).json({success: false, message: "Internal Server Error while fetching session details"});
+    }
+}
+
+export const fetchAllUserSessions = async(req: Request, res: Response)=>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(401).json({success: false, message: "Unauthorized: User not found"});
+        }
+        const sessions = await getAllUserSessions(user_id);
+        return res.status(201).json({success: true, message: "User sessions fetched successfully", data: sessions});
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({success: false, message: "Internal Server Error while fetching user sessions"});
     }
 }
