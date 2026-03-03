@@ -40,7 +40,7 @@ export default function SessionHistory() {
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {sessions.map((session) => (
                 <Link 
-                    href={`/user/stats/sessions/${session.id}`} 
+                    href={`/user/stats/${session.id}`} 
                     key={session.id}
                     className="group flex items-center gap-4 sm:gap-6 bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-[#14919B]/30 transition-all"
                 >

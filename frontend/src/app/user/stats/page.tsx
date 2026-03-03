@@ -17,7 +17,7 @@ export default function StatsPage() {
     ];
 
     return (
-        <main className="min-h-screen bg-[#FDFCFB] pt-24 pb-20 px-6 font-main">
+        <main className="min-h-screen pt-24 pb-20 px-6 font-main max-w-7xl mx-auto">
             <UserNav />
             
             <div className="max-w-4xl mx-auto">

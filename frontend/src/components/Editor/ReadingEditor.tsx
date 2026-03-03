@@ -37,12 +37,13 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
-export default function ReadingEditor({ content, onChange }: { content: string, onChange: (html: string) => void }) {
+export default function ReadingEditor({ content, onChange, editable = true }: { content: string, onChange?: (html: string) => void, editable?: boolean }) {
   const editor = useEditor({
     extensions: [StarterKit],
     content: content,
+    editable: editable,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML()); // Send HTML to your backend
+      if(onChange) onChange(editor.getHTML()); // Send HTML to your backend
     },
     immediatelyRender: false,
     editorProps: {
@@ -54,7 +55,7 @@ export default function ReadingEditor({ content, onChange }: { content: string, 
 
   return (
     <div className="w-full border-2 border-gray-100 rounded-3xl p-4 bg-white focus-within:border-[#14919B] transition-all">
-      <MenuBar editor={editor} />
+      {editable && <MenuBar editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   );
