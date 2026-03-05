@@ -1,8 +1,8 @@
 import type{ Request,Response } from "express";
 import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember } from "../../models/communities/communities.model.js";
-import { CommunityIdParamSchema } from "../../schemas/communities.schema.js";
+import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/communities.schema.js";
 import { createDiscussion, getDiscussionsByCommunityId } from "../../models/communities/discussions.model.js";
-import { success } from "zod";
+import { addComment } from "../../models/communities/comments.model.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -105,5 +105,21 @@ export const getAllDiscussionsByCommunityId = async(req: Request, res: Response)
     }catch(err){
         console.error(err);
         res.status(500).json({success: false, message: "Internal Server Error while fetching discussions"});
+    }
+}
+
+export const addCommentToDiscussion = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = DiscussionIdParamSchema.parse(req.params);
+        const {content} = req.body;
+        const comment = await addComment(id, user_id, content);
+        return res.status(201).json({success: true, message: "Comment added successfully", data: comment});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Errror while adding comment"});
     }
 }
