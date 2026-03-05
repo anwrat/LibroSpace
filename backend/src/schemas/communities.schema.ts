@@ -14,3 +14,14 @@ export const CreateCommunitySchema = z.object({
 export const CommunityIdParamSchema = z.object({
   id: z.string().regex(/^\d+$/, "Community ID must be a number").transform(Number)
 });
+
+export const CreateDiscussionSchema = z.object({
+  body: z.object({
+    title: z.string()
+      .min(3, "Title must be at least 3 characters")
+      .max(100, "Title must be under 100 characters"),
+    content: z.string()
+      .min(10, "Content should be at least 10 characters")
+      .max(1000, "Content is too long"),
+  }),
+});

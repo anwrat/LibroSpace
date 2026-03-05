@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../middleware/validation/validate.middleware.js";
-import { CreateCommunitySchema } from "../../schemas/communities.schema.js";
-import { addNewCommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership } from "../../controllers/users/communities.controller.js";
+import { CreateCommunitySchema, CreateDiscussionSchema } from "../../schemas/communities.schema.js";
+import { addNewCommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership, startDiscussion } from "../../controllers/users/communities.controller.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { communityImgUpload } from "../../middleware/imgupload/communityimg.middleware.js";
 
@@ -12,5 +12,8 @@ router.get('/',authenticateToken,fetchAllCommunities);
 router.get('/joined',authenticateToken, fetchJoinedCommunities);
 router.get('/:id',authenticateToken,getCommunityDetailsbyID);
 router.get('/:id/membership', authenticateToken, checkUserMembership);
+
+//Discussions
+router.post('/:id/discussions',authenticateToken, validate(CreateDiscussionSchema), startDiscussion);
 
 export default router;

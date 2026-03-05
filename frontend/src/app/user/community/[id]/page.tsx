@@ -65,9 +65,16 @@ export default function CommunityDetailsPage() {
               {community.member_count || 0} Members
             </p>
           </div>
-          <button className="bg-[#14919B] text-white px-8 py-3 rounded-2xl font-bold hover:bg-[#0f7178] transition-all shadow-lg shadow-[#14919B]/20">
-            Join Group
-          </button>
+          {!isMember && (
+            <button className="bg-[#14919B] text-white px-8 py-3 rounded-2xl font-bold hover:bg-[#0f7178] transition-all shadow-lg shadow-[#14919B]/20">
+              Join
+            </button>
+          )}
+          {isMember && (
+            <button className="bg-[#14919B] text-white px-8 py-3 rounded-2xl font-bold hover:bg-[#0f7178] transition-all shadow-lg shadow-[#14919B]/20">
+              Leave
+            </button>
+          )}
         </div>
       </div>
 

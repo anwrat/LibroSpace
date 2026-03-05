@@ -1,6 +1,7 @@
 import type{ Request,Response } from "express";
 import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember } from "../../models/communities/communities.model.js";
 import { CommunityIdParamSchema } from "../../schemas/communities.schema.js";
+import { createDiscussion } from "../../models/communities/discussions.model.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -75,6 +76,22 @@ export const checkUserMembership = async(req: Request, res: Response)=>{
         return res.status(200).json({isMember: false});
     }catch(err){
         console.error(err);
-        res.status(500).json({message: "Internal Server Error while checking membership"});
+        res.status(500).json({success: false, message: "Internal Server Error while checking membership"});
+    }
+}
+
+export const startDiscussion = async(req: Request, res: Response)=>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const {title, content} = req.body;
+        const discussion = await createDiscussion(Number(id), user_id, title, content);
+        return res.status(201).json({success: true,message: "Discussion created successfully", data: discussion});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while creating discussion"});
     }
 }
