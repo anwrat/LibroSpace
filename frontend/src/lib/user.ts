@@ -44,6 +44,10 @@ export function getJoinedCommunities(){
     return api.get('/api/users/communities/joined');
 }
 
+export function checkCommunityMembership(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/membership`);
+}
+
 export function createCommunity(data: FormData){
     return api.post('/api/users/communities', data);
 }

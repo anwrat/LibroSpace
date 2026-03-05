@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getCommunitybyId } from "@/lib/user";
+import { getCommunitybyId, checkCommunityMembership } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
 import { Users, Calendar, ShieldCheck, MessageSquarePlus, MessageSquare } from "lucide-react";
@@ -13,6 +13,8 @@ export default function CommunityDetailsPage() {
   const communityId = params.id;
   
   const [community, setCommunity] = useState<any>(null);
+  const [isMember, setIsMember] = useState<boolean>(false);
+  const [role, setRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +22,9 @@ export default function CommunityDetailsPage() {
       try {
         const res = await getCommunitybyId(Number(communityId));
         setCommunity(res.data);
+        const membership = await checkCommunityMembership(Number(communityId));
+        setIsMember(membership.data.isMember);
+        setRole(membership.data.role);
       } catch (err) {
         console.error("Error fetching community:", err);
       } finally {
@@ -70,6 +75,7 @@ export default function CommunityDetailsPage() {
         
         {/* Left Column: Discussions */}
         <div className="lg:col-span-2 space-y-6">
+          {isMember && (
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">Discussions</h2>
             <button className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline">
@@ -77,6 +83,7 @@ export default function CommunityDetailsPage() {
               New Post
             </button>
           </div>
+          )}
 
           {/* Placeholder for Discussion Cards */}
           <div className="bg-white p-8 rounded-[2rem] border border-dashed border-gray-300 text-center">
