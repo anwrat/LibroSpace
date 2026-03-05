@@ -1,7 +1,8 @@
 import type{ Request,Response } from "express";
 import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember } from "../../models/communities/communities.model.js";
 import { CommunityIdParamSchema } from "../../schemas/communities.schema.js";
-import { createDiscussion } from "../../models/communities/discussions.model.js";
+import { createDiscussion, getDiscussionsByCommunityId } from "../../models/communities/discussions.model.js";
+import { success } from "zod";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -93,5 +94,16 @@ export const startDiscussion = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({success: false, message: "Internal Server Error while creating discussion"});
+    }
+}
+
+export const getAllDiscussionsByCommunityId = async(req: Request, res: Response)=>{
+    try{
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const discussions = await getDiscussionsByCommunityId(id);
+        return res.status(200).json({success: true, data: discussions});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while fetching discussions"});
     }
 }
