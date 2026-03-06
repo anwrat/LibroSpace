@@ -6,6 +6,8 @@ import {
   getCommunitybyId, 
   checkCommunityMembership, 
   getAllDiscussions, 
+  joinCommunity,
+  leaveCommunity
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
@@ -26,7 +28,9 @@ export default function CommunityDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [discLoading, setDiscLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
+  // Initial Data Fetch
   const fetchData = async () => {
     try {
       const res = await getCommunitybyId(communityId);
@@ -39,19 +43,20 @@ export default function CommunityDetailsPage() {
         fetchDiscussions();
       }
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error fetching community data:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch Discussions separately (used on load and after joining)
   const fetchDiscussions = async () => {
     setDiscLoading(true);
     try {
       const res = await getAllDiscussions(communityId);
       setDiscussions(res.data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching discussions:", err);
     } finally {
       setDiscLoading(false);
     }
@@ -60,6 +65,30 @@ export default function CommunityDetailsPage() {
   useEffect(() => {
     if (communityId) fetchData();
   }, [communityId]);
+
+  // Handle Join/Leave Toggle
+  const handleMembershipToggle = async () => {
+    setActionLoading(true);
+    try {
+      if (isMember) {
+        await leaveCommunity(communityId);
+        setIsMember(false);
+        setDiscussions([]); // Clear private discussions
+      } else {
+        await joinCommunity(communityId);
+        setIsMember(true);
+        fetchDiscussions(); // Immediately fetch discussions now that they are in
+      }
+      
+      // Refresh community data to update the member count
+      const res = await getCommunitybyId(communityId);
+      setCommunity(res.data);
+    } catch (err) {
+      console.error("Action failed:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -73,7 +102,7 @@ export default function CommunityDetailsPage() {
     <div className="min-h-screen bg-gray-50 font-main">
       <UserNav />
 
-      {/* Header */}
+      {/* Header Section */}
       <div className="bg-white border-b border-gray-200 pt-24 pb-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-end gap-6">
           <div className="relative h-32 w-32 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl bg-gray-100">
@@ -90,14 +119,29 @@ export default function CommunityDetailsPage() {
               {community.member_count || 0} Members
             </p>
           </div>
-          <button className="bg-[#14919B] text-white px-8 py-3 rounded-2xl font-bold hover:opacity-90 transition-all">
-            {isMember ? "Leave Group" : "Join Group"}
+
+          <button 
+            onClick={handleMembershipToggle}
+            disabled={actionLoading}
+            className={`px-8 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 ${
+              isMember 
+                ? "bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100" 
+                : "bg-[#14919B] text-white hover:bg-[#0f7178] shadow-lg shadow-[#14919B]/20"
+            }`}
+          >
+            {actionLoading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : isMember ? (
+              "Leave Group"
+            ) : (
+              "Join Group"
+            )}
           </button>
         </div>
       </div>
 
       <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Discussions Area */}
+        {/* Left: Discussions Area */}
         <div className="lg:col-span-2 space-y-6">
           {isMember ? (
             <>
@@ -112,7 +156,9 @@ export default function CommunityDetailsPage() {
               </div>
 
               {discLoading ? (
-                <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#14919B]" /></div>
+                <div className="flex justify-center py-10">
+                  <Loader2 className="animate-spin text-[#14919B]" />
+                </div>
               ) : discussions.length > 0 ? (
                 <div className="space-y-4">
                   {discussions.map((post) => (
@@ -122,8 +168,8 @@ export default function CommunityDetailsPage() {
                       className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center font-bold text-[#14919B]">
-                          {post.initiator?.[0].toUpperCase()}
+                        <div className="w-10 h-10 rounded-2xl bg-[#14919B]/5 flex items-center justify-center font-bold text-[#14919B]">
+                          {post.username?.[0].toUpperCase() || "U"}
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 leading-none">{post.username}</p>
@@ -133,7 +179,7 @@ export default function CommunityDetailsPage() {
                         </div>
                       </div>
                       <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-3 whitespace-pre-wrap">{post.content}</p>
+                      <p className="text-gray-600 text-sm line-clamp-3 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                     </div>
                   ))}
                 </div>
@@ -145,18 +191,18 @@ export default function CommunityDetailsPage() {
               )}
             </>
           ) : (
-            <div className="bg-white p-12 rounded-[2.5rem] border text-center">
+            <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 text-center shadow-sm">
               <ShieldCheck size={48} className="mx-auto text-gray-200 mb-4" />
-              <h3 className="text-xl font-black">Member-only discussions</h3>
-              <p className="text-gray-500 mt-2">Join this group to see what everyone is talking about.</p>
+              <h3 className="text-xl font-black text-gray-900">Member-only discussions</h3>
+              <p className="text-gray-500 mt-2">Join this community to participate in discussions and share insights.</p>
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Right: Sidebar */}
         <div className="space-y-6">
           <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-            <h3 className="font-bold text-gray-900 mb-4 text-lg">About Community</h3>
+            <h3 className="font-bold text-gray-900 mb-4 text-lg">About</h3>
             <p className="text-gray-600 text-sm leading-relaxed mb-6">{community.description}</p>
             <div className="space-y-4 pt-4 border-t border-gray-50">
               <div className="flex items-center gap-3 text-sm">
@@ -167,7 +213,9 @@ export default function CommunityDetailsPage() {
               <div className="flex items-center gap-3 text-sm">
                 <Calendar size={18} className="text-[#14919B]" />
                 <span className="text-gray-500">Created:</span>
-                <span className="font-bold text-gray-900">{new Date(community.created_at).toLocaleDateString()}</span>
+                <span className="font-bold text-gray-900">
+                  {new Date(community.created_at).toLocaleDateString()}
+                </span>
               </div>
             </div>
           </div>

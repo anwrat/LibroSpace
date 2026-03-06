@@ -56,6 +56,14 @@ export function getCommunitybyId(id: number){
     return api.get(`/api/users/communities/${id}`);
 }
 
+export function joinCommunity(communityId: number){
+    return api.post(`/api/users/communities/${communityId}/membership`);
+}
+
+export function leaveCommunity(communityId: number){
+    return api.delete(`/api/users/communities/${communityId}/membership`);
+}
+
 //For all discussions and comments related to communities
 export function startDiscussion(communityId: number, title: string, content: string){
     return api.post(`/api/users/communities/${communityId}/discussions`, {title, content});
