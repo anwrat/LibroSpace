@@ -85,11 +85,6 @@ export default function ExploreCommunities() {
                   {community.description || "No description provided for this community."}
                 </p>
               </div>
-
-              {/* Action Button */}
-              <button className="w-full py-3 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-[#14919B] transition-all shadow-md active:scale-95">
-                Join Community
-              </button>
             </div>
           ))}
         </div>

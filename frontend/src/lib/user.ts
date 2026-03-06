@@ -44,6 +44,10 @@ export function getJoinedCommunities(){
     return api.get('/api/users/communities/joined');
 }
 
+export function checkCommunityMembership(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/membership`);
+}
+
 export function createCommunity(data: FormData){
     return api.post('/api/users/communities', data);
 }
@@ -52,6 +56,36 @@ export function getCommunitybyId(id: number){
     return api.get(`/api/users/communities/${id}`);
 }
 
+export function joinCommunity(communityId: number){
+    return api.post(`/api/users/communities/${communityId}/membership`);
+}
+
+export function leaveCommunity(communityId: number){
+    return api.delete(`/api/users/communities/${communityId}/membership`);
+}
+
+//For all discussions and comments related to communities
+export function startDiscussion(communityId: number, title: string, content: string){
+    return api.post(`/api/users/communities/${communityId}/discussions`, {title, content});
+}
+
+export function getAllDiscussions(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/discussions`);
+}
+
+export function getDiscussionDetailsbyId(communityId: number, discussionId: number){
+    return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}`);
+}
+
+export function addComment(communityId: number, discussionId: number, content: string){
+    return api.post(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`, {content});
+}
+
+export function getAllComments(communityId: number, discussionId: number){
+    return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`);
+}
+
+//For all reading sessions related functions
 export function startReadingSession(book_id: number, start_page: number){
     return api.post('/api/users/reading/start', {book_id, start_page});
 }
