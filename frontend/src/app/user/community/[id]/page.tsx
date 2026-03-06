@@ -118,7 +118,7 @@ export default function CommunityDetailsPage() {
                   {discussions.map((post) => (
                     <div 
                       key={post.id} 
-                      onClick={() => router.push(`/user/communities/${communityId}/discussions/${post.id}`)}
+                      onClick={() => router.push(`/user/community/${communityId}/discussions/${post.id}`)}
                       className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
                       <div className="flex items-center gap-3 mb-4">

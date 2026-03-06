@@ -65,6 +65,10 @@ export function getAllDiscussions(communityId: number){
     return api.get(`/api/users/communities/${communityId}/discussions`);
 }
 
+export function getDiscussionDetailsbyId(communityId: number, discussionId: number){
+    return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}`);
+}
+
 export function addComment(communityId: number, discussionId: number, content: string){
     return api.post(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`, {content});
 }
