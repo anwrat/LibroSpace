@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember } from "../../models/communities/communities.model.js";
+import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember, addMemberToCommunity, leaveCommunity } from "../../models/communities/communities.model.js";
 import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/communities.schema.js";
 import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from "../../models/communities/discussions.model.js";
 import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
@@ -21,6 +21,36 @@ export const addNewCommunity = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while adding new community"});
+    }
+}
+
+export const joinCommunityasMember = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({success: false, message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const member = await addMemberToCommunity(user_id, id);
+        return res.status(200).json({success: true, message: "User joined community successfully", data: member});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while joining community"});
+    }
+}
+
+export const leaveACommunity = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({success: false, message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const member = await leaveCommunity(user_id, id);
+        return res.status(200).json({success: true, message: "User left community successfully", data: member});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while leaving community"});
     }
 }
 
