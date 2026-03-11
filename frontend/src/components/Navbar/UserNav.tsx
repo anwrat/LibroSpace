@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
-import { Search, User, UserPlus, LogOut, X, Bell } from 'lucide-react';
+import { Search, User, UserPlus, LogOut, MessageCircleMore } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { getPendingFriendRequests } from '@/lib/user';
 
@@ -138,6 +138,19 @@ export default function UserNav() {
                         <div className="flex items-center gap-3">
                           <User size={18} className="text-gray-400" />
                           Profile
+                        </div>
+                      </Link>
+
+                      <Link 
+                        href="/user/friends/messages" 
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <MessageCircleMore size={18} className="text-gray-400" />
+                          Messages
                         </div>
                       </Link>
 

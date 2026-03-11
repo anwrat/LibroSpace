@@ -17,3 +17,14 @@ export const deleteRequestSchema = z.object({
     targetId: z.number().int().positive({message: "Target ID must be a positive integer"}),
   })
 });
+
+export const messageSchema = z.object({
+  senderId: z.number().positive(),
+  
+  receiverId: z.number().positive(),
+  
+  content: z.string()
+    .min(1, "Message cannot be empty")
+    .max(5000, "Message is too long")
+    .trim(),
+});

@@ -1,5 +1,6 @@
 import type{ Request,Response } from "express";
 import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
+import { saveMessage } from "../../models/friends/messages.model.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
