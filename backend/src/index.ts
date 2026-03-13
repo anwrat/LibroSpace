@@ -10,6 +10,7 @@ const io = new Server(httpServer,{
     cors:{
         origin: process.env.CLIENT_URL,
         methods: ["GET","POST"],
+        credentials: true
     }
 });
 
@@ -17,6 +18,6 @@ initSocket(io);
 
 const PORT = process.env.PORT;
 
-app.listen(PORT,()=>{
+httpServer.listen(PORT,()=>{
     console.log(`Server running on port ${PORT}`);
 })

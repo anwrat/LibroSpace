@@ -19,8 +19,6 @@ export const deleteRequestSchema = z.object({
 });
 
 export const messageSchema = z.object({
-  senderId: z.number().positive(),
-  
   receiverId: z.number().positive(),
   
   content: z.string()

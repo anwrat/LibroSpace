@@ -23,7 +23,7 @@ export default function UserNav() {
   const fetchPendingRequests = useCallback(async()=>{
     if(!user) return;
     try{
-      const data = await getPendingFriendRequests(Number(user.id));
+      const data = await getPendingFriendRequests();
       setPendingCount(data.data.pendingRequests.length);
     }catch(err){
       console.error("Error fetching pending friend requests: ",err);

@@ -1,48 +1,91 @@
 import { Server, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import cookie from 'cookie'; 
 import { messageSchema } from '../schemas/friends.schema.js';
 import { saveMessage } from '../models/friends/messages.model.js';
 
-// This map acts like a "phone book"
-// Key: User ID (e.g., 5) | Value: Socket ID (e.g., "abc-123")
+// Track online users: { userId: socketId }
 const activeUsers = new Map<number, string>();
 
 export const initSocket = (io: Server) => {
-  io.on('connection', (socket: Socket) => {
-    console.log('User connected:', socket.id);
+  
+  // 1. JWT Middleware for HttpOnly Cookies
+  io.use((socket, next) => {
+    try {
+      const headerCookie = socket.handshake.headers.cookie;
 
-    // 1. REGISTER USER
-    // The frontend will send the userID as soon as they log in
-    socket.on('register_user', (userId: number) => {
-      activeUsers.set(userId, socket.id);
-      console.log(`User ${userId} is now online with socket ${socket.id}`);
-    });
+      if (!headerCookie) {
+        console.error("Socket Auth: No cookies found in headers");
+        return next(new Error("Authentication error: No cookies found"));
+      }
 
-    // 2. PRIVATE MESSAGE
-    socket.on('send_private_message', async (data) => {
-    // A. Validate data with Zod
-    const validated = messageSchema.safeParse(data);
-    if (!validated.success) return;
+      // Parse the cookies from the header
+      const cookies = cookie.parse(headerCookie);
+      const token = cookies.token; 
 
-    // B. Save to Database (No res.status here!)
-    const dbMessage = await saveMessage(data.senderId, data.receiverId, data.content);
+      if (!token) {
+        console.error("Socket Auth: Token not found in cookies");
+        return next(new Error("Authentication error: Token missing"));
+      }
 
-    // C. Send to receiver
-    const receiverSocketId = activeUsers.get(data.receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('receive_message', dbMessage);
+      // Verify the JWT
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
+      
+      // Attach verified user to the socket
+      (socket as any).user = decoded;
+      next();
+    } catch (err) {
+      console.error("Socket Auth Error:", err);
+      return next(new Error("Authentication error: Invalid token"));
     }
   });
 
-    // 3. DISCONNECT
-    socket.on('disconnect', () => {
-      // Find and remove the user from our map when they close the tab
-      for (const [userId, socketId] of activeUsers.entries()) {
-        if (socketId === socket.id) {
-          activeUsers.delete(userId);
-          console.log(`User ${userId} went offline.`);
-          break;
+  // 2. Connection Logic
+  io.on('connection', (socket: Socket) => {
+    const userId = (socket as any).user.id;
+    
+    // Register user in the active map
+    activeUsers.set(userId, socket.id);
+    console.log(`⚡ Verified Connection: User ${userId} (Socket: ${socket.id})`);
+
+    // 3. Handle Private Messaging
+    socket.on('send_private_message', async (rawData) => {
+      try {
+        const validation = messageSchema.safeParse(rawData);
+        
+        if (!validation.success) {
+          console.log("Step 2 Validation failed: ");
+          return socket.emit('error_message', { error: "Invalid message data" });
         }
+
+        const { receiverId, content } = validation.data;
+        const senderId = userId; // Secure: Use ID from JWT, not frontend payload
+
+        // Save to Database
+        const savedMsg = await saveMessage(senderId, receiverId, content);
+        if(!savedMsg){
+          console.error("Failed to save message to database");
+        }
+
+        // Send to receiver if online
+        const receiverSocketId = activeUsers.get(receiverId);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('receive_message', savedMsg);
+        }
+
+        // Send confirmation to sender
+        socket.emit('message_sent_success', savedMsg);
+
+      } catch (err) {
+        console.error("Socket Message Error:", err);
+        socket.emit('error_message', { error: "Could not send message" });
       }
+    });
+
+    // 4. Handle Disconnect
+    socket.on('disconnect', () => {
+      activeUsers.delete(userId);
+      console.log(`❌ User ${userId} disconnected`);
     });
   });
 };
