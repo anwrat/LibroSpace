@@ -5,8 +5,10 @@ import { io, Socket } from "socket.io-client";
 import UserNav from "@/components/Navbar/UserNav";
 import { Send, MessageSquare, Search, Loader2 } from "lucide-react";
 import { getAllFriends, getChatHistory } from "@/lib/user"; 
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function MessagesPage() {
+    const {user} = useAuthContext();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [friends, setFriends] = useState<any[]>([]);
     const [selectedFriend, setSelectedFriend] = useState<any>(null);
@@ -178,8 +180,8 @@ export default function MessagesPage() {
                             {/* Messages Area */}
                             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30">
                                 {messages.map((msg, idx) => {
-                                    const senderId = msg.sender_id || msg.senderId;
-                                    const currentUserId = Number(localStorage.getItem("userId"));
+                                    const senderId = msg.sender_id;
+                                    const currentUserId = Number(user?.id);
                                     const isMe = senderId === currentUserId;
 
                                     return (
