@@ -1,6 +1,7 @@
 import type{ Request,Response } from "express";
 import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
 import { getAllMessagesbetweenTwoUsers } from "../../models/friends/messages.model.js";
+import { getChatHistorySchema } from "../../schemas/friends.schema.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
@@ -90,7 +91,7 @@ export const getChatHistory = async(req: Request, res: Response) =>{
         if(!userId){
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
-        const {friendId} = req.body;
+        const {friendId} = getChatHistorySchema.parse(req.params);
         const chatHistory = await getAllMessagesbetweenTwoUsers(userId, Number(friendId));
         return res.status(200).json({success: true, data: chatHistory});
     }catch(err){

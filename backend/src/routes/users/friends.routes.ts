@@ -2,7 +2,7 @@ import { Router } from "express";
 import { acceptAndUpdateFriendRequest, sendFriendRequest, deleteFriendRequest, getPendingFriendRequests, getFriendsList } from "../../controllers/users/friends.controller.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
-import { sendFriendRequestSchema, acceptRequestSchema, deleteRequestSchema, getChatHistorySchema } from "../../schemas/friends.schema.js";
+import { sendFriendRequestSchema, acceptRequestSchema, deleteRequestSchema } from "../../schemas/friends.schema.js";
 import { getChatHistory } from "../../controllers/users/friends.controller.js";
 
 const router = Router();
@@ -14,6 +14,6 @@ router.get("/pending",authenticateToken, getPendingFriendRequests);
 router.get("/",authenticateToken, getFriendsList);
 
 //For messages
-router.get("/messages", authenticateToken, validate(getChatHistorySchema), getChatHistory);
+router.get("/messages/:friendId", authenticateToken, getChatHistory);
 
 export default router;

@@ -30,7 +30,5 @@ export const messageSchema = z.object({
 });
 
 export const getChatHistorySchema = z.object({
-  body: z.object({
-    friendId: z.number().int().positive({message: "Friend ID must be a positive integer"}),
-  })
+  friendId: z.string().regex(/^\d+$/, "Community ID must be a number").transform(Number)
 });
