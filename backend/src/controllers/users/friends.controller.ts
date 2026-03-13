@@ -1,6 +1,6 @@
 import type{ Request,Response } from "express";
 import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
-import { saveMessage } from "../../models/friends/messages.model.js";
+import { getAllMessagesbetweenTwoUsers } from "../../models/friends/messages.model.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
@@ -83,3 +83,19 @@ export const getPendingFriendRequests = async(req: Request, res: Response) =>{
         res.status(500).json({message: "Internal Server Error while fetching pending requests count"});
     }
 }
+
+export const getChatHistory = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const {friendId} = req.body;
+        const chatHistory = await getAllMessagesbetweenTwoUsers(userId, Number(friendId));
+        return res.status(200).json({success: true, data: chatHistory});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching chat history"});
+    }
+}
+

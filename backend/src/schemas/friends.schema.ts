@@ -28,3 +28,9 @@ export const messageSchema = z.object({
     .max(5000, "Message is too long")
     .trim(),
 });
+
+export const getChatHistorySchema = z.object({
+  body: z.object({
+    friendId: z.number().int().positive({message: "Friend ID must be a positive integer"}),
+  })
+});
