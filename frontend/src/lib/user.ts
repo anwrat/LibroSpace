@@ -20,11 +20,13 @@ export function addBooktoShelf(bookId: number, shelf: string){
     return api.post('/api/users/shelf',{bookId, shelf});
 }
 
+
+//For friends related functions
 export function getAllFriends(){
     return api.get('/api/users/friends');
 }
 
-export function getPendingFriendRequests(userId: number){
+export function getPendingFriendRequests(){
     return api.get('/api/users/friends/pending');
 }
 
@@ -34,6 +36,11 @@ export function acceptFriendRequest(requesterId: number){
 
 export function deleteFriendRequest(targetId: number){
     return api.delete('/api/users/friends',{data: {targetId}});
+}
+
+//For message related functions
+export function getChatHistory(friendId: number){
+    return api.get(`/api/users/friends/messages/${friendId}`);
 }
 
 export function getAllCommunities(){

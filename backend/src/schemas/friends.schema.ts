@@ -17,3 +17,16 @@ export const deleteRequestSchema = z.object({
     targetId: z.number().int().positive({message: "Target ID must be a positive integer"}),
   })
 });
+
+export const messageSchema = z.object({
+  receiverId: z.number().positive(),
+  
+  content: z.string()
+    .min(1, "Message cannot be empty")
+    .max(5000, "Message is too long")
+    .trim(),
+});
+
+export const getChatHistorySchema = z.object({
+  friendId: z.string().regex(/^\d+$/, "Community ID must be a number").transform(Number)
+});

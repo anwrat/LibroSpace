@@ -24,8 +24,7 @@ export default function FriendRequestsPage() {
     const loadRequests = async () => {
       if (!user) return;
       try {
-        const data = await getPendingFriendRequests(Number(user.id));
-        // Adjusted to match your specific data structure
+        const data = await getPendingFriendRequests();
         setRequests(data.data.pendingRequests);
       } catch (error) {
         console.error("Failed to load requests:", error);
