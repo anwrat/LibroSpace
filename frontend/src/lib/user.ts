@@ -43,6 +43,11 @@ export function getChatHistory(friendId: number){
     return api.get(`/api/users/friends/messages/${friendId}`);
 }
 
+export function markMessagesAsRead(friendId: number){
+    return api.put(`/api/users/friends/messages/${friendId}`);
+}
+
+//For all community related functions
 export function getAllCommunities(){
     return api.get('/api/users/communities');
 }
