@@ -6,7 +6,8 @@ import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
 import { Search, User, UserPlus, LogOut, MessageCircleMore } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { getPendingFriendRequests } from '@/lib/user';
+import { getPendingFriendRequests, getUnreadStatus } from '@/lib/user'; 
+import { io } from "socket.io-client";
 
 export default function UserNav() {
   const { user, loading, logout } = useAuthContext();
@@ -16,28 +17,57 @@ export default function UserNav() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  //State for pending friend requests
+  // State for notifications
   const [pendingCount, setPendingCount] = useState(0);
-
-  //Fetch pending friend requests
-  const fetchPendingRequests = useCallback(async()=>{
-    if(!user) return;
-    try{
-      const data = await getPendingFriendRequests();
-      setPendingCount(data.data.pendingRequests.length);
-    }catch(err){
-      console.error("Error fetching pending friend requests: ",err);
-    }
-  },[user])
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
-  //Fetch pending requests on mount and when user changes
-  useEffect(()=>{
-    fetchPendingRequests();
-  },[pathname, fetchPendingRequests]);
-  
-  // Ref to detect clicks outside the dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // 1. Fetch initial notification states
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    try {
+      // Fetch Friend Requests
+      const reqData = await getPendingFriendRequests();
+      setPendingCount(reqData.data.pendingRequests.length);
+
+      // Fetch Unread Message Status (Initial DB Check)
+      // Only set to true if we aren't already on the messages page
+      if (pathname !== "/user/friends/messages") {
+        const msgData = await getUnreadStatus();
+        setHasUnreadMessages(msgData.data.hasUnread);
+      }
+    } catch (err) {
+      console.error("Error fetching notifications: ", err);
+    }
+  }, [user, pathname]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [pathname, fetchNotifications]);
+
+  // 2. Real-time Socket Listener for incoming messages
+  useEffect(() => {
+    if (!user) return;
+
+    const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000", {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    socket.on("receive_message", (message) => {
+      // If a message arrives and we are NOT on the messages page, show the dot
+      if (pathname !== "/user/friends/messages") {
+        setHasUnreadMessages(true);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, pathname]);
+
+  // 3. Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -106,18 +136,19 @@ export default function UserNav() {
                 {/* Profile Circle */}
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center justify-center h-10 w-10 rounded-full border-2 border-transparent hover:border-[#14919B] bg-gray-100 overflow-hidden transition-all focus:outline-none cursor-pointer"
+                  className="relative flex items-center justify-center h-10 w-10 rounded-full border-2 border-transparent hover:border-[#14919B] bg-gray-100 overflow-hidden transition-all focus:outline-none cursor-pointer"
                 >
                   {user.picture_url ? (
                     <Image src={user.picture_url} alt="User" width={40} height={40} className="object-cover" />
                   ) : (
                     <User className="text-[#14919B]" size={20} />
                   )}
-                  {/* Red Dot on Profile Icon */}
-                  {pendingCount > 0 && (
-                    <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white" />
-                  )}
+                  
                 </button>
+                {/* GLOBAL RED DOT (Messages OR Friend Requests) */}
+                {(pendingCount > 0 || hasUnreadMessages) && (
+                  <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse" />
+                )}
 
                 {/* Popover Menu */}
                 {isDropdownOpen && (
@@ -130,21 +161,18 @@ export default function UserNav() {
                     <div className="py-2">
                       <Link 
                         href="/user/profile" 
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                        }}
-                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <User size={18} className="text-gray-400" />
-                          Profile
-                        </div>
+                        <User size={18} className="text-gray-400" />
+                        Profile
                       </Link>
 
                       <Link 
                         href="/user/friends/messages" 
                         onClick={() => {
                           setIsDropdownOpen(false);
+                          setHasUnreadMessages(false); 
                         }}
                         className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -152,21 +180,22 @@ export default function UserNav() {
                           <MessageCircleMore size={18} className="text-gray-400" />
                           Messages
                         </div>
+                        {hasUnreadMessages && (
+                          <span className="bg-[#14919B] text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-bounce">
+                            NEW
+                          </span>
+                        )}
                       </Link>
 
                       <Link 
                         href="/user/friends/requests" 
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                        }}
+                        onClick={() => setIsDropdownOpen(false)}
                         className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <UserPlus size={18} className="text-gray-400" />
                           Friend Requests
                         </div>
-                        
-                        {/* Notification Badge in Menu */}
                         {pendingCount > 0 && (
                           <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {pendingCount}
@@ -179,7 +208,7 @@ export default function UserNav() {
                           setIsDropdownOpen(false);
                           setShowLogoutConfirm(true);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
                       >
                         <LogOut size={18} />
                         Logout

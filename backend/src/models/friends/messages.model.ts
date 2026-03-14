@@ -23,3 +23,14 @@ export const markMessagesAsRead = async (userId: number, friendId: number) => {
     );
     return result.rows;
 }
+
+export const unreadMessagesStatus = async (userId: number) => {
+    const result = await pool.query(
+            `SELECT EXISTS (
+                SELECT 1 FROM friends.messages 
+                WHERE receiver_id = $1 AND is_read = false
+            ) AS "hasUnread"`,
+            [userId]
+        );
+    return result.rows[0].hasUnread;
+}
