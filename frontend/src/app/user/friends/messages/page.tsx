@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { io, Socket } from "socket.io-client";
 import UserNav from "@/components/Navbar/UserNav";
 import { Send, MessageSquare, Search, Loader2 } from "lucide-react";
@@ -15,7 +15,7 @@ export default function MessagesPage() {
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
-    
+    const [onlineUsers, setOnlineUsers] = useState<number[]>([]);    
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // 1. Initialize Socket Connection with Cookie Token
@@ -89,6 +89,13 @@ export default function MessagesPage() {
         }
     }, [messages]);
 
+    //Update online users list when server sends updates
+    useEffect(() => {
+        socket?.on("online_users", (list: number[]) => {
+            setOnlineUsers(list);
+        });
+    }, [socket]);
+
     const sendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !socket || !selectedFriend) return;
@@ -146,11 +153,11 @@ export default function MessagesPage() {
                                         <div className="w-12 h-12 rounded-2xl bg-[#14919B]/10 flex items-center justify-center font-bold text-[#14919B] border border-[#14919B]/20">
                                             {friend.name[0].toUpperCase()}
                                         </div>
-                                        {/* Optional Online Indicator dot could go here */}
+                                        {onlineUsers.includes(friend.id) ? <div className="w-3 h-3 bg-green-500 rounded-full" />: <div className="w-3 h-3 bg-red-500 rounded-full" />}
                                     </div>
                                     <div className="text-left flex-1">
                                         <p className="font-bold text-gray-900 truncate">{friend.name}</p>
-                                        <p className="text-xs text-gray-400 font-medium truncate">Active now</p>
+                                        <p className="text-xs text-gray-400 font-medium truncate">{onlineUsers.includes(friend.id) ? 'Active' : 'Offline'}</p>
                                     </div>
                                 </button>
                             ))
@@ -172,7 +179,7 @@ export default function MessagesPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-black text-gray-900 leading-none">{selectedFriend.name}</h3>
-                                        <span className="text-[10px] text-[#14919B] font-bold uppercase tracking-wider">Online</span>
+                                        <span className="text-[10px] text-[#14919B] font-bold tracking-wider">{onlineUsers.includes(selectedFriend.id)? 'Online':'Offline'}</span>
                                     </div>
                                 </div>
                             </div>

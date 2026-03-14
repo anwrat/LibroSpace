@@ -6,6 +6,10 @@ import { saveMessage } from '../models/friends/messages.model.js';
 
 // Track online users: { userId: socketId }
 const activeUsers = new Map<number, string>();
+const sendOnlineStatus = (io: Server) => {
+    const onlineList = Array.from(activeUsers.keys());
+    io.emit('online_users', onlineList);
+};
 
 export const initSocket = (io: Server) => {
   
@@ -47,6 +51,7 @@ export const initSocket = (io: Server) => {
     // Register user in the active map
     activeUsers.set(userId, socket.id);
     console.log(`⚡ Verified Connection: User ${userId} (Socket: ${socket.id})`);
+    sendOnlineStatus(io); // Notify everyone
 
     // 3. Handle Private Messaging
     socket.on('send_private_message', async (rawData) => {
