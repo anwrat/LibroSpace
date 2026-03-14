@@ -87,6 +87,14 @@ export const initSocket = (io: Server) => {
       }
     });
 
+    socket.on('mark_as_read', ({senderId})=>{
+      const readerId = userId;
+      const senderSocketId = activeUsers.get(Number(senderId));
+      if(senderSocketId){
+        io.to(senderSocketId).emit('messages_seen', {readerId, senderId});
+      }
+    })
+
     // 4. Handle Disconnect
     socket.on('disconnect', () => {
       activeUsers.delete(userId);

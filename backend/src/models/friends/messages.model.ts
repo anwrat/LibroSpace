@@ -15,3 +15,11 @@ export const getAllMessagesbetweenTwoUsers = async (userId: number, friendId: nu
     );
     return result.rows;
 }
+
+export const markMessagesAsRead = async (userId: number, friendId: number) => {
+    const result = await pool.query(
+        `UPDATE friends.messages SET is_read = true WHERE sender_id = $1 AND receiver_id = $2 AND is_read = false RETURNING *`,
+        [friendId, userId]
+    );
+    return result.rows;
+}

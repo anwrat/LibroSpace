@@ -1,6 +1,6 @@
 import type{ Request,Response } from "express";
 import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
-import { getAllMessagesbetweenTwoUsers } from "../../models/friends/messages.model.js";
+import { getAllMessagesbetweenTwoUsers, markMessagesAsRead } from "../../models/friends/messages.model.js";
 import { getChatHistorySchema } from "../../schemas/friends.schema.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
@@ -97,6 +97,21 @@ export const getChatHistory = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while fetching chat history"});
+    }
+}
+
+export const changeMessageStatus = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const {friendId} = getChatHistorySchema.parse(req.params);
+        const result = await markMessagesAsRead(userId, Number(friendId));
+        return res.status(200).json({success: true, message: "Messages marked as read"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while updating message status"});
     }
 }
 
