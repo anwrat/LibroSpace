@@ -28,5 +28,5 @@ export const messageSchema = z.object({
 });
 
 export const getChatHistorySchema = z.object({
-  friendId: z.string().regex(/^\d+$/, "Community ID must be a number").transform(Number)
+  friendId: z.string().regex(/^\d+$/, "Friend ID must be a number").transform(Number)
 });
