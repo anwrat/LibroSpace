@@ -58,3 +58,8 @@ export const getAllUserSessions = async(user_id: number)=>{
         );
     return result.rows;
 }
+
+export const getTotalReadingTimeToday = async(user_id: number, today: string)=>{
+    const result = await pool.query('SELECT COALESCE(SUM(duration_seconds), 0) as total_time FROM reading.reading_sessions WHERE user_id = $1 AND DATE(end_time) = $2 AND status = $3',[user_id, today, 'completed']);
+    return result.rows[0].total_time;
+}

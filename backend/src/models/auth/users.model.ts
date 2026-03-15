@@ -31,3 +31,18 @@ export const getAllUsers = async()=>{
     const result = await pool.query('SELECT id, name, email, created_at FROM auth.users WHERE role != $1',['admin']);
     return result.rows;
 }
+
+export const getUserGoalandStreakInfo = async(userId: number)=>{
+    const result = await pool.query('SELECT daily_reading_goal, current_streak FROM auth.users WHERE id = $1',[userId]);
+    return result.rows[0];
+}
+
+export const increaseStreak = async(userId: number) =>{
+    const result = await pool.query('UPDATE auth.users SET current_streak = current_streak + 1 WHERE id = $1 RETURNING current_streak',[userId]);
+    return result.rows[0].current_streak;
+}
+
+export const resetStreak = async(userId: number) =>{
+    const result = await pool.query('UPDATE auth.users SET current_streak = 0 WHERE id = $1 RETURNING current_streak',[userId]);
+    return result.rows[0].current_streak;
+}

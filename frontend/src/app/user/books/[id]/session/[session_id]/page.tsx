@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import ReadingEditor from "@/components/Editor/ReadingEditor";
 import EndSessionModal from "@/components/User/Reading/EndSesssionModal";
-import { getSessionDetails, endReadingSession, getBookbyID } from "@/lib/user";
+import { getSessionDetails, endReadingSession, getBookbyID, evaluateDailyGoal } from "@/lib/user";
 import { 
   Play, 
   Pause, 
@@ -69,7 +69,7 @@ export default function ReadingSessionPage() {
     try {
       // API call to update status to inactive and save final notes/page
       await endReadingSession(sessionId, endPage, notes, bookId);
-      
+      await evaluateDailyGoal(); // Check if daily goal is achieved after ending session
       toast.success("Reading session saved!");
       router.push(`/user/books/${bookId}`);
     } catch (err: any) {
