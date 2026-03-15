@@ -134,3 +134,7 @@ export function syncStreak(){
 export function getUserStreakandGoal(){
     return api.get('/api/users/gamification/info');
 }
+
+export function updateUserGoal(newGoal: number){
+    return api.patch('/api/users/gamification/update-goal', {newGoal});
+}

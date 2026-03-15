@@ -121,8 +121,8 @@ export default function UserNav() {
             <div className="hidden lg:flex items-center gap-8">
               <NavLink href="/user/explore">Explore</NavLink>
               <NavLink href="/user/stats">Stats</NavLink>
-              <NavLink href="/challenges">Challenges</NavLink>
-              <NavLink href="/events">Events</NavLink>
+              <NavLink href="/user/challenges">Challenges</NavLink>
+              <NavLink href="/user/events">Events</NavLink>
               <NavLink href="/user/community">Community</NavLink>
             </div>
           </div>

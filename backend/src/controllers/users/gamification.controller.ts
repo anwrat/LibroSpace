@@ -1,6 +1,6 @@
 import type{ Request,Response } from "express";
 import { getTotalReadingTimeToday } from "../../models/reading/reading_sessions.model.js";
-import { getUserGoalandStreakInfo, increaseStreak, resetStreak } from "../../models/auth/users.model.js";
+import { getUserGoalandStreakInfo, increaseStreak, resetStreak, updateDailyGoal } from "../../models/auth/users.model.js";
 import { insertDailyGoalAchievement, checkGoalMetYesterday } from "../../models/gamification/daily_goals_achieved.model.js";
 
 export const getUserStreakandGoal = async(req: Request, res: Response) =>{
@@ -87,6 +87,21 @@ export const syncStreak = async (req: Request, res: Response) => {
         });
 
     } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const adjustDailyGoal = async(req: Request, res: Response)=>{
+    try{
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const {newGoal} = req.body;
+        const updatedGoal = await updateDailyGoal(userId, newGoal);
+        return res.status(200).json({ success: true, message: "Daily reading goal updated successfully"});
+    }catch(err){
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
     }

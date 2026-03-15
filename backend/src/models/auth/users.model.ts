@@ -46,3 +46,8 @@ export const resetStreak = async(userId: number) =>{
     const result = await pool.query('UPDATE auth.users SET current_streak = 0 WHERE id = $1 RETURNING current_streak',[userId]);
     return result.rows[0].current_streak;
 }
+
+export const updateDailyGoal = async(userId: number, newGoal: number) =>{
+    const result = await pool.query('UPDATE auth.users SET daily_reading_goal = $1 WHERE id = $2 RETURNING daily_reading_goal',[newGoal, userId]);
+    return result.rows[0].daily_reading_goal;
+}
