@@ -120,3 +120,17 @@ export function getSessionDetails(session_id: number){
 export function getAllReadingSessions(){
     return api.get('/api/users/reading/sessions/all');
 }
+
+//For all gamification related functions
+
+export function evaluateDailyGoal(){
+    return api.post('/api/users/gamification/daily-goal');
+}
+
+export function syncStreak(){
+    return api.post('/api/users/gamification/sync-streak');
+}
+
+export function getUserStreakandGoal(){
+    return api.get('/api/users/gamification/info');
+}

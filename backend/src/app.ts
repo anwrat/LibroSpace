@@ -8,6 +8,7 @@ import userShelfRoutes from './routes/users/shelf.routes.js';
 import friendRoutes from './routes/users/friends.routes.js';
 import communityRoutes from './routes/users/communities.routes.js';
 import readingRoutes from './routes/users/reading.routes.js';
+import gamificationRoutes from './routes/users/gamification.routes.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middleware/auth/passport.middleware.js';
@@ -42,5 +43,7 @@ app.use('/api/users/friends',friendRoutes);
 app.use('/api/users/communities',communityRoutes);
 //Reading Routes
 app.use('/api/users/reading',readingRoutes);
+//Gamification Routes
+app.use('/api/users/gamification',gamificationRoutes);
 
 export default app;
