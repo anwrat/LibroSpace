@@ -22,7 +22,6 @@ export default function GoalGauge({ currentSeconds, goalMinutes, onGoalUpdate }:
   const stroke = 12;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  // We only want a semi-circle (180 degrees)
   const arcLength = circumference / 2;
   const arcOffset = arcLength - (progress / 100) * arcLength;
 

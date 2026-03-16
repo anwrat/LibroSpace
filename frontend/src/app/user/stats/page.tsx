@@ -17,10 +17,10 @@ export default function StatsPage() {
     ];
 
     return (
-        <main className="min-h-screen pt-24 pb-20 px-6 font-main max-w-7xl mx-auto">
+        <main className="min-h-screen pt-24 pb-20 px-6 font-main mx-auto">
             <UserNav />
             
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 <header className="mb-10">
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">Your Reading Journey</h1>
                     <p className="text-gray-500 mt-2">Track every page, every minute, and every thought.</p>
