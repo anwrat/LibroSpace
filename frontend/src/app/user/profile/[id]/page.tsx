@@ -8,6 +8,7 @@ import { getOtherUserProfile, addFriend, challengeFriend, acceptFriendRequest, d
 import Image from "next/image";
 import {toast, Toaster} from "react-hot-toast";
 import { User, Sword, UserPlus, Check, X, Loader2, Mail, Calendar, UserMinus, Clock, BookOpen } from "lucide-react";
+import { Socket, io } from "socket.io-client";
 
 export default function OthersProfile() {
   const { id } = useParams();
@@ -75,7 +76,16 @@ export default function OthersProfile() {
         durationDays 
       );
       
-      toast.success(`Challenge sent! It will last ${durationDays} days from the moment ${data?.name} accepts it.`);
+      // Notify via Socket
+      const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000", {
+        withCredentials: true
+      });
+      socket.emit('send_challenge', { 
+        receiverId: id, 
+        challengerName: currentUser?.name 
+      });
+
+      toast.success(`Challenge sent!`);
       setIsModalOpen(false);
     } catch (err) {
       console.error("Challenge failed", err);
