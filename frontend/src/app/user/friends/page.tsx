@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import UserNav from "@/components/Navbar/UserNav";
 import { getAllFriends, deleteFriendRequest } from "@/lib/user";
 import Image from "next/image";
-import { User, Search, UserMinus, MessageSquare } from "lucide-react";
+import { User, Search, UserMinus } from "lucide-react";
+import Link from "next/link";
 
 interface Friend {
   id: number;
@@ -81,7 +82,7 @@ export default function AllFriendsPage() {
         ) : filteredFriends.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredFriends.map((friend) => (
-              <div 
+              <Link href={`/user/profile/${friend.id}`}
                 key={friend.id} 
                 className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 transition-all hover:shadow-md group"
               >
@@ -103,11 +104,6 @@ export default function AllFriendsPage() {
                   
                   <div className="flex gap-3 mt-3">
                     <button 
-                      className="text-xs font-bold text-[#14919B] flex items-center gap-1 hover:opacity-80 transition-opacity"
-                    >
-                      <MessageSquare size={14} /> Message
-                    </button>
-                    <button 
                       onClick={() => handleUnfriend(friend.id)}
                       className="text-xs font-bold text-gray-400 flex items-center gap-1 hover:text-red-500 transition-colors"
                     >
@@ -115,7 +111,7 @@ export default function AllFriendsPage() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

@@ -22,12 +22,20 @@ export function addBooktoShelf(bookId: number, shelf: string){
 
 
 //For friends related functions
+export function getOtherUserProfile(targetId: number){
+    return api.get(`/api/users/friends/profile/${targetId}`);
+}
+
 export function getAllFriends(){
     return api.get('/api/users/friends');
 }
 
 export function getPendingFriendRequests(){
     return api.get('/api/users/friends/pending');
+}
+
+export function addFriend(targetId: number){
+    return api.post('/api/users/friends',{addresseeId: targetId});
 }
 
 export function acceptFriendRequest(requesterId: number){
@@ -141,4 +149,17 @@ export function updateUserGoal(newGoal: number){
 
 export function getAchievementThisMonth(){
     return api.get('/api/users/gamification/daily-goal/month');
+}
+
+//For friend challenges
+export function challengeFriend(challengedId: number, challengeType: string, goalValue: number, startDate: string, endDate: string){
+    return api.post('/api/users/gamification/challenge-friend', {challengedId, challengeType, goalValue, startDate, endDate});
+}
+
+export function getUserFriendChallenges(){
+    return api.get('/api/users/gamification/challenges');
+}
+
+export function respondToChallenge(challengeId: number, action: string){
+    return api.post('/api/users/gamification/respond-to-challenge', {challengeId, action});
 }
