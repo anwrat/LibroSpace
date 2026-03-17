@@ -86,14 +86,12 @@ export default function UserProfile() {
               </span>
             </div>
             
-            {friends.length > 6 && (
-              <Link 
-                href="/user/friends" 
-                className="text-[#14919B] text-sm font-semibold flex items-center gap-1 hover:underline"
-              >
-                View All <ArrowRight size={14} />
-              </Link>
-            )}
+            <Link 
+              href="/user/friends" 
+              className="text-[#14919B] text-sm font-semibold flex items-center gap-1 hover:underline"
+            >
+              View All <ArrowRight size={14} />
+            </Link>
           </div>
 
           {loadingFriends ? (
@@ -106,7 +104,7 @@ export default function UserProfile() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
               {/* Only show the first 6 friends as a preview */}
               {friends.slice(0, 6).map((friend) => (
-                <div key={friend.id} className="flex flex-col items-center group cursor-pointer">
+                <Link href={`/user/profile/${friend.id}`} key={friend.id} className="flex flex-col items-center group cursor-pointer">
                   <div className="h-16 w-16 rounded-2xl overflow-hidden relative mb-2 border border-gray-100 transition-transform group-hover:scale-105">
                     {friend.picture_url ? (
                       <Image src={friend.picture_url} alt={friend.name} fill className="object-cover" />
@@ -119,7 +117,7 @@ export default function UserProfile() {
                   <p className="text-xs font-medium text-gray-700 truncate w-full text-center">
                     {friend.name.split(' ')[0]}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

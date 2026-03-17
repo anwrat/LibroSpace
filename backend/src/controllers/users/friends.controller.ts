@@ -1,7 +1,7 @@
 import type{ Request,Response } from "express";
-import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests } from "../../models/friends/friendships.model.js";
+import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests, getRelationshipStatusandDetails } from "../../models/friends/friendships.model.js";
 import { getAllMessagesbetweenTwoUsers, markMessagesAsRead, unreadMessagesStatus } from "../../models/friends/messages.model.js";
-import { getChatHistorySchema } from "../../schemas/friends.schema.js";
+import { getChatHistorySchema, getRelationshipStatusSchema } from "../../schemas/friends.schema.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
@@ -126,6 +126,24 @@ export const checkUnreadMessages = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while checking unread messages"});
+    }
+}
+
+export const getOtherUserProfile = async(req: Request, res: Response)=>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const {targetId} = getRelationshipStatusSchema.parse(req.params);
+        const profileData = await getRelationshipStatusandDetails(userId, Number(targetId));
+        if(!profileData){
+            return res.status(404).json({success: false,message: "User not found"});
+        }
+        return res.status(200).json({success: true, data: profileData});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching other user's profile"});
     }
 }
 

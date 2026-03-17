@@ -95,6 +95,16 @@ export const initSocket = (io: Server) => {
       }
     })
 
+    socket.on('send_challenge', ({ receiverId, challengerName }) => {
+      const receiverSocketId = activeUsers.get(Number(receiverId));
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('receive_challenge', {
+          message: `${challengerName} has sent you a challenge!`,
+          fromId: userId
+        });
+      }
+    });
+    
     // 4. Handle Disconnect
     socket.on('disconnect', () => {
       activeUsers.delete(userId);
