@@ -22,11 +22,47 @@ export const getUserChallenges = async (userId: number) => {
             u1.name AS challenger_name,
             u1.picture_url AS challenger_picture,
             u2.name AS challenged_name,
-            u2.picture_url AS challenged_picture
+            u2.picture_url AS challenged_picture,
+            
+            -- Logic for Challenger Progress
+            CASE 
+                WHEN fc.status = 'active' AND fc.challenge_type = 'time' THEN 
+                    COALESCE((
+                        SELECT SUM(duration_seconds) 
+                        FROM reading.reading_sessions 
+                        WHERE user_id = fc.challenger_id 
+                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                    ), 0)
+                WHEN fc.status = 'active' AND fc.challenge_type = 'pages' THEN 
+                    COALESCE((
+                        SELECT SUM(end_page - start_page) 
+                        FROM reading.reading_sessions 
+                        WHERE user_id = fc.challenger_id 
+                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                    ), 0)
+                ELSE 0 
+            END AS challenger_progress,
+            
+            -- Logic for Challenged Progress
+            CASE 
+                WHEN fc.status = 'active' AND fc.challenge_type = 'time' THEN 
+                    COALESCE((
+                        SELECT SUM(duration_seconds) 
+                        FROM reading.reading_sessions 
+                        WHERE user_id = fc.challenged_id 
+                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                    ), 0)
+                WHEN fc.status = 'active' AND fc.challenge_type = 'pages' THEN 
+                    COALESCE((
+                        SELECT SUM(end_page - start_page) 
+                        FROM reading.reading_sessions 
+                        WHERE user_id = fc.challenged_id 
+                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                    ), 0)
+                ELSE 0 
+            END AS challenged_progress
         FROM gamification.friend_challenges fc
-        -- Join for the person who sent the challenge
         LEFT JOIN auth.users u1 ON fc.challenger_id = u1.id
-        -- Join for the person who received the challenge
         LEFT JOIN auth.users u2 ON fc.challenged_id = u2.id
         WHERE fc.challenger_id = $1 OR fc.challenged_id = $1
         ORDER BY fc.created_at DESC;
