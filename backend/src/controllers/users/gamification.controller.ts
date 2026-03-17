@@ -2,6 +2,7 @@ import type{ Request,Response } from "express";
 import { getTotalReadingTimeToday } from "../../models/reading/reading_sessions.model.js";
 import { getUserGoalandStreakInfo, increaseStreak, resetStreak, updateDailyGoal } from "../../models/auth/users.model.js";
 import { insertDailyGoalAchievement, checkGoalMetYesterday, getDailyGoalsAchievedDateThisMonth } from "../../models/gamification/daily_goals_achieved.model.js";
+import { createFriendChallenge, acceptChallenge, rejectChallenge, getUserChallenges } from "../../models/gamification/friend_challenges.model.js";
 
 export const getUserStreakandGoal = async(req: Request, res: Response) =>{
     try{
@@ -118,5 +119,56 @@ export const getAchievementThisMonth = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const challengeFriend = async(req: Request, res: Response)=>{
+    try{
+        const challengerId = req.user?.id;
+        if (!challengerId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const { challengedId, challengeType, goalValue, durationDays } = req.body;
+        const challenge = await createFriendChallenge(challengerId, challengedId, challengeType, goalValue, durationDays);
+        return res.status(201).json({ success: true, data: challenge });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while creating friend challenge"});
+    }
+}
+
+export const respondToChallenge = async (req: Request, res: Response) => {
+    try{
+        const { challengeId, action } = req.body; 
+        const userId = req.user?.id;
+        if (!userId) {
+                return res.status(401).json({ message: "Unauthorized" });
+        }
+        if(action === "accept"){
+            const response = await acceptChallenge(challengeId, userId);
+            return res.status(200).json({ success: true, data: response });
+        }
+        if(action === "reject"){
+            const response = await rejectChallenge(challengeId, userId);
+            return res.status(200).json({ success: true, data: response });
+        }
+        return res.status(400).json({ success: false, message: "Invalid action. Must be 'accept' or 'reject'." });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while responding to friend challenge"});
+    }
+};
+
+export const getUserFriendChallenges = async(req: Request, res: Response)=>{
+    try{
+        const userId = req.user?.id;
+        if (!userId) {
+                return res.status(401).json({ message: "Unauthorized" });
+        }
+        const challenges = await getUserChallenges(userId);
+        res.status(200).json({ success: true, data: challenges });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while fetching friend challenges"});
     }
 }

@@ -152,8 +152,8 @@ export function getAchievementThisMonth(){
 }
 
 //For friend challenges
-export function challengeFriend(challengedId: number, challengeType: string, goalValue: number, startDate: string, endDate: string){
-    return api.post('/api/users/gamification/challenge-friend', {challengedId, challengeType, goalValue, startDate, endDate});
+export function challengeFriend(challengedId: number, challengeType: string, goalValue: number, durationDays: number){
+    return api.post('/api/users/gamification/challenge-friend', {challengedId, challengeType, goalValue, durationDays});
 }
 
 export function getUserFriendChallenges(){
