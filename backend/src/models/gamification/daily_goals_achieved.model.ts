@@ -1,9 +1,21 @@
 import pool from "../../config/db.js";
 
-export const insertDailyGoalAchievement = async(user_id: number, achieved_date: string, time_read: number) =>{
-    const result = await pool.query('INSERT INTO gamification.daily_goals_achieved (user_id, achieved_date, time_read) VALUES ($1, $2, $3) RETURNING *',[user_id, achieved_date, time_read]);
-    return result.rows[0];
-}
+export const insertDailyGoalAchievement = async (user_id: number, achieved_date: string, time_read: number) => {
+  const query = `
+    INSERT INTO gamification.daily_goals_achieved (user_id, achieved_date, time_read) 
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, achieved_date) 
+    DO UPDATE SET time_read = EXCLUDED.time_read
+    RETURNING *;
+  `;
+  const result = await pool.query(query, [user_id, achieved_date, time_read]);
+  return result.rows[0];
+};
+
+export const checkIfGoalAlreadyAchieved = async(user_id: number, achieved_date: string) => {
+    const result = await pool.query('SELECT id FROM gamification.daily_goals_achieved WHERE user_id = $1 AND achieved_date = $2', [user_id, achieved_date]);
+    return result.rows;
+};
 
 export const checkGoalMetYesterday = async(user_id: number, yesterday: string) =>{
     const result = await pool.query('SELECT * FROM gamification.daily_goals_achieved WHERE user_id = $1 AND achieved_date = $2',[user_id, yesterday]);
