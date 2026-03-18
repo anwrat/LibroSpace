@@ -193,7 +193,7 @@ export default function FriendChallenges() {
           </div>
         ) : (
           <div className="bg-gray-50 border-2 border-dashed border-gray-200 p-8 rounded-[2rem] text-center">
-            <p className="text-gray-400 text-sm italic">No active duels. Go to Community to challenge a friend!</p>
+            <p className="text-gray-400 text-sm italic">No active duels. Go to Friend's Profile to challenge a friend!</p>
           </div>
         )}
       </div>

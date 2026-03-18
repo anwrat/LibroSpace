@@ -10,12 +10,34 @@ export const rejectChallenge = async(challengeId: number, userId: number)=>{
     return result.rows[0]?.duration_days;
 }
 
-export const acceptChallenge = async(challengeId: number, userId: number,) => {
-    const result = await pool.query("UPDATE gamification.friend_challenges SET status = 'active', start_date = NOW(), end_date = NOW() + (duration_days || ' days')::interval WHERE id = $1 AND challenged_id = $2 AND status = 'pending' RETURNING *;", [challengeId, userId]);
+export const acceptChallenge = async (challengeId: number, userId: number) => {
+    const query = `
+        UPDATE gamification.friend_challenges 
+        SET 
+            status = 'active', 
+            start_date = NOW(), 
+            -- Safely multiply the integer by a 1-day interval
+            end_date = NOW() + (duration_days * INTERVAL '1 day')
+        WHERE id = $1 
+        AND challenged_id = $2 
+        AND status = 'pending' 
+        RETURNING *;
+    `;
+    
+    const result = await pool.query(query, [challengeId, userId]);
     return result.rows[0];
-}
+};
 
 export const getUserChallenges = async (userId: number) => {
+    // 1. Auto-expire challenges that passed their end_date without a winner
+    await pool.query(`
+        UPDATE gamification.friend_challenges 
+        SET status = 'completed', completed_at = NOW()
+        WHERE status = 'active' 
+        AND NOW() > end_date;
+    `);
+
+    // 2. Fetch challenges with live progress
     const query = `
         SELECT 
             fc.*,
@@ -24,40 +46,44 @@ export const getUserChallenges = async (userId: number) => {
             u2.name AS challenged_name,
             u2.picture_url AS challenged_picture,
             
-            -- Logic for Challenger Progress
+            -- Live Progress for Challenger
             CASE 
-                WHEN fc.status = 'active' AND fc.challenge_type = 'time' THEN 
+                WHEN fc.challenge_type = 'time' THEN 
                     COALESCE((
                         SELECT SUM(duration_seconds) 
                         FROM reading.reading_sessions 
                         WHERE user_id = fc.challenger_id 
-                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                        AND end_time > fc.start_date 
+                        AND end_time <= fc.end_date
                     ), 0)
-                WHEN fc.status = 'active' AND fc.challenge_type = 'pages' THEN 
+                WHEN fc.challenge_type = 'pages' THEN 
                     COALESCE((
                         SELECT SUM(end_page - start_page) 
                         FROM reading.reading_sessions 
                         WHERE user_id = fc.challenger_id 
-                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                        AND end_time > fc.start_date 
+                        AND end_time <= fc.end_date
                     ), 0)
                 ELSE 0 
             END AS challenger_progress,
             
-            -- Logic for Challenged Progress
+            -- Live Progress for Challenged
             CASE 
-                WHEN fc.status = 'active' AND fc.challenge_type = 'time' THEN 
+                WHEN fc.challenge_type = 'time' THEN 
                     COALESCE((
                         SELECT SUM(duration_seconds) 
                         FROM reading.reading_sessions 
                         WHERE user_id = fc.challenged_id 
-                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                        AND end_time > fc.start_date 
+                        AND end_time <= fc.end_date
                     ), 0)
-                WHEN fc.status = 'active' AND fc.challenge_type = 'pages' THEN 
+                WHEN fc.challenge_type = 'pages' THEN 
                     COALESCE((
                         SELECT SUM(end_page - start_page) 
                         FROM reading.reading_sessions 
                         WHERE user_id = fc.challenged_id 
-                        AND end_time::date BETWEEN fc.start_date AND fc.end_date
+                        AND end_time > fc.start_date 
+                        AND end_time <= fc.end_date
                     ), 0)
                 ELSE 0 
             END AS challenged_progress
