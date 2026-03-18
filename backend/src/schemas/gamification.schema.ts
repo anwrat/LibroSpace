@@ -18,6 +18,6 @@ export const challengeFriendSchema = z.object({
 export const respondToChallengeSchema = z.object({
     body: z.object({
         challengeId: z.number().int().positive({message: "Challenge ID must be a positive integer"}),
-        action: z.enum(["accept", "decline"], {message: "Action must be either 'accept' or 'decline'"})
+        action: z.enum(["accept", "reject"], {message: "Action must be either 'accept' or 'decline'"})
     })
 });

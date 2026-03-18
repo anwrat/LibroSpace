@@ -102,14 +102,14 @@ export default function AllFriendsPage() {
                   <h3 className="font-bold text-gray-900 truncate">{friend.name}</h3>
                   <p className="text-xs text-gray-500 truncate">{friend.email}</p>
                   
-                  <div className="flex gap-3 mt-3">
+                  {/* <div className="flex gap-3 mt-3">
                     <button 
                       onClick={() => handleUnfriend(friend.id)}
                       className="text-xs font-bold text-gray-400 flex items-center gap-1 hover:text-red-500 transition-colors"
                     >
                       <UserMinus size={14} /> Remove
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </Link>
             ))}

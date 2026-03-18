@@ -1,7 +1,7 @@
 import type{ Request,Response } from "express";
 import { getTotalReadingTimeToday } from "../../models/reading/reading_sessions.model.js";
 import { getUserGoalandStreakInfo, increaseStreak, resetStreak, updateDailyGoal } from "../../models/auth/users.model.js";
-import { insertDailyGoalAchievement, checkGoalMetYesterday, getDailyGoalsAchievedDateThisMonth } from "../../models/gamification/daily_goals_achieved.model.js";
+import { insertDailyGoalAchievement, checkGoalMetYesterday, getDailyGoalsAchievedDateThisMonth, checkIfGoalAlreadyAchieved } from "../../models/gamification/daily_goals_achieved.model.js";
 import { createFriendChallenge, acceptChallenge, rejectChallenge, getUserChallenges } from "../../models/gamification/friend_challenges.model.js";
 
 export const getUserStreakandGoal = async(req: Request, res: Response) =>{
@@ -39,8 +39,12 @@ export const evaluateDailyGoal = async(req: Request, res: Response) =>{
         if(totalTimeRead >= dailyGoalInSeconds){
             // Record the achievement
             await insertDailyGoalAchievement(userId, today, totalTimeRead);
-            // Increase streak
-            const newStreak = await increaseStreak(userId);
+            const alreadyAchieved = await checkIfGoalAlreadyAchieved(userId, today);
+            let newStreak = current_streak;
+            if(alreadyAchieved.length === 0){
+                // Increase streak only if this is the first time achieving the goal today
+                newStreak = await increaseStreak(userId);
+            }
             return res.status(200).json({ message: "Congratulations! You've achieved your daily reading goal!", totalTimeRead, newStreak });
         }else{
             return res.status(200).json({ message: "Keep going! You're making progress towards your daily reading goal.", totalTimeRead, current_streak });
