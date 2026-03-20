@@ -37,9 +37,9 @@ export const evaluateDailyGoal = async(req: Request, res: Response) =>{
         const { daily_reading_goal, current_streak } = await getUserGoalandStreakInfo(userId);
         const dailyGoalInSeconds = daily_reading_goal * 60; // Convert minutes to seconds
         if(totalTimeRead >= dailyGoalInSeconds){
+            const alreadyAchieved = await checkIfGoalAlreadyAchieved(userId, today);
             // Record the achievement
             await insertDailyGoalAchievement(userId, today, totalTimeRead);
-            const alreadyAchieved = await checkIfGoalAlreadyAchieved(userId, today);
             let newStreak = current_streak;
             if(alreadyAchieved.length === 0){
                 // Increase streak only if this is the first time achieving the goal today
