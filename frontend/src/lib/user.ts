@@ -163,3 +163,8 @@ export function getUserFriendChallenges(){
 export function respondToChallenge(challengeId: number, action: string){
     return api.post('/api/users/gamification/respond-to-challenge', {challengeId, action});
 }
+
+//For badges related functions
+export function getUserBadges(){
+    return api.get('/api/users/gamification/badges');
+}

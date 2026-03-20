@@ -3,6 +3,7 @@
 import { useState } from "react";
 import UserNav from "@/components/Navbar/UserNav";
 import SessionHistory from "@/components/User/Stats/SessionHistory";
+import UserBadges from "@/components/User/Stats/UserBadges";
 import { History, BarChart3, PieChart } from "lucide-react";
 
 type TabType = 'history' | 'insights' | 'achievements';
@@ -13,7 +14,7 @@ export default function StatsPage() {
     const tabs = [
         { id: 'history', label: 'History', icon: History },
         { id: 'insights', label: 'Insights', icon: BarChart3 },
-        { id: 'achievements', label: 'Milestones', icon: PieChart },
+        { id: 'achievements', label: 'Achievements', icon: PieChart },
     ];
 
     return (
@@ -57,8 +58,12 @@ export default function StatsPage() {
                     )}
 
                     {activeTab === 'achievements' && (
-                        <div className="py-20 text-center text-gray-400 italic bg-white rounded-[2.5rem] border border-gray-100">
-                            Badges and milestones coming soon...
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <header className="mb-8 px-2">
+                                <h2 className="text-2xl font-black text-gray-900">Achievement Showcase</h2>
+                                <p className="text-gray-500 text-sm">Milestones you've conquered in your reading journey.</p>
+                            </header>
+                            <UserBadges />
                         </div>
                     )}
                 </section>

@@ -29,7 +29,7 @@ export const acceptChallenge = async (challengeId: number, userId: number) => {
 };
 
 export const getUserChallenges = async (userId: number) => {
-    // 1. Auto-expire challenges that passed their end_date without a winner
+    // Auto-expire challenges that passed their end_date without a winner
     await pool.query(`
         UPDATE gamification.friend_challenges 
         SET status = 'completed', completed_at = NOW()
@@ -37,7 +37,7 @@ export const getUserChallenges = async (userId: number) => {
         AND NOW() > end_date;
     `);
 
-    // 2. Fetch challenges with live progress
+    // Fetch challenges with live progress and winner details
     const query = `
         SELECT 
             fc.*,
@@ -45,6 +45,7 @@ export const getUserChallenges = async (userId: number) => {
             u1.picture_url AS challenger_picture,
             u2.name AS challenged_name,
             u2.picture_url AS challenged_picture,
+            u3.name AS winner_name, 
             
             -- Live Progress for Challenger
             CASE 
@@ -90,6 +91,7 @@ export const getUserChallenges = async (userId: number) => {
         FROM gamification.friend_challenges fc
         LEFT JOIN auth.users u1 ON fc.challenger_id = u1.id
         LEFT JOIN auth.users u2 ON fc.challenged_id = u2.id
+        LEFT JOIN auth.users u3 ON fc.winner_id = u3.id 
         WHERE fc.challenger_id = $1 OR fc.challenged_id = $1
         ORDER BY fc.created_at DESC;
     `;
