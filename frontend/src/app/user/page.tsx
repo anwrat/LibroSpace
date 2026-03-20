@@ -61,7 +61,7 @@ export default function Dashboard() {
         
         {/* --- STREAK SECTION --- */}
         <section className="mb-10">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-8">
+          {/* <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-8"> */}
             
             {/* Streak Counter */}
             <div className="flex items-center gap-4 border-r border-gray-100 pr-8">
@@ -75,7 +75,7 @@ export default function Dashboard() {
             </div>
 
             {/* Daily Goal Progress */}
-            <div className="flex-1 w-full">
+            {/* <div className="flex-1 w-full">
               <div className="flex justify-between items-end mb-2">
                 <div>
                   <h4 className="font-bold text-gray-900">Daily Goal</h4>
@@ -96,8 +96,8 @@ export default function Dashboard() {
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
         </section>
 
         {/* Currently Reading / To Read*/}

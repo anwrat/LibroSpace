@@ -5,6 +5,7 @@ import UserNav from "@/components/Navbar/UserNav";
 import GoalGauge from "@/components/User/Gamification/GoalGauge";
 import { getUserStreakandGoal } from "@/lib/user";
 import FriendChallenges from "@/components/User/Gamification/FriendChallenges";
+import ChallengeHistory from "@/components/User/Gamification/ChallengeHistory";
 
 export default function ChallengesPage() {
   const [data, setData] = useState<{
@@ -65,6 +66,7 @@ export default function ChallengesPage() {
 
           <div className="lg:col-span-2 space-y-6">
             <FriendChallenges />
+            <ChallengeHistory />
           </div>
         </div>
       </div>
