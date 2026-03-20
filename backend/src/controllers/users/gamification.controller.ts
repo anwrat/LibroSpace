@@ -3,6 +3,7 @@ import { getTotalReadingTimeToday } from "../../models/reading/reading_sessions.
 import { getUserGoalandStreakInfo, increaseStreak, resetStreak, updateDailyGoal } from "../../models/auth/users.model.js";
 import { insertDailyGoalAchievement, checkGoalMetYesterday, getDailyGoalsAchievedDateThisMonth, checkIfGoalAlreadyAchieved } from "../../models/gamification/daily_goals_achieved.model.js";
 import { createFriendChallenge, acceptChallenge, rejectChallenge, getUserChallenges } from "../../models/gamification/friend_challenges.model.js";
+import { getUserBadges } from "../../models/gamification/user_badges.model.js";
 
 export const getUserStreakandGoal = async(req: Request, res: Response) =>{
     try{
@@ -174,5 +175,19 @@ export const getUserFriendChallenges = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal server error while fetching friend challenges"});
+    }
+}
+
+export const getAchievedBadges = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if (!userId) {
+                return res.status(401).json({ message: "Unauthorized" });
+        }
+        const badges = await getUserBadges(userId);
+        return res.status(200).json({success: true, data: badges});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while fetching all achieved badges"});
     }
 }

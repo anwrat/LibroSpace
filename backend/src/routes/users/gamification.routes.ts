@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
-import { evaluateDailyGoal, syncStreak, getUserStreakandGoal, adjustDailyGoal, getAchievementThisMonth, challengeFriend, respondToChallenge, getUserFriendChallenges } from "../../controllers/users/gamification.controller.js";
+import { evaluateDailyGoal, syncStreak, getUserStreakandGoal, adjustDailyGoal, getAchievementThisMonth, challengeFriend, respondToChallenge, getUserFriendChallenges, getAchievedBadges } from "../../controllers/users/gamification.controller.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { updateGoalSchema, challengeFriendSchema, respondToChallengeSchema } from "../../schemas/gamification.schema.js";
 
@@ -17,5 +17,8 @@ router.get('/daily-goal/month', authenticateToken, getAchievementThisMonth);
 router.post('/challenge-friend', authenticateToken, validate(challengeFriendSchema), challengeFriend);
 router.post('/respond-to-challenge', authenticateToken, validate(respondToChallengeSchema), respondToChallenge);
 router.get('/challenges', authenticateToken, getUserFriendChallenges);
+
+//For badges related routes
+router.get('/badges',authenticateToken,getAchievedBadges);
 
 export default router;
