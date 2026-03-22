@@ -129,6 +129,10 @@ export function getAllReadingSessions(){
     return api.get('/api/users/reading/sessions/all');
 }
 
+export function getReadingInsights(){
+    return api.get('/api/users/reading/insights/all');
+}
+
 //For all gamification related functions
 
 export function evaluateDailyGoal(){
