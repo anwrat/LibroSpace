@@ -18,7 +18,6 @@ CREATE TABLE events.exchange_requests (
     sender_id INTEGER REFERENCES auth.users(id),
     receiver_id INTEGER REFERENCES auth.users(id),
     listing_id INTEGER REFERENCES events.book_exchanges(id),
-    message TEXT,
     status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'declined'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

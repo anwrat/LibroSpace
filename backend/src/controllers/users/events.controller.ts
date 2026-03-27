@@ -7,7 +7,12 @@ export const joinBookExchange = async(req: Request, res: Response)=>{
         if(!userId){
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
-        const { book_title, book_author, condition, location_city, description, image_url } = req.body;
+        const { book_title, book_author, condition, location_city, description } = req.body;
+        const file = req.file;
+        if(!file){
+            return res.status(400).json({message:"Book cover is required"});
+        }
+        const image_url = file.path;
         const checkIfJoined = await checkIfAlreadyJoined(userId);
         //A user can only have 1 book for exchange currently available
         //Check if the user has already joined the book exchange
@@ -38,7 +43,7 @@ export const getAllAvailableBooks = async(req: Request, res: Response) =>{
 
 export const requestSwap = async(req: Request, res: Response)=>{
     try{
-        const { listing_id, message } = req.body;
+        const { listing_id} = req.body;
         const senderId = req.user?.id;
         if(!senderId){
             return res.status(401).json({message: "Unauthorized: User not found"});
@@ -58,7 +63,7 @@ export const requestSwap = async(req: Request, res: Response)=>{
             message: "You have already sent a request for this book." 
         });
         }
-        await createExchangeRequest(senderId, receiverId, listing_id, message);
+        await createExchangeRequest(senderId, receiverId, listing_id);
         return res.status(201).json({success: true, message: "Swap request sent"});
     }catch(err){
         console.error(err);

@@ -4,7 +4,7 @@ export const listBookForExchange = async(userId: number, book_title: string, boo
     const query = `
             INSERT INTO events.book_exchanges 
             (user_id, book_title, book_author, condition, location_city, description, image_url)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *;
         `;
     const result = await pool.query(query, [userId, book_title, book_author, condition, location_city, description, image_url]);
@@ -29,13 +29,13 @@ export const getReceiverId = async(listing_id: number) =>{
     return listing.rows[0]?.user_id || null;
 }
 
-export const createExchangeRequest = async(senderId: number, receiverId: number, listing_id: number, message: string)=>{
+export const createExchangeRequest = async(senderId: number, receiverId: number, listing_id: number)=>{
     const query = `
-            INSERT INTO events.exchange_requests (sender_id, receiver_id, listing_id, message)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO events.exchange_requests (sender_id, receiver_id, listing_id)
+            VALUES ($1, $2, $3)
             RETURNING *;
         `;
-    const exchange = await pool.query(query, [senderId, receiverId, listing_id, message]);
+    const exchange = await pool.query(query, [senderId, receiverId, listing_id]);
     return exchange.rows[0];
 }
 

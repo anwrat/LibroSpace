@@ -7,7 +7,7 @@ export const CreateExchangeSchema = z.object({
         condition: z.enum(['New', 'Like New', 'Good', 'Fair', 'Worn']),
         location_city: z.string().min(2, "City is required").max(100),
         description: z.string().max(500).optional(),
-        image_url: z.string().url().optional().or(z.literal('')),
+        // image_url: z.string().url().optional().or(z.literal('')),
     }),
 });
 
