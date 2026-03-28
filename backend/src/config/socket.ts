@@ -120,6 +120,19 @@ export const initSocket = (io: Server) => {
             console.log(`Sent book request from ${senderName} to user ${receiverId}`);
         }
     });
+
+    // Response to Swap Request Notification
+    socket.on('swap_response', ({ receiverId, senderName, bookTitle, status }) => {
+        const receiverSocketId = activeUsers.get(Number(receiverId));
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('receive_swap_update', {
+                message: `${senderName} has ${status} your request for: ${bookTitle}`,
+                status: status,
+                senderName: senderName, 
+                bookTitle: bookTitle    
+            });
+        }
+    });
     
     // 4. Handle Disconnect
     socket.on('disconnect', () => {

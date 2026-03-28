@@ -22,10 +22,9 @@ export default function UserNav() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Separate notification states
   const [pendingFriendRequests, setPendingFriendRequests] = useState(0);
-  const [notificationCount, setNotificationCount] = useState(0); // Challenges
-  const [swapNotificationCount, setSwapNotificationCount] = useState(0); // Book Swaps
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [swapNotificationCount, setSwapNotificationCount] = useState(0); 
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,29 +32,36 @@ export default function UserNav() {
   const fetchInitialData = useCallback(async () => {
     if (!user) return;
     try {
-      // 1. Fetch Friend Requests
-      const reqData = await getPendingFriendRequests();
-      setPendingFriendRequests(reqData.data.pendingRequests.length);
+      const [reqData, msgData, challengeData, swapData] = await Promise.all([
+        getPendingFriendRequests(),
+        getUnreadStatus(),
+        getUserFriendChallenges(),
+        getSwapRequests()
+      ]);
 
-      // 2. Fetch Unread Messages
+      setPendingFriendRequests(reqData.data.pendingRequests?.length || 0);
+
       if (pathname !== "/user/friends/messages") {
-        const msgData = await getUnreadStatus();
         setHasUnreadMessages(msgData.data.hasUnread);
+      } else {
+        setHasUnreadMessages(false);
       }
 
-      // 3. Fetch Pending Challenges
-      const challengeData = await getUserFriendChallenges();
       const pendingChallenges = (challengeData.data.data || []).filter(
         (c: any) => c.status === 'pending' && c.challenged_id === user.id
-      );
-      setNotificationCount(pendingChallenges.length);
+      ).length;
+      setNotificationCount(pendingChallenges);
 
-      // 4. Fetch Pending Book Swap Requests
-      const swapData = await getSwapRequests();
-      const pendingSwaps = (swapData.data.data.received || []).filter(
+      // Count only Pending Received + Accepted Sent
+      const pendingReceived = (swapData.data.data.received || []).filter(
         (s: any) => s.status === 'pending'
-      );
-      setSwapNotificationCount(pendingSwaps.length);
+      ).length;
+
+      const acceptedResponses = (swapData.data.data.sent || []).filter(
+        (s: any) => s.status === 'accepted'
+      ).length;
+
+      setSwapNotificationCount(pendingReceived + acceptedResponses);
 
     } catch (err) {
       console.error("Error fetching nav data: ", err);
@@ -78,24 +84,32 @@ export default function UserNav() {
       if (pathname !== "/user/friends/messages") setHasUnreadMessages(true);
     });
 
-    // Handle Challenge Notifications
     socket.on("receive_challenge", (data) => {
       setNotificationCount(prev => prev + 1);
       toast.success(data.message || "New challenge received!");
     });
 
-    // Handle Book Swap Notifications
     socket.on("receive_book_request", (data) => {
       setSwapNotificationCount(prev => prev + 1);
-      toast.success(data.message || `New swap request for ${data.bookTitle}!`, {
+      toast.success(`New swap request for ${data.bookTitle}!`, {
         icon: '📚',
-        style: {
-          borderRadius: '1.5rem',
-          background: '#14919B',
-          color: '#fff',
-          fontWeight: 'bold'
-        }
+        style: { borderRadius: '1.5rem', background: '#14919B', color: '#fff', fontWeight: 'bold' }
       });
+    });
+
+    socket.on("receive_swap_update", (data) => {
+      // ONLY trigger if the status is accepted
+      if (data.status === 'accepted') {
+        setSwapNotificationCount(prev => prev + 1);
+        toast.success(data.message, {
+          icon: '✅',
+          style: {
+            borderRadius: '1.5rem',
+            background: '#14919B',
+            color: '#fff',
+          }
+        });
+      }
     });
 
     return () => { socket.disconnect(); };
@@ -111,6 +125,8 @@ export default function UserNav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const totalNotifications = notificationCount + swapNotificationCount;
+
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
     const active = pathname === href;
     return (
@@ -120,9 +136,6 @@ export default function UserNav() {
       </Link>
     );
   };
-
-  // Combine counts for the Global Red Dot and the Bell Badge
-  const totalNotifications = notificationCount + swapNotificationCount;
 
   return (
     <>
@@ -157,7 +170,6 @@ export default function UserNav() {
                   {user.picture_url ? <Image src={user.picture_url} alt="User" width={40} height={40} className="object-cover" /> : <User className="text-[#14919B]" size={20} />}
                 </button>
 
-                {/* GLOBAL RED DOT: Show if ANY notification type exists */}
                 {(pendingFriendRequests > 0 || totalNotifications > 0 || hasUnreadMessages) && (
                   <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse" />
                 )}
@@ -222,7 +234,6 @@ export default function UserNav() {
         </div>
       </nav>
 
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-100 p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl animate-in zoom-in duration-300">

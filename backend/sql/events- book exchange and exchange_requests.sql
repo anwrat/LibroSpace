@@ -8,7 +8,7 @@ CREATE TABLE events.book_exchanges (
     location_city VARCHAR(100) NOT NULL,
     description TEXT,
     image_url TEXT,
-    status VARCHAR(20) DEFAULT 'available', -- 'available', 'exchanged', 'hidden'
+    status VARCHAR(20) DEFAULT 'available', -- 'available', 'swapped', 'hidden'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -18,6 +18,6 @@ CREATE TABLE events.exchange_requests (
     sender_id INTEGER REFERENCES auth.users(id),
     receiver_id INTEGER REFERENCES auth.users(id),
     listing_id INTEGER REFERENCES events.book_exchanges(id),
-    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'declined'
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'rejected', 'completed'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

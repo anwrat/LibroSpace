@@ -194,3 +194,7 @@ export function requestSwap(listing_id: number){
 export function getSwapRequests(){
     return api.get('/api/users/events/bookexchange/requests');
 }
+
+export function respondToSwap(request_id: number, new_status: string){
+    return api.patch('/api/users/events/bookexchange/requests/update', {request_id, new_status});
+}

@@ -16,3 +16,10 @@ export const RequestSwapSchema = z.object({
     listing_id: z.number().positive(),
   }),
 });
+
+export const UpdateSwapStatusSchema = z.object({
+  body: z.object({
+    request_id: z.number().positive(),
+    new_status: z.enum(['accepted', 'rejected', 'completed']),
+  }),
+});

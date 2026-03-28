@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getUserFriendChallenges, getSwapRequests } from '@/lib/user';
-import { Bell, Sword, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
+import { Bell, Sword, ArrowRight, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import UserNav from '@/components/Navbar/UserNav';
 import { useAuthContext } from '@/context/AuthContext';
@@ -14,6 +14,8 @@ export default function NotificationsPage() {
   const { user } = useAuthContext();
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchAllNotifications = async () => {
       try {
         const [challengeRes, swapRes] = await Promise.all([
@@ -21,40 +23,63 @@ export default function NotificationsPage() {
           getSwapRequests()
         ]);
 
-        // 1. Format Challenges
+        // 1. Pending Challenges
         const challenges = (challengeRes.data.data || [])
           .filter((c: any) => c.status === 'pending' && c.challenged_id === user?.id)
           .map((c: any) => ({ ...c, type: 'challenge' }));
 
-        // 2. Format Book Requests (Received)
+        // 2. Incoming Book Requests (Pending)
         const bookRequests = (swapRes.data.data.received || [])
           .filter((s: any) => s.status === 'pending')
           .map((s: any) => ({ ...s, type: 'book_request' }));
 
-        setNotifications([...challenges, ...bookRequests].sort((a,b) => 
+        // 3. Sent Book Requests (ONLY Accepted)
+        const swapResponses = (swapRes.data.data.sent || [])
+          .filter((s: any) => s.status === 'accepted')
+          .map((s: any) => ({ ...s, type: 'swap_response' }));
+
+        const all = [...challenges, ...bookRequests, ...swapResponses].sort((a, b) => 
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        ));
+        );
+        
+        setNotifications(all);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-        fetchAllNotifications();
+    fetchAllNotifications();
 
-        // --- SOCKET LISTENER ---
-        const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000", {
-            withCredentials: true
-        });
+    const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000", {
+        withCredentials: true
+    });
 
-        socket.on('new_notification', (data) => {
-            setNotifications(prev => [data, ...prev]);
-        });
+    socket.on('receive_book_request', (data) => {
+        const newNotif = { 
+            ...data, 
+            type: 'book_request', 
+            created_at: new Date().toISOString() 
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+    });
 
-        return () => { socket.disconnect(); };
-    }
+    socket.on('receive_swap_update', (data) => {
+        // Only add to the list if it's an acceptance
+        if (data.status === 'accepted') {
+            const newResponse = {
+                type: 'swap_response',
+                sender_name: data.senderName,
+                book_title: data.bookTitle,
+                status: data.status,
+                created_at: new Date().toISOString()
+            };
+            setNotifications(prev => [newResponse, ...prev]);
+        }
+    });
+
+    return () => { socket.disconnect(); };
   }, [user]);
 
   return (
@@ -78,22 +103,23 @@ export default function NotificationsPage() {
                 <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-5">
                     <div className={`p-4 rounded-2xl ${item.type === 'challenge' ? 'bg-amber-50 text-amber-600' : 'bg-[#14919B]/10 text-[#14919B]'}`}>
-                      {item.type === 'challenge' ? <Sword size={22} /> : <MessageSquare size={22} />}
+                      {item.type === 'challenge' && <Sword size={22} />}
+                      {item.type === 'book_request' && <MessageSquare size={22} />}
+                      {item.type === 'swap_response' && <CheckCircle2 size={22} />}
                     </div>
                     <div>
                       <p className="font-black text-gray-900 text-lg">
-                        {item.type === 'challenge' 
-                            ? `${item.challenger_name} sent a challenge!` 
-                            : `${item.sender_name} wants to swap books!`}
+                        {item.type === 'challenge' && `${item.challenger_name} sent a challenge!`}
+                        {item.type === 'book_request' && `${item.sender_name} wants to swap books!`}
+                        {item.type === 'swap_response' && `${item.sender_name} accepted your swap!`}
                       </p>
                       <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-1">
-                        {item.type === 'challenge' ? "Action required" : `Book: ${item.book_title}`}
+                        {item.type === 'swap_response' ? `Success: ${item.book_title}` : `Book: ${item.book_title}`}
                       </p>
                     </div>
                   </div>
                   <ArrowRight className="text-gray-200 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all" size={24} />
                 </div>
-                {/* Visual Flair */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full -mr-16 -mt-16 group-hover:bg-[#14919B]/5 transition-colors" />
               </Link>
             ))}
