@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions} from "../../models/reading/reading_sessions.model.js";
+import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions, ReadingInsights} from "../../models/reading/reading_sessions.model.js";
 import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
 
@@ -117,3 +117,36 @@ export const fetchAllUserSessions = async(req: Request, res: Response)=>{
         return res.status(500).json({success: false, message: "Internal Server Error while fetching user sessions"});
     }
 }
+
+export const getReadingInsights = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+        const weeklyData = await ReadingInsights(userId);
+
+        // Calculate Derived Insights
+        const totalMinutes = weeklyData.reduce((acc: number, curr: any) => acc + Number(curr.minutes), 0);
+        const totalPages = weeklyData.reduce((acc: number, curr: any) => acc + Number(curr.pages), 0);
+        
+        // Reading Velocity (Pages per Minute)
+        const velocity = totalMinutes > 0 ? (totalPages / totalMinutes).toFixed(2) : 0;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                weeklyData,
+                stats: {
+                    totalMinutesWeek: totalMinutes,
+                    totalPagesWeek: totalPages,
+                    velocity: velocity, 
+                    averageSession: totalMinutes > 0 ? (totalMinutes / weeklyData.filter((d:any) => d.minutes > 0).length || 1).toFixed(0) : 0
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

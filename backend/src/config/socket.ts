@@ -104,6 +104,35 @@ export const initSocket = (io: Server) => {
         });
       }
     });
+
+    // Send Book Swap Request Notification
+    socket.on('send_book_request', ({ receiverId, senderName, bookTitle }) => {
+        // Get the socket ID from activeUsers Map
+        const receiverSocketId = activeUsers.get(Number(receiverId));
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('receive_book_request', {
+                type: 'book_request',
+                message: `${senderName} requested to swap: ${bookTitle}`,
+                bookTitle: bookTitle,
+                senderName: senderName,
+                created_at: new Date()
+            });
+            console.log(`Sent book request from ${senderName} to user ${receiverId}`);
+        }
+    });
+
+    // Response to Swap Request Notification
+    socket.on('swap_response', ({ receiverId, senderName, bookTitle, status }) => {
+        const receiverSocketId = activeUsers.get(Number(receiverId));
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('receive_swap_update', {
+                message: `${senderName} has ${status} your request for: ${bookTitle}`,
+                status: status,
+                senderName: senderName, 
+                bookTitle: bookTitle    
+            });
+        }
+    });
     
     // 4. Handle Disconnect
     socket.on('disconnect', () => {

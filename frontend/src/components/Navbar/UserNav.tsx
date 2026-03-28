@@ -6,7 +6,12 @@ import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
 import { Search, User, UserPlus, LogOut, MessageCircleMore, Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { getPendingFriendRequests, getUnreadStatus, getUserFriendChallenges } from '@/lib/user'; 
+import { 
+  getPendingFriendRequests, 
+  getUnreadStatus, 
+  getUserFriendChallenges, 
+  getSwapRequests 
+} from '@/lib/user'; 
 import { io } from "socket.io-client";
 import { toast } from "react-hot-toast";
 
@@ -17,9 +22,9 @@ export default function UserNav() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Separate notification states
   const [pendingFriendRequests, setPendingFriendRequests] = useState(0);
-  const [notificationCount, setNotificationCount] = useState(0); // For Challenges
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [swapNotificationCount, setSwapNotificationCount] = useState(0); 
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -27,20 +32,36 @@ export default function UserNav() {
   const fetchInitialData = useCallback(async () => {
     if (!user) return;
     try {
-      // 1. Fetch Friend Requests
-      const reqData = await getPendingFriendRequests();
-      setPendingFriendRequests(reqData.data.pendingRequests.length);
+      const [reqData, msgData, challengeData, swapData] = await Promise.all([
+        getPendingFriendRequests(),
+        getUnreadStatus(),
+        getUserFriendChallenges(),
+        getSwapRequests()
+      ]);
 
-      // 2. Fetch Unread Messages
+      setPendingFriendRequests(reqData.data.pendingRequests?.length || 0);
+
       if (pathname !== "/user/friends/messages") {
-        const msgData = await getUnreadStatus();
         setHasUnreadMessages(msgData.data.hasUnread);
+      } else {
+        setHasUnreadMessages(false);
       }
 
-      // Fetch Pending Challenges for the Notification Bell only for receiver
-      const challengeData = await getUserFriendChallenges();
-      const pendingChallenges = (challengeData.data.data || []).filter((c: any) => c.status === 'pending' && c.challenged_id === user.id);
-      setNotificationCount(pendingChallenges.length);
+      const pendingChallenges = (challengeData.data.data || []).filter(
+        (c: any) => c.status === 'pending' && c.challenged_id === user.id
+      ).length;
+      setNotificationCount(pendingChallenges);
+
+      // Count only Pending Received + Accepted Sent
+      const pendingReceived = (swapData.data.data.received || []).filter(
+        (s: any) => s.status === 'pending'
+      ).length;
+
+      const acceptedResponses = (swapData.data.data.sent || []).filter(
+        (s: any) => s.status === 'accepted'
+      ).length;
+
+      setSwapNotificationCount(pendingReceived + acceptedResponses);
 
     } catch (err) {
       console.error("Error fetching nav data: ", err);
@@ -63,17 +84,37 @@ export default function UserNav() {
       if (pathname !== "/user/friends/messages") setHasUnreadMessages(true);
     });
 
-    // Handle Challenge Notifications
     socket.on("receive_challenge", (data) => {
-      // Increment notification count (Bell)
       setNotificationCount(prev => prev + 1);
       toast.success(data.message || "New challenge received!");
+    });
+
+    socket.on("receive_book_request", (data) => {
+      setSwapNotificationCount(prev => prev + 1);
+      toast.success(`New swap request for ${data.bookTitle}!`, {
+        icon: '📚',
+        style: { borderRadius: '1.5rem', background: '#14919B', color: '#fff', fontWeight: 'bold' }
+      });
+    });
+
+    socket.on("receive_swap_update", (data) => {
+      // ONLY trigger if the status is accepted
+      if (data.status === 'accepted') {
+        setSwapNotificationCount(prev => prev + 1);
+        toast.success(data.message, {
+          icon: '✅',
+          style: {
+            borderRadius: '1.5rem',
+            background: '#14919B',
+            color: '#fff',
+          }
+        });
+      }
     });
 
     return () => { socket.disconnect(); };
   }, [user, pathname]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -83,6 +124,8 @@ export default function UserNav() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const totalNotifications = notificationCount + swapNotificationCount;
 
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
     const active = pathname === href;
@@ -127,8 +170,7 @@ export default function UserNav() {
                   {user.picture_url ? <Image src={user.picture_url} alt="User" width={40} height={40} className="object-cover" /> : <User className="text-[#14919B]" size={20} />}
                 </button>
 
-                {/* GLOBAL RED DOT: Show if ANY notification type exists */}
-                {(pendingFriendRequests > 0 || notificationCount > 0 || hasUnreadMessages) && (
+                {(pendingFriendRequests > 0 || totalNotifications > 0 || hasUnreadMessages) && (
                   <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse" />
                 )}
 
@@ -140,15 +182,14 @@ export default function UserNav() {
                     </div>
                     
                     <div className="py-2">
-                      {/* Notifications Link with its own badge */}
                       <Link href="/user/notifications" onClick={() => setIsDropdownOpen(false)} className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                         <div className="flex items-center gap-3">
                           <Bell size={18} className="text-gray-400" />
                           Notifications
                         </div>
-                        {notificationCount > 0 && (
+                        {totalNotifications > 0 && (
                           <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            {notificationCount}
+                            {totalNotifications}
                           </span>
                         )}
                       </Link>
@@ -193,7 +234,6 @@ export default function UserNav() {
         </div>
       </nav>
 
-      {/* Logout Modal*/}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-100 p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl animate-in zoom-in duration-300">
@@ -201,11 +241,11 @@ export default function UserNav() {
               <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
                 <LogOut className="text-red-500" size={32} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Sign Out?</h3>
-              <p className="text-gray-500 mb-8">Are you sure you want to log out?</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 italic">Sign Out?</h3>
+              <p className="text-gray-500 mb-8 font-medium">Are you sure you want to log out of LibroSpace?</p>
               <div className="flex w-full gap-3">
-                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700">Cancel</button>
-                <button onClick={logout} className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl text-sm font-semibold">Logout</button>
+                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onClick={logout} className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 transition-colors">Logout</button>
               </div>
             </div>
           </div>

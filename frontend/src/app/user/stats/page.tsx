@@ -4,6 +4,7 @@ import { useState } from "react";
 import UserNav from "@/components/Navbar/UserNav";
 import SessionHistory from "@/components/User/Stats/SessionHistory";
 import UserBadges from "@/components/User/Stats/UserBadges";
+import ReadingInsights from "@/components/User/Stats/Insights";
 import { History, BarChart3, PieChart } from "lucide-react";
 
 type TabType = 'history' | 'insights' | 'achievements';
@@ -53,7 +54,7 @@ export default function StatsPage() {
                     
                     {activeTab === 'insights' && (
                         <div className="py-20 text-center text-gray-400 italic bg-white rounded-[2.5rem] border border-gray-100">
-                            Graph visualizations coming soon...
+                            <ReadingInsights />
                         </div>
                     )}
 

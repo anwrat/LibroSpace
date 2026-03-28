@@ -129,6 +129,10 @@ export function getAllReadingSessions(){
     return api.get('/api/users/reading/sessions/all');
 }
 
+export function getReadingInsights(){
+    return api.get('/api/users/reading/insights/all');
+}
+
 //For all gamification related functions
 
 export function evaluateDailyGoal(){
@@ -167,4 +171,30 @@ export function respondToChallenge(challengeId: number, action: string){
 //For badges related functions
 export function getUserBadges(){
     return api.get('/api/users/gamification/badges');
+}
+
+//For events related functions
+
+export function getAllExchanges(){
+    return api.get('/api/users/events/bookexchange/books');
+}
+
+export function getJoinStatus(){
+    return api.get('/api/users/events/bookexchange');
+}
+
+export function joinExchange(formData: any){
+    return api.post('/api/users/events/bookexchange/join', formData);
+};
+
+export function requestSwap(listing_id: number){
+    return api.post('/api/users/events/bookexchange/request', {listing_id});
+}
+
+export function getSwapRequests(){
+    return api.get('/api/users/events/bookexchange/requests');
+}
+
+export function respondToSwap(request_id: number, new_status: string){
+    return api.patch('/api/users/events/bookexchange/requests/update', {request_id, new_status});
 }

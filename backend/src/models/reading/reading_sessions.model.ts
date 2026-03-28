@@ -63,3 +63,22 @@ export const getTotalReadingTimeToday = async(user_id: number, today: string)=>{
     const result = await pool.query('SELECT COALESCE(SUM(duration_seconds), 0) as total_time FROM reading.reading_sessions WHERE user_id = $1 AND DATE(end_time) = $2 AND status = $3',[user_id, today, 'completed']);
     return result.rows[0].total_time;
 }
+
+export const ReadingInsights = async(userId: number)=>{
+        const query = `
+            WITH dates AS (
+                SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date AS day
+            )
+            SELECT 
+                to_char(d.day, 'Dy') as label, -- 'Mon', 'Tue', etc.
+                COALESCE(SUM(rs.duration_seconds), 0) / 60 as minutes,
+                COALESCE(SUM(rs.end_page - rs.start_page), 0) as pages
+            FROM dates d
+            LEFT JOIN reading.reading_sessions rs ON DATE(rs.end_time) = d.day AND rs.user_id = $1
+            GROUP BY d.day, d.day
+            ORDER BY d.day ASC;
+        `;
+
+        const result = await pool.query(query, [userId]);
+        return result.rows;
+}
