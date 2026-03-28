@@ -14,10 +14,5 @@ export const CreateExchangeSchema = z.object({
 export const RequestSwapSchema = z.object({
   body: z.object({
     listing_id: z.number().positive(),
-    message: z.string()
-      .min(5, "Message must be at least 5 characters long")
-      .max(300, "Message cannot exceed 300 characters")
-      .optional()
-      .or(z.literal('')),
   }),
 });

@@ -8,14 +8,18 @@ import JoinExchangeModal from "@/components/User/Events/JoinExchangeModal";
 import { getAllExchanges, getJoinStatus, requestSwap, getSwapRequests } from "@/lib/user";
 import { toast } from "react-hot-toast"; 
 import Image from "next/image";
+import { io } from "socket.io-client";
+import { useAuthContext } from "@/context/AuthContext";
+import { BookListing, SwapRequest } from "@/types/bookexchange";
 
 export default function EventsPage() {
   const [hasJoined, setHasJoined] = useState<boolean | null>(null);
-  const [listings, setListings] = useState([]);
-  const [requests, setRequests] = useState({ sent: [], received: [] });
+  const [listings, setListings] = useState<BookListing[]>([]);
+  const [requests, setRequests] = useState<{ sent: SwapRequest[]; received: SwapRequest[] }>({ sent: [], received: [] });
   const [activeTab, setActiveTab] = useState<'browse' | 'requests'>('browse');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { user: currentUser } = useAuthContext();
 
   const fetchData = async () => {
     setLoading(true);
@@ -42,11 +46,21 @@ export default function EventsPage() {
     fetchData();
   }, []);
 
-  const handleRequestSwap = async (listingId: number) => {
+  const handleRequestSwap = async (listing: BookListing) => {
     try {
-      const res = await requestSwap(listingId);
+      const res = await requestSwap(listing.id);
       if (res.data.success) {
         toast.success("Request sent!");
+        // --- SOCKET EMISSION ---
+        const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001", {
+            withCredentials: true
+        });
+        
+        socket.emit('send_book_request', { 
+            receiverId: listing.user_id, 
+            senderName: currentUser?.name, 
+            bookTitle: listing.book_title 
+        });
         // Refresh requests to update button states
         const reqRes = await getSwapRequests();
         setRequests(reqRes.data.data);
@@ -126,7 +140,7 @@ export default function EventsPage() {
                   <ExchangeCard 
                     key={listing.id} 
                     data={listing} 
-                    onRequest={handleRequestSwap}
+                    onRequest={() => handleRequestSwap(listing)}
                     isAlreadyRequested={sentRequestListingIds.has(listing.id)}
                   />
                 ))}
@@ -173,7 +187,7 @@ function RequestListSection({ title, type, data, onAccept }: any) {
       <div className="space-y-4">
         {data.length > 0 ? data.map((item: any) => (
           <div key={item.id} className="group bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 p-4 rounded-3xl transition-all flex items-center gap-4">
-            <div className="relative w-16 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+            <div className="relative w-16 h-20 bg-gray-200 rounded-xl overflow-hidden shrink-0">
               {item.image_url ? (
                 <Image src={item.image_url} alt={item.book_title} fill className="object-cover" />
               ) : <div className="w-full h-full flex items-center justify-center font-black text-gray-400 text-xl">{item.book_title[0]}</div>}
