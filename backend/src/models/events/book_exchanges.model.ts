@@ -47,3 +47,26 @@ export const checkExistingRequest = async (senderId: number, listingId: number) 
   const res = await pool.query(query, [senderId, listingId]);
   return res.rows.length > 0;
 };
+
+export const getSwapRequests = async(userId: number) =>{
+    // Fetch Received Requests 
+    const received = await pool.query(`
+        SELECT er.*, be.book_title, be.image_url, u.name as sender_name, u.picture_url as sender_picture
+        FROM events.exchange_requests er
+        JOIN events.book_exchanges be ON er.listing_id = be.id
+        JOIN auth.users u ON er.sender_id = u.id
+        WHERE be.user_id = $1 AND er.status = 'pending'
+        ORDER BY er.created_at DESC
+    `, [userId]);
+
+    // Fetch Sent Requests 
+    const sent = await pool.query(`
+        SELECT er.*, be.book_title, be.image_url, u.name as owner_name, be.location_city
+        FROM events.exchange_requests er
+        JOIN events.book_exchanges be ON er.listing_id = be.id
+        JOIN auth.users u ON be.user_id = u.id
+        WHERE er.sender_id = $1 AND er.status = 'pending'
+        ORDER BY er.created_at DESC
+    `, [userId]);
+    return { received: received.rows, sent: sent.rows };
+}

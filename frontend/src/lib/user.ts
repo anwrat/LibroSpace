@@ -172,3 +172,25 @@ export function respondToChallenge(challengeId: number, action: string){
 export function getUserBadges(){
     return api.get('/api/users/gamification/badges');
 }
+
+//For events related functions
+
+export function getAllExchanges(){
+    return api.get('/api/users/events/bookexchange/books');
+}
+
+export function getJoinStatus(){
+    return api.get('/api/users/events/bookexchange');
+}
+
+export function joinExchange(formData: any){
+    return api.post('/api/users/events/bookexchange/join', formData);
+};
+
+export function requestSwap(listing_id: number){
+    return api.post('/api/users/events/bookexchange/request', {listing_id});
+}
+
+export function getSwapRequests(){
+    return api.get('/api/users/events/bookexchange/requests');
+}
