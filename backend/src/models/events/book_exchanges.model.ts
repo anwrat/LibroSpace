@@ -90,6 +90,11 @@ export const getSwapRequests = async (userId: number) => {
     return { received: received.rows, sent: sent.rows };
 }
 
+export const getAccepedSwaps = async (userId: number) => {
+    const sent = await pool.query('SELECT er.*, target_be.book_title as target_book_title, u.name as owner_name FROM events.exchange_requests er JOIN events.book_exchanges target_be ON er.listing_id = target_be.id JOIN auth.users u ON target_be.user_id = u.id WHERE er.sender_id = $1 AND er.status = $2 ORDER BY er.created_at DESC', [userId, 'accepted']);
+    return sent.rows;
+}
+
 export const updateSwapStatus = async(requestId: number, newStatus: string) =>{
     const result = await pool.query('UPDATE events.exchange_requests SET status = $1 WHERE id = $2 RETURNING *', [newStatus, requestId]);
     return result.rows[0];

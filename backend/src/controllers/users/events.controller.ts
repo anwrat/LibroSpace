@@ -1,5 +1,5 @@
 import type{ Request, Response } from "express";
-import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus } from "../../models/events/book_exchanges.model.js";
+import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAccepedSwaps} from "../../models/events/book_exchanges.model.js";
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
     try{
@@ -96,6 +96,20 @@ export const getOngoingSwapRequests = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal server error while fetching ongoing swap requests"});
+    }
+}
+
+export const getAcceptedSwapsForUser = async(req: Request, res: Response) => {
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const acceptedSwaps = await getAccepedSwaps(userId);
+        return res.status(200).json({success: true, data: acceptedSwaps});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while fetching accepted swaps"});
     }
 }
 
