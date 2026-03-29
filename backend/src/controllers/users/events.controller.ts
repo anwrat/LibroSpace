@@ -1,5 +1,5 @@
 import type{ Request, Response } from "express";
-import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAccepedSwaps} from "../../models/events/book_exchanges.model.js";
+import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps} from "../../models/events/book_exchanges.model.js";
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
     try{
@@ -105,7 +105,7 @@ export const getAcceptedSwapsForUser = async(req: Request, res: Response) => {
         if(!userId){
             return res.status(401).json({message: "Unauthorized: User not found"});
         }
-        const acceptedSwaps = await getAccepedSwaps(userId);
+        const acceptedSwaps = await getAcceptedSwaps(userId);
         return res.status(200).json({success: true, data: acceptedSwaps});
     }catch(err){
         console.error(err);

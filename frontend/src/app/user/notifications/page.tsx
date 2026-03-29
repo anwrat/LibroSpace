@@ -46,11 +46,11 @@ export default function NotificationsPage() {
             created_at: s.created_at
           }));
 
-        // 3. Accepted Swaps 
+        // 3. Accepted Swaps (Updated with your new backend format)
         const swapResponses = (acceptedRes.data.data || []).map((s: any) => ({
           ...s,
           type: 'swap_response',
-          display_name: s.owner_name,
+          display_name: s.partner_name, // Now correctly shows the "other" person
           display_book: s.target_book_title,
           created_at: s.created_at
         }));
@@ -117,40 +117,54 @@ export default function NotificationsPage() {
           </div>
         ) : notifications.length > 0 ? (
           <div className="space-y-4">
-            {notifications.map((item, idx) => (
-              <Link
-                href={item.type === 'challenge' ? "/user/challenges" : "/user/events"}
-                key={idx}
-                className="block bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-[#14919B]/40 hover:shadow-md transition-all group relative overflow-hidden"
-              >
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 duration-300 ${
-                      item.type === 'challenge' ? 'bg-amber-50 text-amber-600' : 
-                      item.type === 'swap_response' ? 'bg-green-50 text-green-600' : 
-                      'bg-[#14919B]/10 text-[#14919B]'
-                    }`}>
-                      {item.type === 'challenge' && <Sword size={22} />}
-                      {item.type === 'book_request' && <MessageSquare size={22} />}
-                      {item.type === 'swap_response' && <CheckCircle2 size={22} />}
+            {notifications.map((item, idx) => {
+              // Determine where to send the user based on notification type
+              const getHref = () => {
+                if (item.type === 'challenge') return "/user/challenges";
+                if (item.type === 'swap_response') return "/user/friends/messages";
+                return "/user/events";
+              };
+
+              return (
+                <Link
+                  href={getHref()}
+                  key={idx}
+                  className="block bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-[#14919B]/40 hover:shadow-md transition-all group relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-5">
+                      <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 duration-300 ${
+                        item.type === 'challenge' ? 'bg-amber-50 text-amber-600' : 
+                        item.type === 'swap_response' ? 'bg-green-50 text-green-600' : 
+                        'bg-[#14919B]/10 text-[#14919B]'
+                      }`}>
+                        {item.type === 'challenge' && <Sword size={22} />}
+                        {item.type === 'book_request' && <MessageSquare size={22} />}
+                        {item.type === 'swap_response' && <MessageSquare size={22} />}
+                      </div>
+                      <div className="max-w-[85%]">
+                        <p className="font-black text-gray-900 text-lg leading-tight italic">
+                          {item.type === 'challenge' && `${item.display_name} challenged you!`}
+                          {item.type === 'book_request' && `${item.display_name} wants to swap books!`}
+                          {/* Updated text logic for both users */}
+                          {item.type === 'swap_response' && (
+                            <>
+                              Visit messages to talk with <span className="text-[#14919B]">{item.display_name}</span> about swapping <span className="underline underline-offset-4">"{item.display_book}"</span>
+                            </>
+                          )}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mt-2">
+                          {item.type === 'swap_response' ? 'Conversation Ready' : `Book: ${item.display_book}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-gray-900 text-lg leading-tight italic">
-                        {item.type === 'challenge' && `${item.display_name} challenged you!`}
-                        {item.type === 'book_request' && `${item.display_name} wants to swap books!`}
-                        {item.type === 'swap_response' && `${item.display_name} accepted your swap!`}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mt-1">
-                        {item.type === 'swap_response' ? `Confirmed: ${item.display_book}` : `Book: ${item.display_book}`}
-                      </p>
-                    </div>
+                    <ArrowRight className="text-gray-200 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all shrink-0" size={24} />
                   </div>
-                  <ArrowRight className="text-gray-200 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all" size={24} />
-                </div>
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full -mr-16 -mt-16 group-hover:bg-[#14919B]/5 transition-colors" />
-              </Link>
-            ))}
+                  {/* Decorative background element */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full -mr-16 -mt-16 group-hover:bg-[#14919B]/5 transition-colors" />
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">

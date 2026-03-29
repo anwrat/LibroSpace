@@ -90,9 +90,35 @@ export const getSwapRequests = async (userId: number) => {
     return { received: received.rows, sent: sent.rows };
 }
 
-export const getAccepedSwaps = async (userId: number) => {
-    const sent = await pool.query('SELECT er.*, target_be.book_title as target_book_title, u.name as owner_name FROM events.exchange_requests er JOIN events.book_exchanges target_be ON er.listing_id = target_be.id JOIN auth.users u ON target_be.user_id = u.id WHERE er.sender_id = $1 AND er.status = $2 ORDER BY er.created_at DESC', [userId, 'accepted']);
-    return sent.rows;
+export const getAcceptedSwaps = async (userId: number) => {
+    const query = `
+        SELECT 
+            er.id,
+            er.sender_id,
+            er.receiver_id,
+            er.status,
+            er.created_at,
+            be.book_title as target_book_title,
+            -- Determine the 'Partner' (the person the current user is talking to)
+            CASE 
+                WHEN er.sender_id = $1 THEN r_user.name 
+                ELSE s_user.name 
+            END as partner_name,
+            CASE 
+                WHEN er.sender_id = $1 THEN er.receiver_id 
+                ELSE er.sender_id 
+            END as partner_id
+        FROM events.exchange_requests er
+        JOIN events.book_exchanges be ON er.listing_id = be.id
+        JOIN auth.users s_user ON er.sender_id = s_user.id
+        JOIN auth.users r_user ON er.receiver_id = r_user.id
+        WHERE (er.sender_id = $1 OR er.receiver_id = $1) 
+        AND er.status = $2
+        ORDER BY er.created_at DESC
+    `;
+
+    const result = await pool.query(query, [userId, 'accepted']);
+    return result.rows;
 }
 
 export const updateSwapStatus = async(requestId: number, newStatus: string) =>{

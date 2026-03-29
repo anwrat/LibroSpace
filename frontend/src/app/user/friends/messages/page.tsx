@@ -1,21 +1,23 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 import UserNav from "@/components/Navbar/UserNav";
-import { Send, MessageSquare, Search, Loader2, Check, CheckCheck } from "lucide-react";
-import { getAllFriends, getChatHistory, markMessagesAsRead } from "@/lib/user"; 
+import { Send, MessageSquare, Search, Loader2, Check, CheckCheck, BookOpen } from "lucide-react";
+import { getAllFriends, getChatHistory, markMessagesAsRead, getAcceptedSwaps } from "@/lib/user"; 
 import { useAuthContext } from "@/context/AuthContext";
 
 export default function MessagesPage() {
     const { user } = useAuthContext();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [friends, setFriends] = useState<any[]>([]);
+    const [acceptedSwaps, setAcceptedSwaps] = useState<any[]>([]);
     const [selectedFriend, setSelectedFriend] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const [onlineUsers, setOnlineUsers] = useState<number[]>([]);    
+    const [searchQuery, setSearchQuery] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // 1. Initialize Socket Connection
@@ -27,12 +29,10 @@ export default function MessagesPage() {
 
         setSocket(newSocket);
 
-        // Listen for online users broadcast
         newSocket.on("online_users", (list: number[]) => {
             setOnlineUsers(list);
         });
 
-        // Listen for incoming messages
         newSocket.on("receive_message", (message) => {
             setMessages((prev) => {
                 const exists = prev.find(m => m.id === message.id);
@@ -40,13 +40,12 @@ export default function MessagesPage() {
                 return [...prev, message];
             });
 
-            // If we are currently looking at the chat that sent this message, mark it read
+            // Mark as read if the chat is currently open
             if (selectedFriend?.id === message.sender_id) {
                 newSocket.emit("mark_as_read", { senderId: message.sender_id });
             }
         });
 
-        // Listen for "Seen" confirmation (from the person who read your messages)
         newSocket.on("messages_seen", ({ readBy }) => {
             setMessages((prev) => 
                 prev.map(m => m.receiver_id === readBy ? { ...m, is_read: true } : m)
@@ -57,39 +56,67 @@ export default function MessagesPage() {
             setMessages((prev) => [...prev, savedMsg]);
         });
 
-        return () => {
-            newSocket.disconnect();
-        };
-    }, [selectedFriend]); // Re-bind logic when selectedFriend changes to handle auto-read
+        return () => { newSocket.disconnect(); };
+    }, [selectedFriend]);
 
-    // 2. Fetch Friend List
+    // 2. Fetch Data (Friends + Accepted Swaps)
     useEffect(() => {
-        const fetchFriends = async () => {
+        const fetchData = async () => {
             try {
-                const res = await getAllFriends();
-                setFriends(res.data.friends || []);
+                const [friendsRes, swapsRes] = await Promise.all([
+                    getAllFriends(),
+                    getAcceptedSwaps()
+                ]);
+                
+                setFriends(friendsRes.data.friends || []);
+                setAcceptedSwaps(swapsRes.data.data || []);
             } catch (err) {
-                console.error("Error fetching friends:", err);
+                console.error("Error fetching chat data:", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchFriends();
+        fetchData();
     }, []);
 
-    // 3. Load Chat History & Mark as Read
+    // 3. Merge and Unique-ify the Chat List
+    const chatList = useMemo(() => {
+        // Map swaps to a standard format using partner_id and partner_name
+        const swapUsers = acceptedSwaps.map(swap => ({
+            id: swap.partner_id,
+            name: swap.partner_name,
+            isSwapPartner: true,
+            bookTitle: swap.target_book_title
+        }));
+
+        // Combine Friends and Swap Partners
+        const combined = [...friends, ...swapUsers];
+
+        // Deduplicate: If an ID exists twice, merge them into one entry
+        const unique = combined.reduce((acc: any[], current) => {
+            const existing = acc.find(item => Number(item.id) === Number(current.id));
+            if (!existing) {
+                acc.push(current);
+            } else if (current.isSwapPartner) {
+                // If we found a swap entry for an existing friend, upgrade the entry
+                existing.isSwapPartner = true;
+                existing.bookTitle = current.bookTitle;
+            }
+            return acc;
+        }, []);
+
+        // Search Filter
+        return unique.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [friends, acceptedSwaps, searchQuery]);
+
+    // 4. Load Chat History
     useEffect(() => {
         if (selectedFriend) {
             const loadChat = async () => {
                 try {
-                    // Fetch history
                     const res = await getChatHistory(selectedFriend.id);
                     setMessages(res.data.data || []);
-
-                    // Mark as read in Database
                     await markMessagesAsRead(selectedFriend.id);
-
-                    // Notify via socket
                     socket?.emit("mark_as_read", { senderId: selectedFriend.id });
                 } catch (err) {
                     console.error("Error loading chat:", err);
@@ -99,7 +126,7 @@ export default function MessagesPage() {
         }
     }, [selectedFriend, socket]);
 
-    // 4. Auto-scroll
+    // 5. Auto-scroll
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -108,12 +135,10 @@ export default function MessagesPage() {
         e.preventDefault();
         if (!newMessage.trim() || !socket || !selectedFriend) return;
 
-        const messageData = {
+        socket.emit("send_private_message", {
             receiverId: selectedFriend.id,
             content: newMessage.trim(),
-        };
-
-        socket.emit("send_private_message", messageData);
+        });
         setNewMessage("");
     };
 
@@ -129,49 +154,58 @@ export default function MessagesPage() {
             
             <div className="flex-1 mt-20 flex overflow-hidden max-w-7xl mx-auto w-full border-x border-gray-100 bg-white shadow-2xl">
                 
-                {/* Left: Friend List Sidebar */}
+                {/* Left Sidebar */}
                 <aside className="w-80 border-r flex flex-col bg-gray-50/30">
                     <div className="p-6">
-                        <h2 className="text-2xl font-black text-gray-900 mb-4">Messages</h2>
+                        <h2 className="text-2xl font-black text-gray-900 mb-4 italic">Conversations</h2>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
-                                placeholder="Search friends..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search people..." 
                                 className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-10 pr-4 text-sm shadow-sm outline-none focus:ring-2 focus:ring-[#14919B]/20" 
                             />
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {friends.map((friend) => {
-                            const isOnline = onlineUsers.includes(Number(friend.id));
+                        {chatList.length > 0 ? chatList.map((contact) => {
+                            const isOnline = onlineUsers.includes(Number(contact.id));
                             return (
                                 <button 
-                                    key={friend.id}
-                                    onClick={() => setSelectedFriend(friend)}
-                                    className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${
-                                        selectedFriend?.id === friend.id ? "bg-white border-r-4 border-r-[#14919B] shadow-sm" : "hover:bg-gray-100/50"
+                                    key={contact.id}
+                                    onClick={() => setSelectedFriend(contact)}
+                                    className={`w-full flex items-center gap-4 px-6 py-4 transition-all relative ${
+                                        selectedFriend?.id === contact.id ? "bg-white border-r-4 border-r-[#14919B] shadow-sm" : "hover:bg-gray-100/50"
                                     }`}
                                 >
                                     <div className="relative">
                                         <div className="w-12 h-12 rounded-2xl bg-[#14919B]/10 flex items-center justify-center font-bold text-[#14919B] border border-[#14919B]/20">
-                                            {friend.name[0].toUpperCase()}
+                                            {contact.name[0].toUpperCase()}
                                         </div>
                                         <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
                                     </div>
-                                    <div className="text-left flex-1">
-                                        <p className="font-bold text-gray-900 truncate">{friend.name}</p>
-                                        <p className={`text-xs font-medium ${isOnline ? 'text-green-600' : 'text-gray-400'}`}>
-                                            {isOnline ? 'Online' : 'Offline'}
+                                    <div className="text-left flex-1 min-w-0">
+                                        <p className="font-black text-gray-900 truncate flex items-center gap-2">
+                                            {contact.name}
+                                            {contact.isSwapPartner && <BookOpen size={12} className="text-[#14919B]" />}
+                                        </p>
+                                        <p className={`text-[10px] font-black uppercase tracking-wider truncate ${contact.isSwapPartner ? 'text-[#14919B]' : 'text-gray-400'}`}>
+                                            {contact.isSwapPartner ? `Swap: ${contact.bookTitle}` : (isOnline ? 'Online' : 'Offline')}
                                         </p>
                                     </div>
                                 </button>
                             );
-                        })}
+                        }) : (
+                            <div className="p-10 text-center text-gray-400 text-sm italic">
+                                No conversations found
+                            </div>
+                        )}
                     </div>
                 </aside>
 
-                {/* Right: Chat Window */}
+                {/* Right Chat Window */}
                 <section className="flex-1 flex flex-col bg-white">
                     {selectedFriend ? (
                         <>
@@ -180,10 +214,12 @@ export default function MessagesPage() {
                                     <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-[#14919B]">
                                         {selectedFriend.name[0].toUpperCase()}
                                     </div>
-                                    <div>
-                                        <h3 className="font-black text-gray-900 leading-none">{selectedFriend.name}</h3>
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#14919B]">
-                                            {onlineUsers.includes(Number(selectedFriend.id)) ? 'Active Now' : 'Last seen recently'}
+                                    <div className="min-w-0">
+                                        <h3 className="font-black text-gray-900 leading-none italic truncate">{selectedFriend.name}</h3>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#14919B] block mt-1 truncate">
+                                            {selectedFriend.isSwapPartner 
+                                                ? `Coordinating Swap: ${selectedFriend.bookTitle}` 
+                                                : (onlineUsers.includes(Number(selectedFriend.id)) ? 'Active Now' : 'Last seen recently')}
                                         </span>
                                     </div>
                                 </div>
@@ -192,7 +228,6 @@ export default function MessagesPage() {
                             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30">
                                 {messages.map((msg, idx) => {
                                     const isMe = Number(msg.sender_id) === Number(user?.id);
-
                                     return (
                                         <div key={idx} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                                             <div className={`max-w-[75%] px-5 py-3 rounded-[1.8rem] text-sm font-medium shadow-sm ${
@@ -231,7 +266,7 @@ export default function MessagesPage() {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-300">
                             <MessageSquare size={60} strokeWidth={1} className="mb-4 opacity-20" />
-                            <p className="font-bold text-gray-400">Select a conversation</p>
+                            <p className="font-black text-gray-400 italic">Select a conversation to start reading</p>
                         </div>
                     )}
                 </section>
