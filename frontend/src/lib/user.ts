@@ -198,3 +198,11 @@ export function getSwapRequests(){
 export function respondToSwap(request_id: number, new_status: string){
     return api.patch('/api/users/events/bookexchange/requests/update', {request_id, new_status});
 }
+
+export function getAcceptedSwaps(){
+    return api.get('/api/users/events/bookexchange/accepted');
+}
+
+export function completeSwap(request_id: number){
+    return api.post('/api/users/events/bookexchange/complete', {request_id});
+}

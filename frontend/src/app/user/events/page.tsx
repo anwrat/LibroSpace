@@ -63,7 +63,7 @@ export default function EventsPage() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <header className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
               <div>
-                <h1 className="text-4xl font-black text-gray-900 tracking-tight italic">Community Bookshelf</h1>
+                <h1 className="text-4xl font-black text-gray-900 tracking-tight">Book Exchange</h1>
                 <p className="text-gray-500 font-bold">Swap your stories with the world.</p>
               </div>
 
@@ -76,7 +76,7 @@ export default function EventsPage() {
 
             {activeTab === 'browse' && <BrowseTab listings={listings} requests={requests} refresh={fetchData} />}
             {activeTab === 'requests' && <RequestsTab requests={requests} refresh={fetchData} />}
-            {activeTab === 'my-books' && <MyBooksTab myListings={myListings} />}
+            {activeTab === 'my-books' && <MyBooksTab myListings={myListings} setMyListings={setMyListings} />}
           </div>
         )}
       </div>
