@@ -23,3 +23,9 @@ export const UpdateSwapStatusSchema = z.object({
     new_status: z.enum(['accepted', 'rejected', 'completed']),
   }),
 });
+
+export const CompleteSwapSchema = z.object({
+  body: z.object({
+    request_id: z.number().positive(),
+  }),
+});

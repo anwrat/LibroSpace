@@ -1,5 +1,5 @@
 import type{ Request, Response } from "express";
-import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps} from "../../models/events/book_exchanges.model.js";
+import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps, setBookToSwappedAndRequestToCompleted} from "../../models/events/book_exchanges.model.js";
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
     try{
@@ -125,5 +125,16 @@ export const updateSwapRequestStatus = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal server error while updating swap request status"});
+    }
+}
+
+export const completeSwapRequest = async(req: Request, res: Response) =>{
+    try{
+        const { request_id } = req.body;
+        const completedRequest = await setBookToSwappedAndRequestToCompleted(request_id);
+        return res.status(200).json({success: true, data: completedRequest});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while completing swap request"});
     }
 }

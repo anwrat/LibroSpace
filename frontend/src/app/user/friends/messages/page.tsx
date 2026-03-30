@@ -40,7 +40,6 @@ export default function MessagesPage() {
                 return [...prev, message];
             });
 
-            // Mark as read if the chat is currently open
             if (selectedFriend?.id === message.sender_id) {
                 newSocket.emit("mark_as_read", { senderId: message.sender_id });
             }
@@ -59,7 +58,7 @@ export default function MessagesPage() {
         return () => { newSocket.disconnect(); };
     }, [selectedFriend]);
 
-    // 2. Fetch Data (Friends + Accepted Swaps)
+    // 2. Fetch Data
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -79,35 +78,37 @@ export default function MessagesPage() {
         fetchData();
     }, []);
 
-    // 3. Merge and Unique-ify the Chat List
+    // 3. Logic to determine which book belongs to the partner
     const chatList = useMemo(() => {
-        // Map swaps to a standard format using partner_id and partner_name
-        const swapUsers = acceptedSwaps.map(swap => ({
-            id: swap.partner_id,
-            name: swap.partner_name,
-            isSwapPartner: true,
-            bookTitle: swap.target_book_title
-        }));
+        const swapUsers = acceptedSwaps.map(swap => {
+            // If I am the sender, the partner is the receiver (target_book)
+            // If I am the receiver, the partner is the sender (offered_book)
+            const isMeSender = Number(user?.id) === Number(swap.sender_id);
+            const partnerBook = isMeSender ? swap.target_book_title : swap.sender_book_title;
 
-        // Combine Friends and Swap Partners
+            return {
+                id: swap.partner_id,
+                name: swap.partner_name,
+                isSwapPartner: true,
+                bookTitle: partnerBook // This is now context-aware
+            };
+        });
+
         const combined = [...friends, ...swapUsers];
 
-        // Deduplicate: If an ID exists twice, merge them into one entry
         const unique = combined.reduce((acc: any[], current) => {
             const existing = acc.find(item => Number(item.id) === Number(current.id));
             if (!existing) {
                 acc.push(current);
             } else if (current.isSwapPartner) {
-                // If we found a swap entry for an existing friend, upgrade the entry
                 existing.isSwapPartner = true;
                 existing.bookTitle = current.bookTitle;
             }
             return acc;
         }, []);
 
-        // Search Filter
         return unique.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [friends, acceptedSwaps, searchQuery]);
+    }, [friends, acceptedSwaps, searchQuery, user]);
 
     // 4. Load Chat History
     useEffect(() => {
@@ -192,7 +193,7 @@ export default function MessagesPage() {
                                             {contact.isSwapPartner && <BookOpen size={12} className="text-[#14919B]" />}
                                         </p>
                                         <p className={`text-[10px] font-black uppercase tracking-wider truncate ${contact.isSwapPartner ? 'text-[#14919B]' : 'text-gray-400'}`}>
-                                            {contact.isSwapPartner ? `Swap: ${contact.bookTitle}` : (isOnline ? 'Online' : 'Offline')}
+                                            {contact.isSwapPartner ? `Partner's Book: ${contact.bookTitle}` : (isOnline ? 'Online' : 'Offline')}
                                         </p>
                                     </div>
                                 </button>
@@ -218,7 +219,7 @@ export default function MessagesPage() {
                                         <h3 className="font-black text-gray-900 leading-none italic truncate">{selectedFriend.name}</h3>
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#14919B] block mt-1 truncate">
                                             {selectedFriend.isSwapPartner 
-                                                ? `Coordinating Swap: ${selectedFriend.bookTitle}` 
+                                                ? `You get: ${selectedFriend.bookTitle}` 
                                                 : (onlineUsers.includes(Number(selectedFriend.id)) ? 'Active Now' : 'Last seen recently')}
                                         </span>
                                     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getUserFriendChallenges, getSwapRequests, getAcceptedSwaps } from '@/lib/user';
-import { Bell, Sword, ArrowRight, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Bell, Sword, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import UserNav from '@/components/Navbar/UserNav';
 import { useAuthContext } from '@/context/AuthContext';

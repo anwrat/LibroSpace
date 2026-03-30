@@ -202,3 +202,7 @@ export function respondToSwap(request_id: number, new_status: string){
 export function getAcceptedSwaps(){
     return api.get('/api/users/events/bookexchange/accepted');
 }
+
+export function completeSwap(request_id: number){
+    return api.post('/api/users/events/bookexchange/complete', {request_id});
+}
