@@ -15,3 +15,15 @@ export function checkifBookExists(title: string, author: string){
 export function addNewBook(data: FormData){
     return api.post('/api/admin/books/add', data);
 }
+
+export function getAllGenres(){
+    return api.get('/api/admin/genres');
+}
+
+export function addNewGenre(name: string){
+    return api.post('/api/admin/genres/add',{name});
+}
+
+export function deleteGenre(id: number){
+    return api.delete(`/api/admin/genres/${id}`);
+}
