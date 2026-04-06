@@ -118,7 +118,7 @@ export default function Books() {
                             <p className="text-white font-bold text-4xl font-main">{books.length}</p>
                         </div>
                     </div>
-                    <div className="bg-linear-to-r from-purple-600 to-purple-800 rounded-xl p-6 shadow-lg flex items-center gap-4">
+                    <div className="bg-linear-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg flex items-center gap-4">
                         <div className="bg-white/20 p-4 rounded-lg"><Tag size={32} className="text-white" /></div>
                         <div>
                             <p className="text-white/80 font-main text-sm uppercase tracking-wider">Total Genres</p>
