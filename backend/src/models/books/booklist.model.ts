@@ -81,3 +81,62 @@ export const getAllBooksPartialData = async() =>{
     const result = await pool.query('SELECT id,title,author,cover_url FROM books.booklist ORDER BY title ASC');
     return result.rows;
 }
+
+export const updateBookDetails = async (
+    id: number,
+    title: string,
+    author: string,
+    description: string,
+    cover_url: string | null,
+    published_date: string,
+    pageCount: number,
+    genreIds: number[]
+) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Update basic book info (only update cover_url if a new one is provided)
+        const updateQuery = `
+            UPDATE books.booklist 
+            SET title = $1, author = $2, description = $3, 
+                cover_url = COALESCE($4, cover_url), 
+                published_date = $5, pagecount = $6
+            WHERE id = $7
+        `;
+        await client.query(updateQuery, [title, author, description, cover_url, published_date, pageCount, id]);
+
+        // 2. Refresh Genres: Delete old ones and insert new ones
+        await client.query('DELETE FROM books.book_genres WHERE book_id = $1', [id]);
+        
+        if (genreIds && genreIds.length > 0) {
+            const values = genreIds.map((_, i) => `($1, $${i + 2})`).join(',');
+            await client.query(`INSERT INTO books.book_genres (book_id, genre_id) VALUES ${values}`, [id, ...genreIds]);
+        }
+
+        await client.query('COMMIT');
+        return { success: true };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
+export const deleteBookByID = async(id: number) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        // First delete from the junction table
+        await client.query('DELETE FROM books.book_genres WHERE book_id = $1', [id]);
+        // Then delete the book itself
+        await client.query('DELETE FROM books.booklist WHERE id = $1', [id]);
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+}

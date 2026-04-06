@@ -1,10 +1,27 @@
 'use client';
 import AdminNav from "@/components/Navbar/AdminNav";
-import { getAllBooks, getAllGenres, addNewGenre, deleteGenre } from "@/lib/admin";
+import { 
+    getAllBooks, 
+    getAllGenres, 
+    addNewGenre, 
+    deleteGenre, 
+    deleteBook, 
+    getBookByID 
+} from "@/lib/admin";
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Search, Plus, Trash2, Tag } from "lucide-react";
+import { 
+    BookOpen, 
+    ChevronLeft, 
+    ChevronRight, 
+    Search, 
+    Plus, 
+    Trash2, 
+    Tag, 
+    Edit3 
+} from "lucide-react";
 import { Button, TextField } from "@mui/material";
 import AddBookForm from "@/components/Forms/AddBookForm";
+import toast, { Toaster } from "react-hot-toast";
 
 interface BookType {
     id: number;
@@ -13,7 +30,8 @@ interface BookType {
     description: string;
     cover_url: string;
     published_date: string;
-    language: string;
+    pagecount: number;
+    genres?: GenreType[];
 }
 
 interface GenreType {
@@ -25,20 +43,18 @@ export default function Books() {
     const [books, setBooks] = useState<BookType[]>([]);
     const [genres, setGenres] = useState<GenreType[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     
-    // Pagination and Search for Books
     const [bookPage, setBookPage] = useState(1);
     const [bookSearch, setBookSearch] = useState('');
     const booksPerPage = 5;
 
-    // Pagination and Search for Genres
     const [genrePage, setGenrePage] = useState(1);
     const [genreSearch, setGenreSearch] = useState('');
     const [newGenreName, setNewGenreName] = useState('');
     const genresPerPage = 5;
 
     const [showAddBookForm, setShowAddBookForm] = useState(false);
+    const [editingBook, setEditingBook] = useState<BookType | null>(null);
 
     const fetchData = async () => {
         try {
@@ -50,7 +66,7 @@ export default function Books() {
             setBooks(booksRes.data.books || []);
             setGenres(genresRes.data.data || []);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to load data');
+            toast.error('Failed to load dashboard data');
         } finally {
             setLoading(false);
         }
@@ -58,37 +74,52 @@ export default function Books() {
 
     useEffect(() => { fetchData(); }, []);
 
-    // --- GENRE HANDLERS ---
+    const handleDeleteBook = async (id: number) => {
+        try {
+            const check = await getBookByID(id);
+            if (!check.data) return toast.error("Book not found");
+
+            if (!confirm(`Are you sure you want to delete "${check.data.title}"?`)) return;
+
+            const res = await deleteBook(id);
+            if (res.status === 200) {
+                toast.success("Book deleted successfully");
+                fetchData();
+            }
+        } catch (err) {
+            toast.error("Error deleting book");
+        }
+    };
+
     const handleAddGenre = async () => {
         if (!newGenreName.trim()) return;
         try {
             await addNewGenre(newGenreName.trim());
             setNewGenreName('');
-            fetchData(); // Refresh list
+            fetchData();
         } catch (err) {
-            alert("Failed to add genre");
+            toast.error("Failed to add genre");
         }
     };
 
     const handleDeleteGenre = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this genre?")) return;
+        if (!confirm("Delete this genre?")) return;
         try {
             await deleteGenre(id);
             fetchData();
         } catch (err) {
-            alert("Failed to delete genre");
+            toast.error("Failed to delete genre");
         }
     };
 
-    // --- FILTERING & PAGINATION LOGIC ---
     const filteredBooks = books.filter(b => b.title.toLowerCase().includes(bookSearch.toLowerCase()));
     const filteredGenres = genres.filter(g => g.name.toLowerCase().includes(genreSearch.toLowerCase()));
 
     const currentBooks = filteredBooks.slice((bookPage - 1) * booksPerPage, bookPage * booksPerPage);
     const currentGenres = filteredGenres.slice((genrePage - 1) * genresPerPage, genrePage * genresPerPage);
 
-    const totalBookPages = Math.ceil(filteredBooks.length / booksPerPage);
-    const totalGenrePages = Math.ceil(filteredGenres.length / genresPerPage);
+    const totalBookPages = Math.ceil(filteredBooks.length / booksPerPage) || 1;
+    const totalGenrePages = Math.ceil(filteredGenres.length / genresPerPage) || 1;
 
     if (loading) return (
         <div className="flex min-h-screen bg-gray-50">
@@ -102,6 +133,7 @@ export default function Books() {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <AdminNav />
+            <Toaster position="top-center" />
             
             <div className="flex-1 ml-64 p-8">
                 <div className="mb-8">
@@ -109,7 +141,6 @@ export default function Books() {
                     <p className="text-gray-600 font-main">Manage your books and categorization system</p>
                 </div>
 
-                {/* STATS SECTION */}
                 <div className="grid grid-cols-2 gap-6 mb-8">
                     <div className="bg-linear-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg flex items-center gap-4">
                         <div className="bg-white/20 p-4 rounded-lg"><BookOpen size={32} className="text-white" /></div>
@@ -127,7 +158,6 @@ export default function Books() {
                     </div>
                 </div>
 
-                {/* --- BOOKS MANAGEMENT SECTION --- */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-black font-main text-gray-800 uppercase tracking-tight">Books Inventory</h2>
@@ -154,25 +184,37 @@ export default function Books() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-gray-100">
-                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">ID</th>
                                 <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Title</th>
                                 <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Author</th>
-                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Published</th>
+                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {currentBooks.map((book) => (
                                 <tr key={book.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="py-4 px-4 text-sm font-bold text-gray-400">#{book.id}</td>
                                     <td className="py-4 px-4 text-sm font-black text-gray-800">{book.title}</td>
                                     <td className="py-4 px-4 text-sm text-gray-600 italic">{book.author}</td>
-                                    <td className="py-4 px-4 text-sm text-gray-500 text-right">{new Date(book.published_date).getFullYear()}</td>
+                                    <td className="py-4 px-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => setEditingBook(book)}
+                                                className="p-2 text-[#14919B] hover:bg-[#14919B]/10 rounded-lg transition-all"
+                                            >
+                                                <Edit3 size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteBook(book.id)}
+                                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
 
-                    {/* Book Pagination */}
                     <div className="mt-6 flex justify-between items-center">
                         <span className="text-xs font-bold text-gray-400 uppercase">Page {bookPage} of {totalBookPages}</span>
                         <div className="flex gap-2">
@@ -182,9 +224,7 @@ export default function Books() {
                     </div>
                 </div>
 
-                {/* --- GENRE MANAGEMENT SECTION --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Add Genre Form */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
                         <h3 className="text-lg font-black font-main text-gray-800 mb-4 uppercase tracking-tight">Create Genre</h3>
                         <div className="space-y-4">
@@ -207,7 +247,6 @@ export default function Books() {
                         </div>
                     </div>
 
-                    {/* Genre List Table */}
                     <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-black font-main text-gray-800 uppercase tracking-tight">Genre List</h3>
@@ -225,7 +264,6 @@ export default function Books() {
                         <table className="w-full">
                             <thead>
                                 <tr className="text-left border-b border-gray-50">
-                                    <th className="pb-3 text-xs font-black text-gray-400 uppercase tracking-widest">Genre ID</th>
                                     <th className="pb-3 text-xs font-black text-gray-400 uppercase tracking-widest">Name</th>
                                     <th className="pb-3 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
@@ -233,7 +271,6 @@ export default function Books() {
                             <tbody>
                                 {currentGenres.map((genre) => (
                                     <tr key={genre.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                                        <td className="py-3 text-sm font-bold text-gray-400">#{genre.id}</td>
                                         <td className="py-3 text-sm font-black text-gray-800">{genre.name}</td>
                                         <td className="py-3 text-right">
                                             <button 
@@ -248,7 +285,6 @@ export default function Books() {
                             </tbody>
                         </table>
 
-                        {/* Genre Pagination */}
                         <div className="mt-6 flex justify-between items-center">
                             <span className="text-[10px] font-black text-gray-300 uppercase italic">Total {filteredGenres.length} Categories</span>
                             <div className="flex gap-2">
@@ -259,12 +295,15 @@ export default function Books() {
                     </div>
                 </div>
 
-                {/* Add Book Modal Overlay */}
-                {showAddBookForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={()=>setShowAddBookForm(false)}/>
+                {(showAddBookForm || editingBook) && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowAddBookForm(false); setEditingBook(null); }}/>
                         <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                            <AddBookForm onClose={()=>setShowAddBookForm(false)} onRefresh={fetchData}/>
+                            <AddBookForm 
+                                initialData={editingBook} 
+                                onClose={() => { setShowAddBookForm(false); setEditingBook(null); }} 
+                                onRefresh={fetchData} 
+                            />
                         </div>
                     </div>
                 )}

@@ -1,5 +1,5 @@
 import type{ Request, Response } from "express";
-import { createBook,getAllBooks, findBookByTitleandAuthor } from "../../models/books/booklist.model.js";
+import { createBook,getAllBooks, findBookByTitleandAuthor, deleteBookByID, updateBookDetails } from "../../models/books/booklist.model.js";
 import { createGenre, checkIfGenreExists, getAllGenres, deleteGenre } from "../../models/books/genres.model.js";
 import { deleteGenreSchema } from "../../schemas/book.schema.js";
 
@@ -66,6 +66,34 @@ export const fetchAllBooks = async(req: Request, res: Response) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal Server Error while fetching books" });
+    }
+}
+
+export const updateBook = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, author, description, published_date, pageCount, genres } = req.body;
+        const file = req.file; 
+        
+        const cover_url = file ? file.path : null;
+        const genreIds = typeof genres === 'string' ? JSON.parse(genres) : genres;
+
+        await updateBookDetails(Number(id), title, author, description, cover_url, published_date, pageCount, genreIds);
+        
+        res.status(200).json({ message: "Book updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Error updating book" });
+    }
+};
+
+export const deleteBook = async(req: Request, res: Response) => {
+    try{
+        const {id} = req.params;
+        const deletedBook = await deleteBookByID(Number(id));
+        return res.status(200).json({success: true, message: "Book deleted successfully", data: deletedBook});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while deleting book"});
     }
 }
 
