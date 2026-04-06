@@ -134,9 +134,23 @@ export default function BookDetailsPage() {
                 {/* --- RIGHT COLUMN: DETAILS --- */}
                 <div className="flex-1">
                     <div className="mb-8">
-                        <span className="text-[#14919B] font-bold text-sm uppercase tracking-widest bg-[#14919B]/10 px-4 py-1.5 rounded-full">
-                            {book.genre || "Book Details"}
-                        </span>
+                        {/* Render multiple spans if genres exist, otherwise show a default */}
+                        <div className="flex flex-wrap gap-2">
+                            {book.genres && book.genres.length > 0 ? (
+                                book.genres.map((g: string, index: number) => (
+                                    <span 
+                                        key={index}
+                                        className="text-[#14919B] font-bold text-xs uppercase tracking-widest bg-[#14919B]/10 px-4 py-1.5 rounded-full"
+                                    >
+                                        {g}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-gray-400 font-bold text-xs uppercase tracking-widest bg-gray-100 px-4 py-1.5 rounded-full">
+                                    No Genre
+                                </span>
+                            )}
+                        </div>
                         <h1 className="text-5xl font-black text-gray-900 mt-4 tracking-tight leading-tight">
                             {book.title}
                         </h1>

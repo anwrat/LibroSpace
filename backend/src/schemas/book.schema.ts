@@ -1,4 +1,5 @@
 import z from "zod";
+import { id } from "zod/locales";
 
 export const getAllBooksPartialDataSchema = z.array(z.object({
     id: z.number().int(),
@@ -10,3 +11,13 @@ export const getAllBooksPartialDataSchema = z.array(z.object({
 export const BookIdParamSchema = z.object({
   id: z.string().regex(/^\d+$/, "Book ID must be a number").transform(Number)
 });
+
+export const createGenreSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, "Genre name is required").max(100, "Genre name must be less than 100 characters")
+  })
+});
+
+export const deleteGenreSchema = z.object({
+  id: z.string().regex(/^\d+$/, "Genre ID must be a number").transform(Number)
+})
