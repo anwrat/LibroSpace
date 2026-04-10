@@ -7,11 +7,14 @@ import {
   getBookbyID, 
   addBooktoShelf, 
   checkBookInShelf, 
-  startReadingSession 
+  startReadingSession,
+  getQuotesForBook,
+  toggleSaveQuote,
+  getSavedQuotes 
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import toast, { Toaster } from "react-hot-toast";
-import { Play, Loader2, BookmarkPlus } from "lucide-react";
+import { Play, Loader2, BookmarkPlus, Heart } from "lucide-react";
 
 type ShelfType = "read" | "currently_reading" | "to_read" | null;
 
@@ -25,9 +28,11 @@ export default function BookDetailsPage() {
     const [showModal, setShowModal] = useState(false);
     const [currentShelf, setCurrentShelf] = useState<ShelfType>(null);
     const [updating, setUpdating] = useState(false);
+    const [quotes, setQuotes] = useState<any[]>([]);
+    const [savedQuoteIds, setSavedQuoteIds] = useState<Set<number>>(new Set());
 
     useEffect(() => {
-        async function fetchBook() {
+        async function fetchData() {
             try {
                 const response = await getBookbyID(Number(bookId));
                 setBook(response.data);
@@ -36,14 +41,44 @@ export default function BookDetailsPage() {
                 if(shelfCheck.data.inShelf){
                   setCurrentShelf(shelfCheck.data.shelf); 
                 }
+                
+                const [quotesRes, savedRes] = await Promise.all([
+                    getQuotesForBook(Number(bookId)),
+                    getSavedQuotes()
+                ]);
+
+                setQuotes(quotesRes.data.data);
+                const savedIds = new Set<number>(savedRes.data.data.map((q: any) => q.id));
+                setSavedQuoteIds(savedIds);
             } catch (error) {
                 console.error("Error fetching books details: ", error);
             } finally {
                 setLoading(false);
             }
         }
-        if (bookId) fetchBook();
+        if (bookId) fetchData();
     }, [bookId]);
+
+    const handleToggleSave = async (quoteId: number) => {
+        try {
+            const res = await toggleSaveQuote(quoteId);
+            
+            // Update local state UI instantly
+            setSavedQuoteIds(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(quoteId)) {
+                    newSet.delete(quoteId);
+                    toast.success("Removed from saved");
+                } else {
+                    newSet.add(quoteId);
+                    toast.success("Quote saved!");
+                }
+                return newSet;
+            });
+        } catch (error) {
+            toast.error("Failed to update saved quotes");
+        }
+    };
 
     const handleStartSession = async () => {
         setUpdating(true);
@@ -172,7 +207,7 @@ export default function BookDetailsPage() {
                         <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
                            Description
                         </h2>
-                        <p className="text-gray-600 leading-relaxed text-lg italic">
+                        <p className="text-gray-600 leading-relaxed text-lg">
                             {book.description || "No description available for this book."}
                         </p>
                     </div>
@@ -191,6 +226,53 @@ export default function BookDetailsPage() {
                     </button>
                 </div>
             </div>
+
+            {/* --- QUOTES SECTION --- */}
+            <section className="mt-20">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-black text-gray-900">Notable Quotes</h2>
+                    <span className="text-sm font-bold text-[#14919B] bg-[#14919B]/10 px-4 py-1 rounded-full">
+                        {quotes.length} Quotes found
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {quotes.map((quote) => {
+                        const isSaved = savedQuoteIds.has(quote.id);
+                        return (
+                            <div key={quote.id} className="group bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-2 h-full bg-[#14919B]/20 group-hover:bg-[#14919B] transition-colors" />
+                                
+                                <button 
+                                    onClick={() => handleToggleSave(quote.id)}
+                                    className="absolute top-6 right-6 p-2 rounded-full transition-all active:scale-90"
+                                >
+                                    <Heart 
+                                        size={24} 
+                                        className={isSaved ? "fill-red-500 text-red-500" : "text-gray-300 hover:text-red-400"} 
+                                    />
+                                </button>
+
+                                <p className="text-gray-700 text-base leading-relaxed italic mb-4 pr-8">
+                                    "{quote.content}"
+                                </p>
+                                
+                                {quote.page_number && (
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        Page {quote.page_number}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {quotes.length === 0 && (
+                    <div className="text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
+                        <p className="text-gray-400 font-medium">No quotes shared for this book yet.</p>
+                    </div>
+                )}
+            </section>
 
             {/* --- SHELF SELECTION MODAL --- */}
             {showModal && (

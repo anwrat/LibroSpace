@@ -36,4 +36,8 @@ export const deleteBookQuoteSchema = z.object({
 
 export const getQuotesByBookIdSchema = z.object({
     id: z.string().regex(/^\d+$/, "Book ID must be a number").transform(Number)
-})
+});
+
+export const toggleSaveQuoteSchema = z.object({
+    quote_id: z.string().regex(/^\d+$/, "Quote ID must be a number").transform(Number)
+});
