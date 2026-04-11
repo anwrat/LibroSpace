@@ -1,7 +1,8 @@
 import type{ Request, Response } from "express";
 import { createBook,getAllBooks, findBookByTitleandAuthor, deleteBookByID, updateBookDetails } from "../../models/books/booklist.model.js";
 import { createGenre, checkIfGenreExists, getAllGenres, deleteGenre } from "../../models/books/genres.model.js";
-import { deleteGenreSchema } from "../../schemas/book.schema.js";
+import { deleteGenreSchema, deleteBookQuoteSchema } from "../../schemas/book.schema.js";
+import { createBookQuote, deleteBookQuote, getAllBookQuotes} from "../../models/books/book_quotes.model.js";
 
 export const addNewBook = async (req: Request, res: Response) => {
     try {
@@ -97,6 +98,7 @@ export const deleteBook = async(req: Request, res: Response) => {
     }
 }
 
+// For genre related functions
 export const fetchAllGenres = async(req: Request, res: Response)=>{
     try{
         const genres = await getAllGenres();
@@ -134,5 +136,41 @@ export const removeGenre = async(req: Request, res: Response)=>{
         console.error(err);
         res.status(500).json({message: "Internal Server Error while deleting genre"});
     }   
+}
+
+//For book quotes related functions
+export const addBookQuote = async(req: Request, res: Response)=>{
+    try{
+        const {book_id, quote, pageNumber} = req.body;
+        const newQuote = await createBookQuote(book_id, quote, pageNumber);
+        return res.status(201).json({success: true, message: "Book quote added successfully"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while adding book quote"});
+    }
+}
+
+export const removeBookQuote = async(req: Request, res: Response)=>{
+    try{
+        const {id} = deleteBookQuoteSchema.parse(req.params);
+        const deletedQuote = await deleteBookQuote(Number(id));
+        if(!deletedQuote){
+            return res.status(404).json({message: "Book quote not found"});
+        }
+        return res.status(200).json({success: true, message: "Book quote deleted successfully", data: deletedQuote});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while deleting book quote"});
+    }
+}
+
+export const getAllQuotes = async(req: Request, res: Response)=>{
+    try{
+        const quotes = await getAllBookQuotes();
+        return res.status(200).json({success: true,data: quotes});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching book quotes"});
+    }
 }
 

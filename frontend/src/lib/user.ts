@@ -20,6 +20,17 @@ export function addBooktoShelf(bookId: number, shelf: string){
     return api.post('/api/users/shelf',{bookId, shelf});
 }
 
+export function getQuotesForBook(bookId: number){
+    return api.get(`/api/users/books/quotes/book/${bookId}`);
+}
+
+export function toggleSaveQuote(quoteId: number){
+    return api.post(`/api/users/books/quotes/save/${quoteId}`);
+}
+
+export function getSavedQuotes(){
+    return api.get('/api/users/books/quotes/saved');
+}
 
 //For friends related functions
 export function getOtherUserProfile(targetId: number){

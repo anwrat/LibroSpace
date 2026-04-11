@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuthContext } from "@/context/AuthContext";
 import Image from 'next/image';
-import { Search, User, UserPlus, LogOut, MessageCircleMore, Bell } from 'lucide-react';
+import { Search, User, UserPlus, LogOut, MessageCircleMore, Bell, Quote, SwatchBook } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { 
   getPendingFriendRequests, 
@@ -217,6 +217,16 @@ export default function UserNav() {
                             {pendingFriendRequests}
                           </span>
                         )}
+                      </Link>
+
+                      <Link href="/user/profile/shelf" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <SwatchBook size={18} className="text-gray-400" />
+                        Your Shelves
+                      </Link>
+
+                      <Link href="/user/profile/quotes" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <Quote size={18} className="text-gray-400" />
+                        Saved Quotes
                       </Link>
                       
                       <button onClick={() => { setIsDropdownOpen(false); setShowLogoutConfirm(true); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left">

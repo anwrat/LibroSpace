@@ -21,3 +21,23 @@ export const createGenreSchema = z.object({
 export const deleteGenreSchema = z.object({
   id: z.string().regex(/^\d+$/, "Genre ID must be a number").transform(Number)
 })
+
+export const createBookQuoteSchema = z.object({
+  body: z.object({
+    book_id: z.number().int(),
+    quote: z.string().min(1, "Quote content is required"),
+    pageNumber: z.number().int().positive("Page number must be a positive integer")
+  })
+});
+
+export const deleteBookQuoteSchema = z.object({
+  id: z.string().regex(/^\d+$/, "Quote ID must be a number").transform(Number)
+});
+
+export const getQuotesByBookIdSchema = z.object({
+    id: z.string().regex(/^\d+$/, "Book ID must be a number").transform(Number)
+});
+
+export const toggleSaveQuoteSchema = z.object({
+    quote_id: z.string().regex(/^\d+$/, "Quote ID must be a number").transform(Number)
+});

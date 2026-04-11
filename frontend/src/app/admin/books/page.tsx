@@ -6,7 +6,10 @@ import {
     addNewGenre, 
     deleteGenre, 
     deleteBook, 
-    getBookByID 
+    getBookByID,
+    addBookQuote,
+    removeBookQuote,
+    getAllQuotes 
 } from "@/lib/admin";
 import { useEffect, useState } from "react";
 import { 
@@ -17,9 +20,11 @@ import {
     Plus, 
     Trash2, 
     Tag, 
-    Edit3 
+    Edit3,
+    Quote,
+    X
 } from "lucide-react";
-import { Button, TextField } from "@mui/material";
+import { Button, TextField, Autocomplete, Box, IconButton } from "@mui/material";
 import AddBookForm from "@/components/Forms/AddBookForm";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -56,15 +61,24 @@ export default function Books() {
     const [showAddBookForm, setShowAddBookForm] = useState(false);
     const [editingBook, setEditingBook] = useState<BookType | null>(null);
 
+    const [quotes, setQuotes] = useState<any[]>([]);
+    const [quotePage, setQuotePage] = useState(1);
+    const quotesPerPage = 5;
+
+    const [showQuoteForm, setShowQuoteForm] = useState(false);
+    const [newQuote, setNewQuote] = useState({ text: '', page: '', bookId: '' });
+
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [booksRes, genresRes] = await Promise.all([
+            const [booksRes, genresRes, quotesRes] = await Promise.all([
                 getAllBooks(),
-                getAllGenres()
+                getAllGenres(),
+                getAllQuotes()
             ]);
             setBooks(booksRes.data.books || []);
             setGenres(genresRes.data.data || []);
+            setQuotes(quotesRes.data.data || []);
         } catch (err: any) {
             toast.error('Failed to load dashboard data');
         } finally {
@@ -78,9 +92,7 @@ export default function Books() {
         try {
             const check = await getBookByID(id);
             if (!check.data) return toast.error("Book not found");
-
             if (!confirm(`Are you sure you want to delete "${check.data.title}"?`)) return;
-
             const res = await deleteBook(id);
             if (res.status === 200) {
                 toast.success("Book deleted successfully");
@@ -109,6 +121,30 @@ export default function Books() {
             fetchData();
         } catch (err) {
             toast.error("Failed to delete genre");
+        }
+    };
+
+    const handleAddQuote = async () => {
+        if (!newQuote.text || !newQuote.bookId) return toast.error("Fill required fields");
+        try {
+            await addBookQuote(Number(newQuote.bookId), newQuote.text, Number(newQuote.page));
+            toast.success("Quote added!");
+            setShowQuoteForm(false);
+            setNewQuote({ text: '', page: '', bookId: '' });
+            fetchData();
+        } catch (err) {
+            toast.error("Failed to add quote");
+        }
+    };
+
+    const handleDeleteQuote = async (quoteId: number) => {
+        if (!confirm("Delete this quote?")) return;
+        try {
+            await removeBookQuote(quoteId);
+            toast.success("Quote removed");
+            fetchData();
+        } catch (err) {
+            toast.error("Failed to delete quote");
         }
     };
 
@@ -224,6 +260,7 @@ export default function Books() {
                     </div>
                 </div>
 
+                {/* Genre and Quote Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
                         <h3 className="text-lg font-black font-main text-gray-800 mb-4 uppercase tracking-tight">Create Genre</h3>
@@ -284,17 +321,143 @@ export default function Books() {
                                 ))}
                             </tbody>
                         </table>
-
-                        <div className="mt-6 flex justify-between items-center">
-                            <span className="text-[10px] font-black text-gray-300 uppercase italic">Total {filteredGenres.length} Categories</span>
-                            <div className="flex gap-2">
-                                <button onClick={() => setGenrePage(p => Math.max(1, p-1))} className="p-1.5 border rounded-md hover:bg-gray-50 disabled:opacity-30" disabled={genrePage === 1}><ChevronLeft size={16}/></button>
-                                <button onClick={() => setGenrePage(p => Math.min(totalGenrePages, p+1))} className="p-1.5 border rounded-md hover:bg-gray-50 disabled:opacity-30" disabled={genrePage === totalGenrePages}><ChevronRight size={16}/></button>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
+                {/* Quotes Management Section */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-black font-main text-gray-800 uppercase tracking-tight">Book Quotes</h2>
+                        <Button 
+                            variant="contained" 
+                            startIcon={<Plus />}
+                            sx={{bgcolor:'#14919B', borderRadius: '12px'}}
+                            onClick={() => setShowQuoteForm(true)}
+                        >
+                            Add New Quote
+                        </Button>
+                    </div>
+
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-gray-100">
+                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Quote</th>
+                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Book</th>
+                                <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {quotes.slice((quotePage-1)*quotesPerPage, quotePage*quotesPerPage).map((q) => (
+                                <tr key={q.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-4 px-4 text-sm text-gray-700 italic">"{q.content.substring(0, 80)}..."</td>
+                                    <td className="py-4 px-4 text-sm font-bold text-[#14919B]">{q.book_title}</td>
+                                    <td className="py-4 px-4 text-right">
+                                        <button onClick={() => handleDeleteQuote(q.id)} className="text-red-400 hover:text-red-600">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* ENHANCED ADD QUOTE MODAL */}
+                {showQuoteForm && (
+                    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md transition-all">
+                        <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                            {/* Modal Header */}
+                            <div className="bg-[#14919B] p-6 text-white flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white/20 p-2 rounded-lg">
+                                        <Quote size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold font-main">Add Book Quote</h3>
+                                        <p className="text-white/70 text-xs">Curate meaningful lines from your collection</p>
+                                    </div>
+                                </div>
+                                <IconButton onClick={() => setShowQuoteForm(false)} sx={{ color: 'white' }}>
+                                    <X size={20} />
+                                </IconButton>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-8 space-y-6">
+                                {/* Searchable Book Autocomplete */}
+                                <Autocomplete
+                                    options={books}
+                                    getOptionLabel={(option) => option.title}
+                                    onChange={(_, newValue) => {
+                                        setNewQuote({ ...newQuote, bookId: newValue ? String(newValue.id) : '' });
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField 
+                                            {...params} 
+                                            label="Search & Select Book" 
+                                            variant="outlined"
+                                            placeholder="Type book title..."
+                                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                        />
+                                    )}
+                                    renderOption={(props, option) => (
+                                        <Box component="li" {...props} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', py: 1 }}>
+                                            <span className="font-bold text-sm">{option.title}</span>
+                                            <span className="text-xs text-gray-500 italic">{option.author}</span>
+                                        </Box>
+                                    )}
+                                />
+
+                                <TextField 
+                                    fullWidth 
+                                    multiline 
+                                    rows={4} 
+                                    label="Quote Content" 
+                                    placeholder="Enter the text exactly as it appears in the book..."
+                                    variant="outlined"
+                                    onChange={(e) => setNewQuote({...newQuote, text: e.target.value})}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                />
+
+                                <TextField 
+                                    fullWidth 
+                                    label="Page Number" 
+                                    type="number" 
+                                    variant="outlined"
+                                    onChange={(e) => setNewQuote({...newQuote, page: e.target.value})}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                />
+
+                                <div className="flex gap-4 pt-2">
+                                    <Button 
+                                        fullWidth 
+                                        variant="outlined" 
+                                        onClick={() => setShowQuoteForm(false)}
+                                        sx={{ borderRadius: '12px', py: 1.5, color: '#666', borderColor: '#ddd' }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button 
+                                        fullWidth 
+                                        variant="contained" 
+                                        onClick={handleAddQuote}
+                                        sx={{ 
+                                            bgcolor: '#14919B', 
+                                            borderRadius: '12px', 
+                                            py: 1.5, 
+                                            boxShadow: '0 4px 12px rgba(20, 145, 155, 0.3)',
+                                            '&:hover': { bgcolor: '#0d6169' }
+                                        }}
+                                    >
+                                        Save Quote
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Book Form Modal */}
                 {(showAddBookForm || editingBook) && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowAddBookForm(false); setEditingBook(null); }}/>

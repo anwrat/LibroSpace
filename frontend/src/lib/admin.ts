@@ -39,3 +39,16 @@ export function addNewGenre(name: string){
 export function deleteGenre(id: number){
     return api.delete(`/api/admin/genres/${id}`);
 }
+
+//For book quotes related functions
+export function addBookQuote(book_id: number, quote: string, pageNumber: number){
+    return api.post('/api/admin/quotes/add',{book_id, quote, pageNumber});
+}
+
+export function removeBookQuote(id: number){
+    return api.delete(`/api/admin/quotes/${id}`);
+}
+
+export function getAllQuotes(){
+    return api.get('/api/admin/quotes');
+}
