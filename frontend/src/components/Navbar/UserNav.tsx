@@ -219,12 +219,12 @@ export default function UserNav() {
                         )}
                       </Link>
 
-                      <Link href="/user/shelf" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                      <Link href="/user/profile/shelf" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                         <SwatchBook size={18} className="text-gray-400" />
                         Your Shelves
                       </Link>
 
-                      <Link href="/user/profile" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                      <Link href="/user/profile/quotes" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                         <Quote size={18} className="text-gray-400" />
                         Saved Quotes
                       </Link>
