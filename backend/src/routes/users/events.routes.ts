@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
-import { CreateExchangeSchema, RequestSwapSchema, UpdateSwapStatusSchema, CompleteSwapSchema } from "../../schemas/events.schema.js";
-import { getAllAvailableBooks, joinBookExchange, requestSwap, checkifUserJoined, getOngoingSwapRequests, updateSwapRequestStatus, getAcceptedSwapsForUser, completeSwapRequest } from "../../controllers/users/events.controller.js";
+import { CreateExchangeSchema, RequestSwapSchema, UpdateSwapStatusSchema, CompleteSwapSchema,SubmitQuoteRequestSchema } from "../../schemas/events.schema.js";
+import { getAllAvailableBooks, joinBookExchange, requestSwap, checkifUserJoined, getOngoingSwapRequests, updateSwapRequestStatus, getAcceptedSwapsForUser, completeSwapRequest, submitQuoteRequest } from "../../controllers/users/events.controller.js";
 import { bookExchangeImgUpload } from "../../middleware/imgupload/bookexchangeimg.middleware.js";
 
 const router = Router();
@@ -16,6 +16,9 @@ router.get('/bookexchange/requests', authenticateToken, getOngoingSwapRequests);
 router.patch('/bookexchange/requests/update', authenticateToken, validate(UpdateSwapStatusSchema), updateSwapRequestStatus);
 router.get('/bookexchange/accepted', authenticateToken, getAcceptedSwapsForUser);
 router.post('/bookexchange/complete', authenticateToken, validate(CompleteSwapSchema), completeSwapRequest);
+
+//For quote requests
+router.post('/quoterequest', authenticateToken, validate(SubmitQuoteRequestSchema), submitQuoteRequest);
 
 
 export default router;
