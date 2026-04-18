@@ -26,6 +26,6 @@ export const getPendingRequests = async(userId: number) =>{
 }
 
 export const getRelationshipStatusandDetails = async(userId: number, targetId: number) =>{
-    const result = await pool.query('SELECT u.id,u.name,u.email,u.picture_url,u.created_at,EXISTS(SELECT 1 FROM friends.friendships WHERE (requester_id = $1 AND addressee_id = $2 AND status = 1) OR (requester_id = $2 AND addressee_id = $1 AND status = 1)) AS are_friends, EXISTS(SELECT 1 FROM friends.friendships WHERE requester_id = $1 AND addressee_id = $2 AND status = 0) AS request_sent, EXISTS(SELECT 1 FROM friends.friendships WHERE requester_id = $2 AND addressee_id = $1 AND status = 0) AS request_received FROM auth.users u WHERE u.id = $2;',[userId, targetId]);
+    const result = await pool.query('SELECT u.id,u.name,u.email,u.picture_url,u.created_at,u.level,EXISTS(SELECT 1 FROM friends.friendships WHERE (requester_id = $1 AND addressee_id = $2 AND status = 1) OR (requester_id = $2 AND addressee_id = $1 AND status = 1)) AS are_friends, EXISTS(SELECT 1 FROM friends.friendships WHERE requester_id = $1 AND addressee_id = $2 AND status = 0) AS request_sent, EXISTS(SELECT 1 FROM friends.friendships WHERE requester_id = $2 AND addressee_id = $1 AND status = 0) AS request_received FROM auth.users u WHERE u.id = $2;',[userId, targetId]);
     return result.rows[0];
 }

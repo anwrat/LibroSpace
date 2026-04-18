@@ -109,7 +109,9 @@ export default function OthersProfile() {
         {/* --- PROFILE HEADER --- */}
         <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 mb-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="h-36 w-36 rounded-[2rem] bg-gray-100 overflow-hidden border-4 border-[#14919B]/10 relative shadow-inner">
+{/* Avatar Section with Level Badge */}
+          <div className="relative shrink-0">
+            <div className="h-36 w-36 rounded-[2rem] bg-gray-100 overflow-hidden border-4 border-white shadow-xl relative">
               {data?.picture_url ? (
                 <Image src={data.picture_url} fill className="object-cover" alt="Profile" />
               ) : (
@@ -118,6 +120,15 @@ export default function OthersProfile() {
                 </div>
               )}
             </div>
+            
+            {/* --- THE LEVEL BADGE --- */}
+            <div className="absolute -bottom-2 -right-2 bg-white p-1 rounded-xl shadow-md border border-gray-50">
+                <div className="bg-[#14919B] text-white px-3 py-1 rounded-lg font-black flex items-center gap-1">
+                    <span className="text-[10px] uppercase opacity-80">Lv</span>
+                    <span className="text-lg leading-none">{data?.level ?? 1}</span>
+                </div>
+            </div>
+          </div>
 
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-3xl font-black">{data?.name}</h1>
