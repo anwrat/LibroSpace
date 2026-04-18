@@ -1,5 +1,6 @@
 import type{ Request, Response } from "express";
 import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps, setBookToSwappedAndRequestToCompleted} from "../../models/events/book_exchanges.model.js";
+import { newQuoteRequest } from "../../models/events/quote_requests.model.js";
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
     try{
@@ -136,5 +137,21 @@ export const completeSwapRequest = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal server error while completing swap request"});
+    }
+}
+
+//For quotes request related 
+export const submitQuoteRequest = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const { bookId, text, pageNumber } = req.body;
+        const newRequest = await newQuoteRequest(userId, bookId, text, pageNumber);
+        return res.status(201).json({success: true, message: "Quote request submitted successfully", data: newRequest});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while submitting quote request"});
     }
 }

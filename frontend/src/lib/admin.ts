@@ -52,3 +52,11 @@ export function removeBookQuote(id: number){
 export function getAllQuotes(){
     return api.get('/api/admin/quotes');
 }
+
+export function getAllQuoteRequests(){
+    return api.get('/api/admin/quotes/requests');
+}
+
+export function updateQuoteRequestStatus(requestId: number, status: string, admin_feedback: string){
+    return api.post('/api/admin/quotes/requests/update',{requestId, status, admin_feedback});
+}

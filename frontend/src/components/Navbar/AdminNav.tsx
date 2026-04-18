@@ -9,7 +9,8 @@ import {
     MessageSquare, 
     Flag,
     ChevronLeft,
-    ChevronRight 
+    ChevronRight,
+    Send 
 } from "lucide-react";
 import { useState } from "react";
 
@@ -42,6 +43,7 @@ export default function AdminNav(){
     const menuItems = [
         { label: 'Users', path: 'users', icon: Users },
         { label: 'Books', path: 'books', icon: BookOpen },
+        { label: 'Requests', path: 'requests', icon: Send },
         { label: 'Community', path: 'community', icon: MessageSquare },
         { label: 'Reports', path: 'reports', icon: Flag }
     ];

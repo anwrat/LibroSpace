@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { id } from 'zod/locales';
 
 export const CreateExchangeSchema = z.object({
     body: z.object({
@@ -29,3 +30,15 @@ export const CompleteSwapSchema = z.object({
     request_id: z.number().positive(),
   }),
 });
+
+export const SubmitQuoteRequestSchema = z.object({
+  body: z.object({
+    bookId: z.number().positive(),
+    text: z.string().min(1, "Quote text is required").max(1000),
+    pageNumber: z.number().positive(),
+  }),
+});
+
+export const GetQuoteRequestDetailsSchema = z.object({
+  id: z.number().positive(),
+})

@@ -10,11 +10,12 @@ import {
   startReadingSession,
   getQuotesForBook,
   toggleSaveQuote,
-  getSavedQuotes 
+  getSavedQuotes,
+  submitQuoteRequest 
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import toast, { Toaster } from "react-hot-toast";
-import { Play, Loader2, BookmarkPlus, Heart } from "lucide-react";
+import { Play, Loader2, BookmarkPlus, Heart, Plus } from "lucide-react";
 
 type ShelfType = "read" | "currently_reading" | "to_read" | null;
 
@@ -26,6 +27,9 @@ export default function BookDetailsPage() {
     const [book, setBook] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [addQuotesModal, setAddQuotesModal] = useState(false);
+    const [quoteText, setQuoteText] = useState("");
+    const [quotePage, setQuotePage] = useState<number>(0); 
     const [currentShelf, setCurrentShelf] = useState<ShelfType>(null);
     const [updating, setUpdating] = useState(false);
     const [quotes, setQuotes] = useState<any[]>([]);
@@ -118,6 +122,20 @@ export default function BookDetailsPage() {
         if (!currentShelf) return "Add to My Shelf";
         return `Shelf: ${currentShelf.replace('_', ' ').toUpperCase()}`;
     };
+
+    const handleSubmitQuoteRequest = async (text: string, pageNumber: number) => {
+        setUpdating(true);
+        try {
+            await submitQuoteRequest(Number(bookId), text, pageNumber);
+            toast.success("Quote request submitted!");
+            setAddQuotesModal(false);
+        } catch (error) {
+            console.error("Error submitting quote request:", error);
+            toast.error("Failed to submit quote request.");
+        } finally {
+            setUpdating(false);
+        }
+    }
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center">
@@ -236,6 +254,11 @@ export default function BookDetailsPage() {
                     </span>
                 </div>
 
+                <button onClick={()=>setAddQuotesModal(true)} disabled={updating} className="flex items-center gap-2 bg-[#14919B] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#0f7178] transition-all shadow-lg active:scale-95 disabled:opacity-50 mb-8">
+                    <Plus size={22} />
+                    Add A Quote
+                </button>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {quotes.map((quote) => {
                         const isSaved = savedQuoteIds.has(quote.id);
@@ -316,6 +339,67 @@ export default function BookDetailsPage() {
                     </div>
                 </div>
             )}
+
+            {addQuotesModal && (
+            <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
+                <div 
+                    className="absolute inset-0 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300" 
+                    onClick={() => !updating && setAddQuotesModal(false)}
+                />
+                
+                <div className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-[#14919B]/10 p-2 rounded-xl">
+                            <Plus className="text-[#14919B]" size={24} />
+                        </div>
+                        <h3 className="text-2xl font-black text-gray-900">Share a Quote</h3>
+                    </div>
+                    <p className="text-gray-500 text-sm mb-8">Your contribution will be reviewed by the community before appearing live.</p>
+                    
+                    <div className="flex flex-col gap-6">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-2">Quote Content</label>
+                            <textarea 
+                                value={quoteText}
+                                onChange={(e) => setQuoteText(e.target.value)}
+                                placeholder="What resonated with you?"
+                                className="w-full p-5 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#14919B] focus:bg-white transition-all outline-none text-gray-700 min-h-[150px] resize-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 ml-2">Page Number</label>
+                            <input 
+                                type="number"
+                                value={quotePage}
+                                onChange={(e) => setQuotePage(Number(e.target.value))}
+                                placeholder="e.g. 42"
+                                className="w-full p-5 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#14919B] focus:bg-white transition-all outline-none text-gray-700"
+                            />
+                        </div>
+
+                        <button
+                            disabled={updating || quoteText.trim().length < 5 || quotePage == 0 || isNaN(quotePage)}
+                            onClick={() => {
+                                handleSubmitQuoteRequest(quoteText, Number(quotePage));
+                                setQuoteText(""); // Reset form
+                                setQuotePage(0);
+                            }}
+                            className="w-full py-5 rounded-2xl font-black text-white bg-gray-900 hover:bg-[#14919B] transition-all shadow-xl disabled:opacity-50 disabled:bg-gray-400 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            {updating ? <Loader2 className="animate-spin" size={20} /> : "Submit for Review"}
+                        </button>
+                    </div>
+
+                    <button 
+                        onClick={() => setAddQuotesModal(false)}
+                        className="mt-6 w-full text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors uppercase tracking-widest"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        )}
         </main>
     );
 }

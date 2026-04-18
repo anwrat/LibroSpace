@@ -7,6 +7,7 @@ import { getBookDetailsbyID } from "../../controllers/users/books.controller.js"
 import { bookImgUpload } from "../../middleware/imgupload/bookimg.middleware.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { createGenreSchema, createBookQuoteSchema } from "../../schemas/book.schema.js";
+import { fetchAllQuoteRequests, updateQuoteStatus } from "../../controllers/admin/events.controller.js";
 
 const router = Router();
 
@@ -29,5 +30,7 @@ router.delete('/genres/:id', authenticateToken, authorizeAdmin, removeGenre);
 router.post('/quotes/add', authenticateToken, authorizeAdmin, validate(createBookQuoteSchema), addBookQuote);
 router.delete('/quotes/:id', authenticateToken, authorizeAdmin, removeBookQuote);
 router.get('/quotes', authenticateToken, authorizeAdmin, getAllQuotes);
+router.get('/quotes/requests', authenticateToken, authorizeAdmin, fetchAllQuoteRequests);
+router.post('/quotes/requests/update', authenticateToken, authorizeAdmin, updateQuoteStatus);
 
 export default router;

@@ -32,6 +32,10 @@ export function getSavedQuotes(){
     return api.get('/api/users/books/quotes/saved');
 }
 
+export function submitQuoteRequest(bookId: number, text: string, pageNumber: number){
+    return api.post('/api/users/events/quoterequest', {bookId, text, pageNumber});
+}
+
 //For friends related functions
 export function getOtherUserProfile(targetId: number){
     return api.get(`/api/users/friends/profile/${targetId}`);
