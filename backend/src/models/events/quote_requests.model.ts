@@ -21,6 +21,16 @@ export const getQuoteRequestById = async(requestId: number) =>{
     return request.rows[0];
 }
 
+export const getAllQuoteRequests = async() =>{
+    const requests = await pool.query(
+            `SELECT qr.*, u.name as requester_name, b.title as book_title
+             FROM events.quote_requests qr
+             JOIN auth.users u ON qr.user_id = u.id
+             JOIN books.booklist b ON qr.book_id = b.id
+             ORDER BY qr.created_at DESC`
+        );
+    return requests.rows;
+}
 
 export const approveQuoteRequest = async(requestId: number, book_id: number, text: string, pageNumber: number)=>{
     const client = await pool.connect();
@@ -42,4 +52,12 @@ export const approveQuoteRequest = async(requestId: number, book_id: number, tex
     } finally {
         client.release();
     }
+}
+
+export const rejectQuoteRequest = async(requestId: number, admin_feedback: string) =>{
+    const rejectedRequest = await pool.query(
+            `UPDATE events.quote_requests SET status = 'rejected', admin_feedback = $2 WHERE id = $1 RETURNING *`,
+            [requestId, admin_feedback]
+    );
+    return rejectedRequest.rows[0];
 }

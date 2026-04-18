@@ -5,22 +5,23 @@ DECLARE
     v_total_time BIGINT;
     v_wins INTEGER;
     v_streak INTEGER;
+    v_quote_count INTEGER; -- New variable for quotes
     v_badge RECORD;
 BEGIN
     -- 1. Identify the User ID based on the triggering table
-    -- TG_TABLE_NAME is a built-in variable that tells us which table fired the trigger
     IF TG_TABLE_NAME = 'reading_sessions' THEN
         v_target_user_id := NEW.user_id;
     ELSIF TG_TABLE_NAME = 'friend_challenges' THEN
         v_target_user_id := NEW.winner_id;
+    ELSIF TG_TABLE_NAME = 'activity_log' THEN -- New trigger source
+        v_target_user_id := NEW.user_id;
     END IF;
 
-    -- Safety check: if we can't find a user ID, stop here
     IF v_target_user_id IS NULL THEN
         RETURN NEW;
     END IF;
 
-    -- 2. Gather Stats using the identified v_target_user_id
+    -- 2. Gather Stats
     SELECT COALESCE(SUM(duration_seconds), 0) INTO v_total_time 
     FROM reading.reading_sessions WHERE user_id = v_target_user_id;
     
@@ -30,7 +31,13 @@ BEGIN
     SELECT current_streak INTO v_streak 
     FROM auth.users WHERE id = v_target_user_id;
 
-    -- 3. Loop through badges the user DOES NOT have yet
+    -- Count approved quotes from the activity log
+    SELECT COUNT(*) INTO v_quote_count 
+    FROM events.activity_log 
+    WHERE user_id = v_target_user_id 
+    AND activity_type = 'QUOTE_SUBMISSION';
+
+    -- 3. Loop through unearned badges
     FOR v_badge IN 
         SELECT b.* FROM gamification.badges b
         WHERE b.id NOT IN (SELECT badge_id FROM gamification.user_badges WHERE user_id = v_target_user_id)
@@ -45,6 +52,10 @@ BEGIN
 
         -- Logic for Challenge Wins
         ELSIF v_badge.criteria_type = 'challenges_won' AND v_wins >= v_badge.criteria_threshold THEN
+            INSERT INTO gamification.user_badges (user_id, badge_id) VALUES (v_target_user_id, v_badge.id);
+
+        -- NEW: Logic for Quote Submissions
+        ELSIF v_badge.criteria_type = 'quote_approved' AND v_quote_count >= v_badge.criteria_threshold THEN
             INSERT INTO gamification.user_badges (user_id, badge_id) VALUES (v_target_user_id, v_badge.id);
         END IF;
     END LOOP;
@@ -67,4 +78,12 @@ CREATE TRIGGER trg_check_badges_challenges
 AFTER UPDATE ON gamification.friend_challenges
 FOR EACH ROW
 WHEN (NEW.status = 'completed' AND NEW.winner_id IS NOT NULL)
+EXECUTE FUNCTION gamification.check_and_award_badges();
+
+DROP TRIGGER IF EXISTS trg_check_badges_quotes ON events.activity_log;
+
+CREATE TRIGGER trg_check_badges_quotes
+AFTER INSERT ON events.activity_log
+FOR EACH ROW
+WHEN (NEW.activity_type = 'QUOTE_SUBMISSION')
 EXECUTE FUNCTION gamification.check_and_award_badges();
