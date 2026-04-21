@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../middleware/validation/validate.middleware.js";
-import { CreateCommunitySchema, CreateDiscussionSchema, AddCommentSchema } from "../../schemas/communities.schema.js";
-import { addNewCommunity, joinCommunityasMember, leaveACommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership, startDiscussion, getAllDiscussionsByCommunityId, addCommentToDiscussion, getAllComments, getDiscussionDetailsById } from "../../controllers/users/communities.controller.js";
+import { CreateCommunitySchema, CreateDiscussionSchema, AddCommentSchema, ChangeMemberRoleSchema } from "../../schemas/communities.schema.js";
+import { addNewCommunity, joinCommunityasMember, leaveACommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership, startDiscussion, getAllDiscussionsByCommunityId, addCommentToDiscussion, getAllComments, getDiscussionDetailsById, getAllMembersByCommunity, changeMemberRole, checkUserRole } from "../../controllers/users/communities.controller.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { communityImgUpload } from "../../middleware/imgupload/communityimg.middleware.js";
 
@@ -14,6 +14,11 @@ router.get('/:id',authenticateToken,getCommunityDetailsbyID);
 router.get('/:id/membership', authenticateToken, checkUserMembership);
 router.post('/:id/membership', authenticateToken, joinCommunityasMember);
 router.delete('/:id/membership', authenticateToken, leaveACommunity);
+
+//Members related routes
+router.get('/:id/members/all', authenticateToken, getAllMembersByCommunity);
+router.get('/:id/members/role', authenticateToken, checkUserRole);
+router.post('/:id/members/role', authenticateToken, validate(ChangeMemberRoleSchema), changeMemberRole);
 
 //Discussions
 router.post('/:id/discussions',authenticateToken, validate(CreateDiscussionSchema), startDiscussion);

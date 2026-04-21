@@ -7,15 +7,19 @@ import {
   checkCommunityMembership, 
   getAllDiscussions, 
   joinCommunity,
-  leaveCommunity
+  leaveCommunity,
+  getAllMembers, 
+  checkUserRole,
+  changeMemberRole
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
 import { 
   Users, Calendar, ShieldCheck, MessageSquarePlus, 
-  MessageSquare, Loader2 
+  MessageSquare, Loader2, UserCog, Crown
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
+import { toast } from "react-hot-toast";
 
 export default function CommunityDetailsPage() {
   const params = useParams();
@@ -24,13 +28,14 @@ export default function CommunityDetailsPage() {
 
   const [community, setCommunity] = useState<any>(null);
   const [discussions, setDiscussions] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isMember, setIsMember] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [discLoading, setDiscLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Initial Data Fetch
   const fetchData = async () => {
     try {
       const res = await getCommunitybyId(communityId);
@@ -40,7 +45,11 @@ export default function CommunityDetailsPage() {
       setIsMember(membership.data.isMember);
 
       if (membership.data.isMember) {
-        fetchDiscussions();
+        await Promise.all([
+            fetchDiscussions(),
+            fetchMembersList(),
+            fetchCurrentUserRole()
+        ]);
       }
     } catch (err) {
       console.error("Error fetching community data:", err);
@@ -49,7 +58,6 @@ export default function CommunityDetailsPage() {
     }
   };
 
-  // Fetch Discussions separately (used on load and after joining)
   const fetchDiscussions = async () => {
     setDiscLoading(true);
     try {
@@ -62,31 +70,60 @@ export default function CommunityDetailsPage() {
     }
   };
 
+  const fetchMembersList = async () => {
+    try {
+        const res = await getAllMembers(communityId);
+        setMembers(res.data.data || []);
+    } catch (err) {
+        console.error("Error fetching members:", err);
+    }
+  };
+
+  const fetchCurrentUserRole = async () => {
+    try {
+        const res = await checkUserRole(communityId);
+        setUserRole(res.data.data); // returns 'mentor', 'moderator', or 'member'
+    } catch (err) {
+        console.error("Error fetching role:", err);
+    }
+  };
+
   useEffect(() => {
     if (communityId) fetchData();
   }, [communityId]);
 
-  // Handle Join/Leave Toggle
   const handleMembershipToggle = async () => {
     setActionLoading(true);
     try {
       if (isMember) {
         await leaveCommunity(communityId);
         setIsMember(false);
-        setDiscussions([]); // Clear private discussions
+        setDiscussions([]);
+        setMembers([]);
+        setUserRole(null);
       } else {
         await joinCommunity(communityId);
         setIsMember(true);
-        fetchDiscussions(); // Immediately fetch discussions now that they are in
+        fetchData(); // Refresh everything
       }
-      
-      // Refresh community data to update the member count
-      const res = await getCommunitybyId(communityId);
-      setCommunity(res.data);
     } catch (err) {
       console.error("Action failed:", err);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleUpdateRole = async (memberId: number, newRole: string) => {
+    try {
+        setActionLoading(true);
+        await changeMemberRole(communityId, memberId, newRole );
+        toast.success("Role updated successfully");
+        fetchMembersList(); // Refresh the list to show new roles
+    } catch (err) {
+        toast.error("Failed to update role");
+        console.error(err);
+    } finally {
+        setActionLoading(false);
     }
   };
 
@@ -96,8 +133,6 @@ export default function CommunityDetailsPage() {
     </div>
   );
 
-  if (!community) return <div className="pt-32 text-center">Community not found.</div>;
-
   return (
     <div className="min-h-screen bg-gray-50 font-main">
       <UserNav />
@@ -106,17 +141,17 @@ export default function CommunityDetailsPage() {
       <div className="bg-white border-b border-gray-200 pt-24 pb-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-end gap-6">
           <div className="relative h-32 w-32 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl bg-gray-100">
-            {community.photo_url ? (
+            {community?.photo_url ? (
               <Image src={community.photo_url} alt={community.name} fill className="object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-gray-400"><Users size={40} /></div>
             )}
           </div>
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-black text-gray-900">{community.name}</h1>
+            <h1 className="text-4xl font-black text-gray-900">{community?.name}</h1>
             <p className="text-gray-500 mt-2 flex items-center justify-center md:justify-start gap-2 font-medium">
               <Users size={18} className="text-[#14919B]" />
-              {community.member_count || 0} Members
+              {community?.member_count || 0} Members
             </p>
           </div>
 
@@ -129,19 +164,12 @@ export default function CommunityDetailsPage() {
                 : "bg-[#14919B] text-white hover:bg-[#0f7178] shadow-lg shadow-[#14919B]/20"
             }`}
           >
-            {actionLoading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : isMember ? (
-              "Leave Group"
-            ) : (
-              "Join Group"
-            )}
+            {actionLoading ? <Loader2 className="animate-spin" size={20} /> : isMember ? "Leave Group" : "Join Group"}
           </button>
         </div>
       </div>
 
       <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Discussions Area */}
         <div className="lg:col-span-2 space-y-6">
           {isMember ? (
             <>
@@ -156,10 +184,8 @@ export default function CommunityDetailsPage() {
               </div>
 
               {discLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="animate-spin text-[#14919B]" />
-                </div>
-              ) : discussions.length > 0 ? (
+                <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#14919B]" /></div>
+              ) : (
                 <div className="space-y-4">
                   {discussions.map((post) => (
                     <div 
@@ -167,26 +193,10 @@ export default function CommunityDetailsPage() {
                       onClick={() => router.push(`/user/community/${communityId}/discussions/${post.id}`)}
                       className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-2xl bg-[#14919B]/5 flex items-center justify-center font-bold text-[#14919B]">
-                          {post.username?.[0].toUpperCase() || "U"}
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 leading-none">{post.username}</p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">
-                            {new Date(post.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
                       <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-3 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                      <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="bg-white p-12 rounded-[2.5rem] border border-dashed text-center">
-                  <MessageSquare size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-gray-500 font-medium">No discussions yet. Be the first to post!</p>
                 </div>
               )}
             </>
@@ -194,31 +204,64 @@ export default function CommunityDetailsPage() {
             <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 text-center shadow-sm">
               <ShieldCheck size={48} className="mx-auto text-gray-200 mb-4" />
               <h3 className="text-xl font-black text-gray-900">Member-only discussions</h3>
-              <p className="text-gray-500 mt-2">Join this community to participate in discussions and share insights.</p>
+              <p className="text-gray-500 mt-2">Join this community to participate.</p>
             </div>
           )}
         </div>
 
-        {/* Right: Sidebar */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* About Card */}
           <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
             <h3 className="font-bold text-gray-900 mb-4 text-lg">About</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">{community.description}</p>
-            <div className="space-y-4 pt-4 border-t border-gray-50">
-              <div className="flex items-center gap-3 text-sm">
-                <ShieldCheck size={18} className="text-[#14919B]" />
-                <span className="text-gray-500">Mentor:</span>
-                <span className="font-bold text-gray-900">{community.mentor_name || "Admin"}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Calendar size={18} className="text-[#14919B]" />
-                <span className="text-gray-500">Created:</span>
-                <span className="font-bold text-gray-900">
-                  {new Date(community.created_at).toLocaleDateString()}
-                </span>
+            <p className="text-gray-600 text-sm leading-relaxed mb-6">{community?.description}</p>
+          </div>
+
+          {/* Members List Card */}
+          {isMember && (
+            <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+              <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+                <Users size={20} className="text-[#14919B]" /> Community Members
+              </h3>
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                {members.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#14919B]/10 flex items-center justify-center font-bold text-[#14919B] text-xs">
+                        {member.name?.[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 leading-none">{member.name}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {member.role === 'mentor' && <Crown size={10} className="text-amber-500" />}
+                          {member.role === 'moderator' && <ShieldCheck size={10} className="text-[#14919B]" />}
+                          <p className={`text-[9px] font-black uppercase tracking-widest ${
+                            member.role === 'mentor' ? 'text-amber-500' : 
+                            member.role === 'moderator' ? 'text-[#14919B]' : 'text-gray-400'
+                          }`}>
+                            {member.role}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Role Management: Only visible to Mentors, and they can't demote themselves */}
+                    {userRole === 'mentor' && member.role !== 'mentor' && (
+                      <select 
+                        className="text-[10px] font-bold bg-gray-50 border-none rounded-lg focus:ring-0 cursor-pointer p-1"
+                        value={member.role}
+                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                        disabled={actionLoading}
+                      >
+                        <option value="member">Member</option>
+                        <option value="moderator">Moderator</option>
+                      </select>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 
