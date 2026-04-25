@@ -10,13 +10,16 @@ import {
   leaveCommunity,
   getAllMembers, 
   checkUserRole,
-  changeMemberRole
+  changeMemberRole,
+  getActiveRoom, 
+  startRoom,    
+  getAllBooksforUser 
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
 import { 
   Users, Calendar, ShieldCheck, MessageSquarePlus, 
-  MessageSquare, Loader2, UserCog, Crown
+  MessageSquare, Loader2, UserCog, Crown, Radio, Play, BookOpen
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
 import { toast } from "react-hot-toast";
@@ -26,6 +29,7 @@ export default function CommunityDetailsPage() {
   const router = useRouter();
   const communityId = Number(params.id);
 
+  // Core State
   const [community, setCommunity] = useState<any>(null);
   const [discussions, setDiscussions] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -35,6 +39,12 @@ export default function CommunityDetailsPage() {
   const [discLoading, setDiscLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Reading Room State
+  const [activeRoom, setActiveRoom] = useState<any>(null);
+  const [availableBooks, setAvailableBooks] = useState<any[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<string>("");
+  const [roomLoading, setRoomLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -48,13 +58,58 @@ export default function CommunityDetailsPage() {
         await Promise.all([
             fetchDiscussions(),
             fetchMembersList(),
-            fetchCurrentUserRole()
+            fetchCurrentUserRole(),
+            fetchRoomStatus()
         ]);
       }
     } catch (err) {
       console.error("Error fetching community data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoomStatus = async () => {
+    try {
+      const res = await getActiveRoom(communityId);
+      if (res.data.data && res.data.data.length > 0) {
+        setActiveRoom(res.data.data[0]); 
+      } else {
+        setActiveRoom(null); 
+      }
+    } catch (err) {
+      console.error("Room fetch error:", err);
+    }
+  };
+
+  const fetchCurrentUserRole = async () => {
+    try {
+        const res = await checkUserRole(communityId);
+        const role = res.data.data;
+        setUserRole(role);
+
+        // If mentor/moderator, fetch books to populate start-room dropdown
+        if (role === 'mentor' || role === 'moderator') {
+          const booksRes = await getAllBooksforUser();
+          setAvailableBooks(booksRes.data || []);
+        }
+    } catch (err) {
+        console.error("Error fetching role:", err);
+    }
+  };
+
+  const handleStartRoom = async () => {
+    if (!selectedBookId) return toast.error("Please select a book first");
+    
+    setRoomLoading(true);
+    try {
+      await startRoom(communityId, Number(selectedBookId) );
+      toast.success("Reading room started!");
+      fetchRoomStatus(); // Refresh to show the active room UI
+    } catch (err) {
+      toast.error("Failed to start room");
+    } finally {
+      setRoomLoading(false);
     }
   };
 
@@ -79,15 +134,6 @@ export default function CommunityDetailsPage() {
     }
   };
 
-  const fetchCurrentUserRole = async () => {
-    try {
-        const res = await checkUserRole(communityId);
-        setUserRole(res.data.data); // returns 'mentor', 'moderator', or 'member'
-    } catch (err) {
-        console.error("Error fetching role:", err);
-    }
-  };
-
   useEffect(() => {
     if (communityId) fetchData();
   }, [communityId]);
@@ -101,10 +147,11 @@ export default function CommunityDetailsPage() {
         setDiscussions([]);
         setMembers([]);
         setUserRole(null);
+        setActiveRoom(null);
       } else {
         await joinCommunity(communityId);
         setIsMember(true);
-        fetchData(); // Refresh everything
+        fetchData();
       }
     } catch (err) {
       console.error("Action failed:", err);
@@ -118,10 +165,9 @@ export default function CommunityDetailsPage() {
         setActionLoading(true);
         await changeMemberRole(communityId, memberId, newRole );
         toast.success("Role updated successfully");
-        fetchMembersList(); // Refresh the list to show new roles
+        fetchMembersList();
     } catch (err) {
         toast.error("Failed to update role");
-        console.error(err);
     } finally {
         setActionLoading(false);
     }
@@ -171,6 +217,65 @@ export default function CommunityDetailsPage() {
 
       <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          
+          {/* LIVE ROOM SECTION */}
+          {isMember && (
+            <div className={`p-8 rounded-[2.5rem] border transition-all ${
+              activeRoom ? "bg-[#14919B] border-none text-white shadow-xl shadow-[#14919B]/30" : "bg-white border-2 border-dashed border-gray-200"
+            }`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className={`p-4 rounded-2xl ${activeRoom ? "bg-white/20 animate-pulse" : "bg-gray-100"}`}>
+                    <Radio size={28} className={activeRoom ? "text-white" : "text-gray-400"} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-black ${activeRoom ? "text-white" : "text-gray-900"}`}>
+                      {activeRoom ? "Live Reading Session" : "No Active Room"}
+                    </h2>
+                    <p className={`text-sm ${activeRoom ? "text-white/80" : "text-gray-500"}`}>
+                      {activeRoom ? `Reading: ${activeRoom.book_title}` : "Start a session to read together with others."}
+                    </p>
+                  </div>
+                </div>
+
+                {activeRoom ? (
+                  <button 
+                    onClick={() => router.push(`/user/community/${communityId}/live`)}
+                    className="bg-white text-[#14919B] px-8 py-3 rounded-xl font-black hover:scale-105 transition-transform"
+                  >
+                    Join Room
+                  </button>
+                ) : (userRole === 'mentor' || userRole === 'moderator') ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <select 
+                      className="w-full sm:w-48 bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 p-3 outline-none focus:ring-2 focus:ring-[#14919B]/20"
+                      value={selectedBookId}
+                      onChange={(e) => setSelectedBookId(e.target.value)}
+                    >
+                      <option value="">Select Book...</option>
+                      {availableBooks.map(book => (
+                        <option key={book.id} value={book.id}>{book.title}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={handleStartRoom}
+                      disabled={roomLoading}
+                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75]"
+                    >
+                      {roomLoading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} fill="white" />}
+                      Start Room
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+                    Waiting for Mentor...
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Discussions Section */}
           {isMember ? (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -187,7 +292,7 @@ export default function CommunityDetailsPage() {
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#14919B]" /></div>
               ) : (
                 <div className="space-y-4">
-                  {discussions.map((post) => (
+                  {discussions.length > 0 ? discussions.map((post) => (
                     <div 
                       key={post.id} 
                       onClick={() => router.push(`/user/community/${communityId}/discussions/${post.id}`)}
@@ -196,7 +301,9 @@ export default function CommunityDetailsPage() {
                       <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
                       <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-center text-gray-400 py-10">No discussions yet. Be the first to post!</p>
+                  )}
                 </div>
               )}
             </>
@@ -245,7 +352,6 @@ export default function CommunityDetailsPage() {
                       </div>
                     </div>
 
-                    {/* Role Management: Only visible to Mentors, and they can't demote themselves */}
                     {userRole === 'mentor' && member.role !== 'mentor' && (
                       <select 
                         className="text-[10px] font-bold bg-gray-50 border-none rounded-lg focus:ring-0 cursor-pointer p-1"

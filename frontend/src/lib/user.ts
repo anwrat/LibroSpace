@@ -135,6 +135,15 @@ export function getAllComments(communityId: number, discussionId: number){
     return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`);
 }
 
+//For community rooms related functions
+export function getActiveRoom(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/rooms/active`);
+}
+
+export function startRoom(communityId: number, bookId: number){
+    return api.post(`/api/users/communities/${communityId}/rooms`, {book_id: bookId});
+}
+
 //For all reading sessions related functions
 export function startReadingSession(book_id: number, start_page: number){
     return api.post('/api/users/reading/start', {book_id, start_page});
