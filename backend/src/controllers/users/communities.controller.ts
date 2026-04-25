@@ -3,6 +3,8 @@ import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID,
 import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/communities.schema.js";
 import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from "../../models/communities/discussions.model.js";
 import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
+import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId } from "../../models/communities/community_members.model.js";
+import { getActiveRoomsByCommunityId, startNewRoom } from "../../models/communities/community_rooms.model.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -176,5 +178,79 @@ export const getAllComments = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({success: false, message: "Internal Server Error while fetching comments"});
+    }
+}
+
+export const getAllMembersByCommunity = async(req: Request, res: Response) =>{
+    try{
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const members = await getAllMembersByCommunityId(id);
+        return res.status(200).json({success: true, data: members});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while fetching community members"});
+    }
+}
+
+export const checkUserRole = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const role = await checkMemberRole(user_id, id);
+        return res.status(200).json({success: true, data: role});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while checking user role"});
+    }
+}
+
+export const changeMemberRole = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const {member_id, role} = req.body;
+        const userRole = await checkMemberRole(user_id, id);
+        if(userRole !== 'mentor'){
+            return res.status(403).json({success: false, message: "Only mentor can change member roles"});
+        }
+        await assignRoleToMember(member_id, id, role);
+        return res.status(200).json({success: true, message: "Member role updated successfully"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while changing member role"});
+    }
+}
+
+// For community rooms related controllers
+export const getActiveRoom = async(req: Request, res: Response) =>{
+    try{
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const rooms = await getActiveRoomsByCommunityId(id);
+        return res.status(200).json({success: true, data: rooms});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while fetching active rooms"});
+    }
+}
+
+export const startRoom = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const {book_id} = req.body;
+        const room = await startNewRoom(id, user_id, book_id);
+        return res.status(201).json({success: true, message: "New room started successfully", data: room});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while starting a new room"});
     }
 }

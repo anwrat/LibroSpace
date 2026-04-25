@@ -102,6 +102,18 @@ export function leaveCommunity(communityId: number){
     return api.delete(`/api/users/communities/${communityId}/membership`);
 }
 
+export function getAllMembers(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/members/all`);
+}
+
+export function checkUserRole(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/members/role`);
+}
+
+export function changeMemberRole(communityId: number, member_id: number, role: string){
+    return api.post(`/api/users/communities/${communityId}/members/role`, {member_id, role});
+}
+
 //For all discussions and comments related to communities
 export function startDiscussion(communityId: number, title: string, content: string){
     return api.post(`/api/users/communities/${communityId}/discussions`, {title, content});
@@ -121,6 +133,15 @@ export function addComment(communityId: number, discussionId: number, content: s
 
 export function getAllComments(communityId: number, discussionId: number){
     return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`);
+}
+
+//For community rooms related functions
+export function getActiveRoom(communityId: number){
+    return api.get(`/api/users/communities/${communityId}/rooms/active`);
+}
+
+export function startRoom(communityId: number, bookId: number){
+    return api.post(`/api/users/communities/${communityId}/rooms`, {book_id: bookId});
 }
 
 //For all reading sessions related functions

@@ -37,3 +37,16 @@ export const AddCommentSchema = z.object({
       .max(1000, "Content is too long"),
   }),
 });
+
+export const ChangeMemberRoleSchema = z.object({
+  body: z.object({
+    member_id: z.number(),
+    role: z.enum(['mentor', 'moderator', 'member'], "Role must be one of mentor, moderator, or member"),
+  })
+});
+
+export const StartNewRoomSchema = z.object({
+  body: z.object({
+    book_id: z.number(),
+  }),
+});
