@@ -247,3 +247,9 @@ export function completeSwap(request_id: number){
 export function getTodaysUserLeaderBoardbyXp(){
     return api.get('/api/users/events/leaderboard/today');
 }
+
+//For search related functions
+
+export function getGlobalSearchResults(query: string){
+    return api.get(`/api/users/reading/search/global?q=${query}`);
+}
