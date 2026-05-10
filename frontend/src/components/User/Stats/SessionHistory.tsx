@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getAllReadingSessions, getAchievementThisMonth } from "@/lib/user"; 
-import { BookOpen, Clock, Calendar, ChevronRight, Loader2, BarChart3 } from "lucide-react";
+import { BookOpen, Clock, Calendar, ChevronRight, Loader2, BarChart3, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import MonthHeatMap from "./MonthHeatMap";
@@ -12,10 +12,13 @@ export default function SessionHistory() {
     const [achievedDates, setAchievedDates] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // --- PAGINATION STATE ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const sessionsPerPage = 5;
+
     useEffect(() => {
         async function fetchData() {
             try {
-                // Parallel fetch for better performance
                 const [sessionRes, historyRes] = await Promise.all([
                     getAllReadingSessions(),
                     getAchievementThisMonth() 
@@ -32,6 +35,18 @@ export default function SessionHistory() {
         fetchData();
     }, []);
 
+    // --- PAGINATION LOGIC ---
+    const indexOfLastSession = currentPage * sessionsPerPage;
+    const indexOfFirstSession = indexOfLastSession - sessionsPerPage;
+    const currentSessions = sessions.slice(indexOfFirstSession, indexOfLastSession);
+    const totalPages = Math.ceil(sessions.length / sessionsPerPage);
+
+    const paginate = (pageNumber: number) => {
+        setCurrentPage(pageNumber);
+        // Optional: Scroll to top of list on change
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     if (loading) return (
         <div className="flex justify-center py-20">
             <Loader2 className="animate-spin text-[#14919B]" size={32} />
@@ -43,9 +58,16 @@ export default function SessionHistory() {
             {/* 1. HEATMAP AT THE TOP */}
             <MonthHeatMap achievedDates={achievedDates} />
 
-            <div className="flex items-center gap-2 mb-6 px-2">
-                <BarChart3 size={20} className="text-[#14919B]" />
-                <h3 className="text-xl font-bold text-gray-900">Recent Sessions</h3>
+            <div className="flex items-center justify-between mb-6 px-2">
+                <div className="flex items-center gap-2">
+                    <BarChart3 size={20} className="text-[#14919B]" />
+                    <h3 className="text-xl font-bold text-gray-900">Recent Sessions</h3>
+                </div>
+                {sessions.length > 0 && (
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                )}
             </div>
 
             {/* 2. SESSIONS LIST */}
@@ -55,7 +77,7 @@ export default function SessionHistory() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {sessions.map((session) => (
+                    {currentSessions.map((session) => (
                         <Link 
                             href={`/user/stats/${session.id}`} 
                             key={session.id}
@@ -93,6 +115,43 @@ export default function SessionHistory() {
                             <ChevronRight size={20} className="text-gray-300 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all" />
                         </Link>
                     ))}
+
+                    {/* --- PAGINATION CONTROLS --- */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-6">
+                            <button 
+                                onClick={() => paginate(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+
+                            <div className="flex items-center gap-1">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => paginate(i + 1)}
+                                        className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                                            currentPage === i + 1 
+                                            ? 'bg-[#14919B] text-white shadow-lg shadow-[#14919B]/20' 
+                                            : 'text-gray-400 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button 
+                                onClick={() => paginate(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
