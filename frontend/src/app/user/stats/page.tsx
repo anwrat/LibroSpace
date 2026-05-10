@@ -5,9 +5,10 @@ import UserNav from "@/components/Navbar/UserNav";
 import SessionHistory from "@/components/User/Stats/SessionHistory";
 import UserBadges from "@/components/User/Stats/UserBadges";
 import ReadingInsights from "@/components/User/Stats/Insights";
-import { History, BarChart3, PieChart } from "lucide-react";
+import Leaderboard from '@/components/User/Stats/LeaderBoard';
+import { History, BarChart3, PieChart, Trophy } from "lucide-react";
 
-type TabType = 'history' | 'insights' | 'achievements';
+type TabType = 'history' | 'insights' | 'achievements' | 'leaderboard';
 
 export default function StatsPage() {
     const [activeTab, setActiveTab] = useState<TabType>('history');
@@ -16,6 +17,7 @@ export default function StatsPage() {
         { id: 'history', label: 'History', icon: History },
         { id: 'insights', label: 'Insights', icon: BarChart3 },
         { id: 'achievements', label: 'Achievements', icon: PieChart },
+        { id: 'leaderboard', label: 'Daily Rank', icon: Trophy },
     ];
 
     return (
@@ -67,6 +69,7 @@ export default function StatsPage() {
                             <UserBadges />
                         </div>
                     )}
+                    {activeTab === 'leaderboard' && <Leaderboard />}
                 </section>
             </div>
         </main>
