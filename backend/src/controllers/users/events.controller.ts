@@ -1,6 +1,7 @@
 import type{ Request, Response } from "express";
 import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps, setBookToSwappedAndRequestToCompleted} from "../../models/events/book_exchanges.model.js";
 import { newQuoteRequest } from "../../models/events/quote_requests.model.js";
+import {getTodaysLeaderboard} from '../../models/events/activity_log.model.js'
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
     try{
@@ -155,3 +156,19 @@ export const submitQuoteRequest = async(req: Request, res: Response) =>{
         res.status(500).json({message: "Internal server error while submitting quote request"});
     }
 }
+
+//For activity logs related functions
+export const getDailyLeaderboard = async (req: Request, res: Response) => {
+    try {
+        const leaderboard = await getTodaysLeaderboard();
+        return res.status(200).json({
+            success: true,
+            data: leaderboard
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch leaderboard"
+        });
+    }
+};

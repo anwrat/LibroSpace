@@ -30,6 +30,7 @@
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0",
     "recharts": "^3.8.0",
+    "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.4.0"
   },
@@ -40,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/simple-peer": "^9.11.9",
     "babel-plugin-react-compiler": "1.0.0",
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9",

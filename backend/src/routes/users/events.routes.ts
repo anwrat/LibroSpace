@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { CreateExchangeSchema, RequestSwapSchema, UpdateSwapStatusSchema, CompleteSwapSchema,SubmitQuoteRequestSchema } from "../../schemas/events.schema.js";
-import { getAllAvailableBooks, joinBookExchange, requestSwap, checkifUserJoined, getOngoingSwapRequests, updateSwapRequestStatus, getAcceptedSwapsForUser, completeSwapRequest, submitQuoteRequest } from "../../controllers/users/events.controller.js";
+import { getAllAvailableBooks, joinBookExchange, requestSwap, checkifUserJoined, getOngoingSwapRequests, updateSwapRequestStatus, getAcceptedSwapsForUser, completeSwapRequest, submitQuoteRequest, getDailyLeaderboard } from "../../controllers/users/events.controller.js";
 import { bookExchangeImgUpload } from "../../middleware/imgupload/bookexchangeimg.middleware.js";
 
 const router = Router();
@@ -19,6 +19,9 @@ router.post('/bookexchange/complete', authenticateToken, validate(CompleteSwapSc
 
 //For quote requests
 router.post('/quoterequest', authenticateToken, validate(SubmitQuoteRequestSchema), submitQuoteRequest);
+
+//For activity log
+router.get('/leaderboard/today', authenticateToken, getDailyLeaderboard);
 
 
 export default router;

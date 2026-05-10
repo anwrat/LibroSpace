@@ -242,3 +242,8 @@ export function getAcceptedSwaps(){
 export function completeSwap(request_id: number){
     return api.post('/api/users/events/bookexchange/complete', {request_id});
 }
+
+//For activity log related functions
+export function getTodaysUserLeaderBoardbyXp(){
+    return api.get('/api/users/events/leaderboard/today');
+}
