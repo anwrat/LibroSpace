@@ -268,7 +268,7 @@ export default function CommunityDetailsPage() {
                   </div>
                 ) : (
                   <div className="text-gray-400 text-xs font-bold uppercase tracking-widest">
-                    Waiting for Mentor...
+                    No live rooms currently
                   </div>
                 )}
               </div>
