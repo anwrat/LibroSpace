@@ -106,19 +106,6 @@ export default function Users() {
                     </p>
                 </div>
                 
-                {/* Stats Card */}
-                <div className="bg-linear-to-r from-[#14919B] to-[#0d6169] rounded-xl p-6 shadow-lg mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-4 rounded-lg">
-                            <User size={32} className="text-white" />
-                        </div>
-                        <div>
-                            <p className="text-white/80 font-main text-sm">Total Users</p>
-                            <p className="text-white font-bold text-4xl font-main">{totalUsers}</p>
-                        </div>
-                    </div>
-                </div>
-                
                 {/* Search Bar */}
                 <div className="mb-6">
                     <div className="relative">
