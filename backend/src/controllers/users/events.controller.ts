@@ -1,6 +1,6 @@
 import type{ Request, Response } from "express";
 import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps, setBookToSwappedAndRequestToCompleted} from "../../models/events/book_exchanges.model.js";
-import { newQuoteRequest } from "../../models/events/quote_requests.model.js";
+import { newQuoteRequest, getAllQuoteRequestsbyUserId } from "../../models/events/quote_requests.model.js";
 import {getTodaysLeaderboard} from '../../models/events/activity_log.model.js'
 
 export const joinBookExchange = async(req: Request, res: Response)=>{
@@ -154,6 +154,20 @@ export const submitQuoteRequest = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal server error while submitting quote request"});
+    }
+}
+
+export const getQuoteRequests = async(req: Request, res: Response)=>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const requests = await getAllQuoteRequestsbyUserId(userId);
+        return res.status(200).json({success: true, data: requests});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal server error while fetching user quote requests"});
     }
 }
 

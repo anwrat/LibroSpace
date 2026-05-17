@@ -13,6 +13,7 @@ import {
     Send 
 } from "lucide-react";
 import { useState } from "react";
+import Link from 'next/link';
 
 export default function AdminNav(){
     const router = useRouter();
@@ -43,9 +44,8 @@ export default function AdminNav(){
     const menuItems = [
         { label: 'Users', path: 'users', icon: Users },
         { label: 'Books', path: 'books', icon: BookOpen },
-        { label: 'Requests', path: 'requests', icon: Send },
         { label: 'Community', path: 'community', icon: MessageSquare },
-        { label: 'Reports', path: 'reports', icon: Flag }
+        { label: 'Requests', path: 'requests', icon: Send },
     ];
     
     return(
@@ -60,7 +60,7 @@ export default function AdminNav(){
             <div>
                 <div className="flex items-center justify-between px-4 mb-6">
                     {!collapsed && (
-                        <div className="flex items-center gap-3">
+                        <Link href='/admin' className="flex items-center gap-3">
                             <Image 
                                 src="/Logo/Logonobgcropped.png" 
                                 width={40} 
@@ -69,16 +69,18 @@ export default function AdminNav(){
                                 className="rounded-lg"
                             />
                             <p className="font-main font-bold text-lg">LibroSpace</p>
-                        </div>
+                        </Link>
                     )}
                     {collapsed && (
-                        <Image 
-                            src="/Logo/Logonobgcropped.png" 
-                            width={40} 
-                            height={40} 
-                            alt="LibroSpace Logo"
-                            className="rounded-lg mx-auto"
-                        />
+                        <Link href = '/admin'>
+                            <Image 
+                                src="/Logo/Logonobgcropped.png" 
+                                width={40} 
+                                height={40} 
+                                alt="LibroSpace Logo"
+                                className="rounded-lg mx-auto"
+                            />
+                        </Link>
                     )}
                 </div>
                 

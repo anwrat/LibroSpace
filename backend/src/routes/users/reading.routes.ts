@@ -3,6 +3,7 @@ import { validate } from "../../middleware/validation/validate.middleware.js";
 import { startReadingSession, updateSessionNotes, endReadingSession, getSession, fetchAllUserSessions, getReadingInsights } from "../../controllers/users/reading.controller.js";
 import { StartSessionSchema, UpdateNotesSchema, EndSessionSchema } from "../../schemas/reading.schema.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
+import {globalSearch} from '../../controllers/users/reading.controller.js';
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.post('/end',authenticateToken,validate(EndSessionSchema), endReadingSessi
 router.get('/:session_id',authenticateToken,getSession);
 router.get('/sessions/all',authenticateToken, fetchAllUserSessions);
 router.get('/insights/all',authenticateToken,getReadingInsights);
+router.get('/search/global',authenticateToken, globalSearch);
 
 export default router;

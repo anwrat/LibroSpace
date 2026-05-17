@@ -2,6 +2,7 @@ import type{ Request,Response } from "express";
 import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions, ReadingInsights} from "../../models/reading/reading_sessions.model.js";
 import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
+import pool from '../../config/db.js';
 
 export const startReadingSession = async (req: Request, res: Response) => {
     try {
@@ -148,5 +149,31 @@ export const getReadingInsights = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+//Global Search
+export const globalSearch = async (req: Request, res: Response) => {
+    const { q } = req.query;
+    if (!q) return res.status(200).json({ data: { books: [], users: [], communities: [] } });
+
+    const searchTerm = `%${q}%`;
+
+    try {
+        const books = await pool.query('SELECT id, title, cover_url FROM books.booklist WHERE title ILIKE $1 LIMIT 3', [searchTerm]);
+        const users = await pool.query('SELECT id, name, picture_url FROM auth.users WHERE name ILIKE $1 LIMIT 3', [searchTerm]);
+        const communities = await pool.query('SELECT id, name, photo_url FROM communities.communities WHERE name ILIKE $1 LIMIT 3', [searchTerm]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                books: books.rows,
+                users: users.rows,
+                communities: communities.rows
+            }
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false, message: "Search failed" });
     }
 };

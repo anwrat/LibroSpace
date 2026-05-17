@@ -60,3 +60,8 @@ export function getAllQuoteRequests(){
 export function updateQuoteRequestStatus(requestId: number, status: string, admin_feedback: string){
     return api.post('/api/admin/quotes/requests/update',{requestId, status, admin_feedback});
 }
+
+//For community related functions
+export function getAllCommunities(){
+    return api.get('/api/admin/communities/all');
+}
