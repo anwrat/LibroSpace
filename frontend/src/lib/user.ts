@@ -36,6 +36,10 @@ export function submitQuoteRequest(bookId: number, text: string, pageNumber: num
     return api.post('/api/users/events/quoterequest', {bookId, text, pageNumber});
 }
 
+export function getAllQuoteRequests(){
+    return api.get('/api/users/events/quoterequests');
+}
+
 //For friends related functions
 export function getOtherUserProfile(targetId: number){
     return api.get(`/api/users/friends/profile/${targetId}`);

@@ -187,7 +187,7 @@ export default function UserNav() {
 
               {/* SEARCH DROPDOWN */}
               {searchResults && (
-                <div className="absolute top-full left-0 w-full mt-3 bg-white border border-gray-100 rounded-[2rem] shadow-2xl overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="absolute top-full left-0 w-full mt-3 bg-white border border-gray-100 rounded-[2rem] shadow-2xl overflow-hidden z-60 animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="max-h-[400px] overflow-y-auto p-2">
                     
                     {searchResults.books.length > 0 && (
@@ -282,14 +282,14 @@ export default function UserNav() {
                       <DropdownItem href="/user/friends/messages" icon={MessageCircleMore} label="Messages" count={hasUnreadMessages ? "NEW" : 0} onClick={() => setIsDropdownOpen(false)} />
                       <DropdownItem href="/user/friends/requests" icon={UserPlus} label="Friend Requests" count={pendingFriendRequests} onClick={() => setIsDropdownOpen(false)} />
                       <DropdownItem href="/user/profile/shelf" icon={SwatchBook} label="My Shelves" onClick={() => setIsDropdownOpen(false)} />
-                      <DropdownItem href="/user/profile/quotes" icon={Quote} label="Saved Quotes" onClick={() => setIsDropdownOpen(false)} />
+                      <DropdownItem href="/user/profile/quotes" icon={Quote} label="My Quotes" onClick={() => setIsDropdownOpen(false)} />
                       
                       <button 
                         onClick={() => { setIsDropdownOpen(false); setShowLogoutConfirm(true); }} 
                         className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-[1.5rem] transition-colors mt-2"
                       >
                         <LogOut size={18} />
-                        Logout Session
+                        Logout
                       </button>
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export default function UserNav() {
 
       {/* LOGOUT MODAL */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-100 p-6">
           <div className="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl animate-in zoom-in-90 duration-300">
             <div className="flex flex-col items-center text-center">
               <div className="h-20 w-20 bg-red-50 rounded-full flex items-center justify-center mb-6">

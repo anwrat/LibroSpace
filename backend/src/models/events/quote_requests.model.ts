@@ -61,3 +61,15 @@ export const rejectQuoteRequest = async(requestId: number, admin_feedback: strin
     );
     return rejectedRequest.rows[0];
 }
+
+export const getAllQuoteRequestsbyUserId = async(user_id: number)=>{
+    const requests = await pool.query(
+            `SELECT qr.*, u.name as requester_name, b.title as book_title, b.author
+             FROM events.quote_requests qr
+             JOIN auth.users u ON qr.user_id = u.id
+             JOIN books.booklist b ON qr.book_id = b.id
+             WHERE qr.user_id = $1
+             ORDER BY qr.created_at DESC`,[user_id]
+        );
+    return requests.rows;
+}
