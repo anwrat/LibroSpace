@@ -1,13 +1,12 @@
-import { getAllBooksPartialData, getBookbyID } from "../../models/books/booklist.model.js";
+import { getAllBooks, getBookbyID } from "../../models/books/booklist.model.js";
 import type{ Request,Response } from "express";
-import { getAllBooksPartialDataSchema,BookIdParamSchema, getQuotesByBookIdSchema, toggleSaveQuoteSchema } from "../../schemas/book.schema.js";
+import {BookIdParamSchema, getQuotesByBookIdSchema, toggleSaveQuoteSchema } from "../../schemas/book.schema.js";
 import { getQuotesByBookId, checkIfQuoteSavedbyUser, deleteSavedQuote, saveQuoteForUser, getSavedQuotesForUser } from "../../models/books/book_quotes.model.js";
 
-export const getAllBooks = async(req:Request, res: Response) =>{
+export const getAllBooksforUser = async(req:Request, res: Response) =>{
     try{
-        const books = await getAllBooksPartialData();
-        const validatedBooks = getAllBooksPartialDataSchema.parse(books);
-        return res.status(200).json(validatedBooks);
+        const books = await getAllBooks();
+        return res.status(200).json(books);
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while fetching books"});

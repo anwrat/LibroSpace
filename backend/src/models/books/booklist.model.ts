@@ -76,12 +76,6 @@ export const getBookbyID = async(id: number) => {
     return result.rows[0];
 }
 
-//Function to get only partial data of all books
-export const getAllBooksPartialData = async() =>{
-    const result = await pool.query('SELECT id,title,author,cover_url FROM books.booklist ORDER BY title ASC');
-    return result.rows;
-}
-
 export const updateBookDetails = async (
     id: number,
     title: string,
