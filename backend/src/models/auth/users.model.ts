@@ -51,3 +51,8 @@ export const updateDailyGoal = async(userId: number, newGoal: number) =>{
     const result = await pool.query('UPDATE auth.users SET daily_reading_goal = $1 WHERE id = $2 RETURNING daily_reading_goal',[newGoal, userId]);
     return result.rows[0].daily_reading_goal;
 }
+
+export const updateProfilePic = async(userId: number, picture_url: string)=>{
+    const result = await pool.query('UPDATE auth.users SET picture_url = $1 WHERE id = $2', [picture_url, userId]);
+    return result.rows[0];
+}
