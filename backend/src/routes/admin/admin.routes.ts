@@ -8,6 +8,7 @@ import { bookImgUpload } from "../../middleware/imgupload/bookimg.middleware.js"
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { createGenreSchema, createBookQuoteSchema } from "../../schemas/book.schema.js";
 import { fetchAllQuoteRequests, updateQuoteStatus } from "../../controllers/admin/events.controller.js";
+import {getAllCommunitiesAdmin} from "../../controllers/admin/communities.controller.js";
 
 const router = Router();
 
@@ -32,5 +33,8 @@ router.delete('/quotes/:id', authenticateToken, authorizeAdmin, removeBookQuote)
 router.get('/quotes', authenticateToken, authorizeAdmin, getAllQuotes);
 router.get('/quotes/requests', authenticateToken, authorizeAdmin, fetchAllQuoteRequests);
 router.post('/quotes/requests/update', authenticateToken, authorizeAdmin, updateQuoteStatus);
+
+//Community routes
+router.get('/communities/all',authenticateToken, authorizeAdmin, getAllCommunitiesAdmin);
 
 export default router;

@@ -1,5 +1,9 @@
 import { api } from "./axios";
 
+export function changeProfilePic(formData: any){
+    return api.post('/api/auth/profilepic/update', formData);
+}
+
 export function getAllBooksforUser(){
     return api.get('/api/users/books');
 }
