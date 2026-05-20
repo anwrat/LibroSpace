@@ -1,11 +1,12 @@
 import type{Request, Response} from 'express'; //This is a type-only import
 import {hashPassword,comparePassword} from '../../utils/hash.js';
 import { signToken } from '../../utils/jwt.js';
-import {findUserByEmail, findUserByName, loginByEmailorName} from '../../models/auth/users.model.js';
+import {findUserByEmail, findUserByName, loginByEmailorName, updateProfilePic} from '../../models/auth/users.model.js';
 import { generateOTP } from '../../utils/otp.js';
 import { saveOTP } from '../../models/auth/otp.model.js';
 import { sendOTPMail } from '../../utils/email.js';
 import { createRegisterSession } from '../../models/auth/registerSessions.model.js';
+import { file, success } from 'zod';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
@@ -88,4 +89,22 @@ export const logOutUser = async (req: Request, res: Response) =>{
         sameSite: 'strict',
     });
     return res.status(200).json({message: 'User logged out successfully'});
+}
+
+export const updateProfilePicture = async(req: Request, res: Response) =>{
+    try{
+        const userId = req.user?.id;
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized: User not found"});
+        }
+        const image = req.file;
+        if(!image){
+            return res.status(400).json({message:"Profile photo is required for updating"});
+        }
+        const image_url = image.path;
+        const changePic = await updateProfilePic(userId,image_url);
+        return res.status(201).json({success: true, message: "Profile picture updated successfully"});
+    }catch(err){
+        console.error(err);
+    }
 }

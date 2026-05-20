@@ -1,8 +1,9 @@
 import {Router} from 'express';
-import {loginUser, registerUser, getCurrentUser, logOutUser} from '../../controllers/auth/auth.controller.js';
+import {loginUser, registerUser, getCurrentUser, logOutUser, updateProfilePicture} from '../../controllers/auth/auth.controller.js';
 import { authenticateToken } from '../../middleware/auth/auth.middleware.js';
 import {validate} from "../../middleware/validation/validate.middleware.js";
 import { loginSchema,registerSchema } from '../../schemas/auth.schema.js';
+import {profilePicChange} from '../../middleware/imgupload/profilepic.middleware.js';
 
 const router = Router();
 
@@ -11,5 +12,7 @@ router.post('/login',validate(loginSchema),loginUser);
 
 router.get('/me',authenticateToken, getCurrentUser);
 router.post('/logout',authenticateToken, logOutUser)
+
+router.post('/profilepic/update',authenticateToken,profilePicChange.single('profile'),updateProfilePicture);
 
 export default router;

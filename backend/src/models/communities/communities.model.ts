@@ -16,20 +16,52 @@ export const leaveCommunity = async(user_id: number, community_id: number) =>{
     return result.rows[0];
 }
 
-export const getAllCommunities = async () =>{
-    const result = await pool.query('SELECT * FROM communities.communities');
+export const getAllCommunities = async () => {
+    const queryText = `
+        SELECT 
+            c.*, 
+            COUNT(cm.user_id)::INT AS member_count
+        FROM communities.communities c
+        LEFT JOIN communities.community_members cm ON c.id = cm.community_id
+        GROUP BY c.id;
+    `;
+    const result = await pool.query(queryText);
     return result.rows;
-}
+};
 
-export const joinedCommunities = async(user_id: number)=>{
-    const result = await pool.query('SELECT c.*, cm.role FROM communities.communities c JOIN communities.community_members cm ON c.id = cm.community_id WHERE cm.user_id = $1',[user_id]);
+export const joinedCommunities = async (user_id: number) => {
+    const queryText = `
+        SELECT 
+            c.*, 
+            membership.role,
+            (
+                SELECT COUNT(*)::INT 
+                FROM communities.community_members 
+                WHERE community_id = c.id
+            ) AS member_count
+        FROM communities.communities c 
+        JOIN communities.community_members membership ON c.id = membership.community_id 
+        WHERE membership.user_id = $1;
+    `;
+    const result = await pool.query(queryText, [user_id]);
     return result.rows;
-}
+};
 
-export const getCommunitybyID = async(id: number) =>{
-    const result = await pool.query('SELECT * FROM communities.communities WHERE id=$1',[id]);
+export const getCommunitybyID = async (id: number) => {
+    const queryText = `
+        SELECT 
+            *, 
+            (
+                SELECT COUNT(*)::INT 
+                FROM communities.community_members 
+                WHERE community_id = communities.id
+            ) AS member_count
+        FROM communities.communities 
+        WHERE id = $1;
+    `;
+    const result = await pool.query(queryText, [id]);
     return result.rows[0];
-}
+};
 
 export const isUserMember = async(user_id: number, community_id: number)=>{
     const result = await pool.query('SELECT * FROM communities.community_members WHERE user_id = $1 AND community_id = $2',[user_id, community_id]);
