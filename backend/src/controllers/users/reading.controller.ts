@@ -3,6 +3,7 @@ import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalcul
 import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
 import pool from '../../config/db.js';
+import {awardActivityXP} from '../../services/gamification.service.js';
 
 export const startReadingSession = async (req: Request, res: Response) => {
     try {
@@ -77,6 +78,7 @@ export const endReadingSession = async(req: Request, res: Response) =>{
             await addtoShelf(user_id, book_id, 'read');
         }
         await updateProgress(user_id,book_id,progressPercentage);
+        await awardActivityXP(user_id, 'READING_SESSION', null);
         return res.status(201).json({success: true, message: "Session ended and progress saved", data: sessionUpdate});
     }catch(err){
         console.error(err);
