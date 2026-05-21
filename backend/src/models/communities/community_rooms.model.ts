@@ -1,7 +1,7 @@
 import pool from "../../config/db.js";
 
 export const getActiveRoomsByCommunityId = async(community_id: number)=>{
-    const query = `SELECT *, b.title as book_title FROM communities.community_rooms cr JOIN books.booklist b ON cr.book_id = b.id WHERE cr.community_id = $1 AND cr.is_active = true`;
+    const query = `SELECT *, b.title as book_title, b.* FROM communities.community_rooms cr JOIN books.booklist b ON cr.book_id = b.id WHERE cr.community_id = $1 AND cr.is_active = true`;
     const result = await pool.query(query, [community_id]);
     return result.rows;
 }

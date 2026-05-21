@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   getCommunitybyId, 
@@ -19,7 +19,8 @@ import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
 import { 
   Users, ShieldCheck, MessageSquarePlus, 
-  Loader2, Crown, Radio, Play, Sparkles
+  Loader2, Crown, Radio, Play, Sparkles,
+  Search, BookOpen, Check
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
 import { toast } from "react-hot-toast";
@@ -45,6 +46,11 @@ export default function CommunityDetailsPage() {
   const [availableBooks, setAvailableBooks] = useState<any[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<string>("");
   const [roomLoading, setRoomLoading] = useState(false);
+
+  // Book Search UI State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = async () => {
     try {
@@ -105,6 +111,7 @@ export default function CommunityDetailsPage() {
       await startRoom(communityId, Number(selectedBookId));
       toast.success("Reading room started!");
       fetchRoomStatus();
+      setSearchQuery("");
     } catch (err) {
       toast.error("Failed to start room");
     } finally {
@@ -136,6 +143,17 @@ export default function CommunityDetailsPage() {
   useEffect(() => {
     if (communityId) fetchData();
   }, [communityId]);
+
+  // Click outside listener to dismiss the search results overlay dropdown view automatically
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleMembershipToggle = async () => {
     setActionLoading(true);
@@ -181,7 +199,14 @@ export default function CommunityDetailsPage() {
   // Experience progression bar calculation configurations
   const currentXp = community?.xp || 0;
   const nextLevelXp = community?.next_level_xp || 1000;
-  const progressPercentage = Math.min(Math.max((currentXp / nextLevelXp) * 180, 0), 100);
+  const progressPercentage = Math.min(Math.max((currentXp / nextLevelXp) * 100, 0), 100);
+
+  // Filter books down by matching string titles layout view layers
+  const filteredBooks = availableBooks.filter((book) =>
+    book.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const currentSelectedBook = availableBooks.find(b => String(b.id) === selectedBookId);
 
   return (
     <div className="min-h-screen bg-gray-50 font-main">
@@ -275,21 +300,61 @@ export default function CommunityDetailsPage() {
                     Join Room
                   </button>
                 ) : (userRole === 'mentor' || userRole === 'moderator') ? (
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                    <select 
-                      className="w-full sm:w-48 bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 p-3 outline-none focus:ring-2 focus:ring-[#14919B]/20"
-                      value={selectedBookId}
-                      onChange={(e) => setSelectedBookId(e.target.value)}
-                    >
-                      <option value="">Select Book...</option>
-                      {availableBooks.map(book => (
-                        <option key={book.id} value={book.id}>{book.title}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto relative" ref={searchContainerRef}>
+                    
+                    {/* Interactive Book Search Field Input Layout Box */}
+                    <div className="w-full sm:w-64 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <Search size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={currentSelectedBook ? currentSelectedBook.title : "Search book to start..."}
+                        className="w-full bg-gray-50 text-gray-800 placeholder:text-gray-400 pl-9 pr-4 p-3 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-[#14919B]/20 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => setIsSearchFocused(true)}
+                      />
+                      
+                      {/* Search Results Filter Box Dropdown Container Overlay */}
+                      {isSearchFocused && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200/80 shadow-xl max-h-56 overflow-y-auto z-50 p-1.5 space-y-0.5">
+                          {filteredBooks.length > 0 ? (
+                            filteredBooks.map((book) => (
+                              <button
+                                key={book.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBookId(String(book.id));
+                                  setSearchQuery(book.title);
+                                  setIsSearchFocused(false);
+                                }}
+                                className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                                  selectedBookId === String(book.id)
+                                    ? "bg-[#14919B]/10 text-[#14919B]"
+                                    : "text-gray-600 hover:bg-gray-50"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 truncate pr-2">
+                                  <BookOpen size={14} className="shrink-0 text-gray-400" />
+                                  <span className="truncate">{book.title}</span>
+                                </div>
+                                {selectedBookId === String(book.id) && <Check size={14} className="shrink-0 text-[#14919B]" />}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-center text-gray-400 text-xs py-4 font-bold italic">
+                              No matching books found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <button 
                       onClick={handleStartRoom}
                       disabled={roomLoading}
-                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75]"
+                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75] transition-colors whitespace-nowrap shrink-0"
                     >
                       {roomLoading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} fill="white" />}
                       Start Room
