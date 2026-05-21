@@ -5,6 +5,7 @@ import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from
 import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
 import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId } from "../../models/communities/community_members.model.js";
 import { getActiveRoomsByCommunityId, startNewRoom } from "../../models/communities/community_rooms.model.js";
+import { awardActivityXP } from "../../services/gamification.service.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
     try{
@@ -122,6 +123,7 @@ export const startDiscussion = async(req: Request, res: Response)=>{
         const {id} = CommunityIdParamSchema.parse(req.params);
         const {title, content} = req.body;
         const discussion = await createDiscussion(Number(id), user_id, title, content);
+        await awardActivityXP(user_id, 'START_DISCUSSION', id);
         return res.status(201).json({success: true,message: "Discussion created successfully", data: discussion});
     }catch(err){
         console.error(err);

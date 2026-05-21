@@ -2,6 +2,8 @@ import pool from "../config/db.js";
 
 const XP_CONFIG: { [key: string]: { user: number; community: number } } = {
     'QUOTE_SUBMISSION': { user: 50, community: 0 },
+    'START_DISCUSSION': { user: 50, community: 50 },
+    'READING_SESSION': { user: 70, community: 0 },
 };
 
 export const awardActivityXP = async (userId: number, activityType: string, communityId: number | null = null) => {

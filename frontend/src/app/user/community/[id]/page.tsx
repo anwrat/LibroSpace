@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   getCommunitybyId, 
@@ -18,8 +18,9 @@ import {
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
 import { 
-  Users, Calendar, ShieldCheck, MessageSquarePlus, 
-  MessageSquare, Loader2, UserCog, Crown, Radio, Play, BookOpen
+  Users, ShieldCheck, MessageSquarePlus, 
+  Loader2, Crown, Radio, Play, Sparkles,
+  Search, BookOpen, Check
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
 import { toast } from "react-hot-toast";
@@ -46,6 +47,11 @@ export default function CommunityDetailsPage() {
   const [selectedBookId, setSelectedBookId] = useState<string>("");
   const [roomLoading, setRoomLoading] = useState(false);
 
+  // Book Search UI State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   const fetchData = async () => {
     try {
       const res = await getCommunitybyId(communityId);
@@ -56,10 +62,10 @@ export default function CommunityDetailsPage() {
 
       if (membership.data.isMember) {
         await Promise.all([
-            fetchDiscussions(),
-            fetchMembersList(),
-            fetchCurrentUserRole(),
-            fetchRoomStatus()
+          fetchDiscussions(),
+          fetchMembersList(),
+          fetchCurrentUserRole(),
+          fetchRoomStatus()
         ]);
       }
     } catch (err) {
@@ -88,7 +94,6 @@ export default function CommunityDetailsPage() {
         const role = res.data.data;
         setUserRole(role);
 
-        // If mentor/moderator, fetch books to populate start-room dropdown
         if (role === 'mentor' || role === 'moderator') {
           const booksRes = await getAllBooksforUser();
           setAvailableBooks(booksRes.data || []);
@@ -103,9 +108,10 @@ export default function CommunityDetailsPage() {
     
     setRoomLoading(true);
     try {
-      await startRoom(communityId, Number(selectedBookId) );
+      await startRoom(communityId, Number(selectedBookId));
       toast.success("Reading room started!");
-      fetchRoomStatus(); // Refresh to show the active room UI
+      fetchRoomStatus();
+      setSearchQuery("");
     } catch (err) {
       toast.error("Failed to start room");
     } finally {
@@ -138,6 +144,17 @@ export default function CommunityDetailsPage() {
     if (communityId) fetchData();
   }, [communityId]);
 
+  // Click outside listener to dismiss the search results overlay dropdown view automatically
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleMembershipToggle = async () => {
     setActionLoading(true);
     try {
@@ -163,7 +180,7 @@ export default function CommunityDetailsPage() {
   const handleUpdateRole = async (memberId: number, newRole: string) => {
     try {
         setActionLoading(true);
-        await changeMemberRole(communityId, memberId, newRole );
+        await changeMemberRole(communityId, memberId, newRole);
         toast.success("Role updated successfully");
         fetchMembersList();
     } catch (err) {
@@ -174,44 +191,81 @@ export default function CommunityDetailsPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
       <Loader2 className="animate-spin text-[#14919B]" size={40} />
     </div>
   );
+
+  // Experience progression bar calculation configurations
+  const currentXp = community?.xp || 0;
+  const nextLevelXp = community?.next_level_xp || 1000;
+  const progressPercentage = Math.min(Math.max((currentXp / nextLevelXp) * 100, 0), 100);
+
+  // Filter books down by matching string titles layout view layers
+  const filteredBooks = availableBooks.filter((book) =>
+    book.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const currentSelectedBook = availableBooks.find(b => String(b.id) === selectedBookId);
 
   return (
     <div className="min-h-screen bg-gray-50 font-main">
       <UserNav />
 
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 pt-24 pb-10">
+      {/* Header Container Dashboard Area */}
+      <div className="bg-white border-b border-gray-200/80 pt-28 pb-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-end gap-6">
-          <div className="relative h-32 w-32 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl bg-gray-100">
+          <div className="relative h-32 w-32 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl bg-gray-100 shrink-0">
             {community?.photo_url ? (
               <Image src={community.photo_url} alt={community.name} fill className="object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-gray-400"><Users size={40} /></div>
             )}
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-black text-gray-900">{community?.name}</h1>
-            <p className="text-gray-500 mt-2 flex items-center justify-center md:justify-start gap-2 font-medium">
-              <Users size={18} className="text-[#14919B]" />
-              {community?.member_count || 0} Members
-            </p>
+          
+          <div className="flex-1 text-center md:text-left min-w-0">
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight truncate">{community?.name}</h1>
+            
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#14919B] bg-[#14919B]/5 px-3 py-1.5 rounded-xl">
+                <Users size={14} />
+                {community?.member_count || 0} Members
+              </span>
+
+              {/* Enhanced Interactive Level Indicator Layout */}
+              <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-xl uppercase tracking-wider">
+                <Sparkles size={13} fill="currentColor" />
+                Level {community?.level || 1}
+              </span>
+            </div>
           </div>
 
-          <button 
-            onClick={handleMembershipToggle}
-            disabled={actionLoading}
-            className={`px-8 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 ${
-              isMember 
-                ? "bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100" 
-                : "bg-[#14919B] text-white hover:bg-[#0f7178] shadow-lg shadow-[#14919B]/20"
-            }`}
-          >
-            {actionLoading ? <Loader2 className="animate-spin" size={20} /> : isMember ? "Leave Group" : "Join Group"}
-          </button>
+          {/* Action Callout Interface Logic Router */}
+          <div className="shrink-0 mt-4 md:mt-0">
+            {isMember && userRole === 'mentor' ? (
+              <div className="flex items-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 text-white px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-md shadow-amber-500/20">
+                <Crown size={16} fill="white" />
+                Community Owner
+              </div>
+            ) : isMember && userRole === 'moderator' ? (
+              <div className="flex items-center gap-2 bg-linear-to-r from-[#14919B] to-[#1bc2cf] text-white px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-md shadow-[#14919B]/20">
+                <ShieldCheck size={16} fill="white" />
+                Staff Moderator
+              </div>
+            ) : (
+              <button 
+                onClick={handleMembershipToggle}
+                disabled={actionLoading}
+                className={`px-8 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
+                  isMember 
+                    ? "bg-white text-gray-500 border border-gray-200/80 hover:bg-red-50 hover:text-red-600 hover:border-red-100" 
+                    : "bg-[#14919B] text-white hover:bg-[#11767e] shadow-lg shadow-[#14919B]/20"
+                }`}
+              >
+                {actionLoading ? <Loader2 className="animate-spin" size={16} /> : isMember ? "Leave Group" : "Join Group"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -246,21 +300,61 @@ export default function CommunityDetailsPage() {
                     Join Room
                   </button>
                 ) : (userRole === 'mentor' || userRole === 'moderator') ? (
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                    <select 
-                      className="w-full sm:w-48 bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 p-3 outline-none focus:ring-2 focus:ring-[#14919B]/20"
-                      value={selectedBookId}
-                      onChange={(e) => setSelectedBookId(e.target.value)}
-                    >
-                      <option value="">Select Book...</option>
-                      {availableBooks.map(book => (
-                        <option key={book.id} value={book.id}>{book.title}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto relative" ref={searchContainerRef}>
+                    
+                    {/* Interactive Book Search Field Input Layout Box */}
+                    <div className="w-full sm:w-64 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <Search size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={currentSelectedBook ? currentSelectedBook.title : "Search book to start..."}
+                        className="w-full bg-gray-50 text-gray-800 placeholder:text-gray-400 pl-9 pr-4 p-3 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-[#14919B]/20 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => setIsSearchFocused(true)}
+                      />
+                      
+                      {/* Search Results Filter Box Dropdown Container Overlay */}
+                      {isSearchFocused && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200/80 shadow-xl max-h-56 overflow-y-auto z-50 p-1.5 space-y-0.5">
+                          {filteredBooks.length > 0 ? (
+                            filteredBooks.map((book) => (
+                              <button
+                                key={book.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBookId(String(book.id));
+                                  setSearchQuery(book.title);
+                                  setIsSearchFocused(false);
+                                }}
+                                className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                                  selectedBookId === String(book.id)
+                                    ? "bg-[#14919B]/10 text-[#14919B]"
+                                    : "text-gray-600 hover:bg-gray-50"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 truncate pr-2">
+                                  <BookOpen size={14} className="shrink-0 text-gray-400" />
+                                  <span className="truncate">{book.title}</span>
+                                </div>
+                                {selectedBookId === String(book.id) && <Check size={14} className="shrink-0 text-[#14919B]" />}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-center text-gray-400 text-xs py-4 font-bold italic">
+                              No matching books found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <button 
                       onClick={handleStartRoom}
                       disabled={roomLoading}
-                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75]"
+                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75] transition-colors whitespace-nowrap shrink-0"
                     >
                       {roomLoading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} fill="white" />}
                       Start Room
@@ -279,7 +373,7 @@ export default function CommunityDetailsPage() {
           {isMember ? (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Discussions</h2>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Discussions</h2>
                 <button 
                   onClick={() => setIsModalOpen(true)}
                   className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline"
@@ -296,19 +390,19 @@ export default function CommunityDetailsPage() {
                     <div 
                       key={post.id} 
                       onClick={() => router.push(`/user/community/${communityId}/discussions/${post.id}`)}
-                      className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                      className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                     >
                       <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
+                      <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
                     </div>
                   )) : (
-                    <p className="text-center text-gray-400 py-10">No discussions yet. Be the first to post!</p>
+                    <p className="text-center text-gray-400 py-10 font-medium">No discussions yet. Be the first to post!</p>
                   )}
                 </div>
               )}
             </>
           ) : (
-            <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 text-center shadow-sm">
+            <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 text-center shadow-xs">
               <ShieldCheck size={48} className="mx-auto text-gray-200 mb-4" />
               <h3 className="text-xl font-black text-gray-900">Member-only discussions</h3>
               <p className="text-gray-500 mt-2">Join this community to participate.</p>
@@ -316,30 +410,57 @@ export default function CommunityDetailsPage() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar Cards Panel Wrapper */}
         <div className="space-y-6">
+          
+          {/* Progression Metrics Level Widget Block */}
+          <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-gray-900 text-base tracking-tight flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500" />
+                Guild Experience
+              </h3>
+              <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                LVL {community?.level || 1}
+              </span>
+            </div>
+            
+            {/* Custom Interactive Linear Progress Bar */}
+            <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden border border-gray-200/40 relative">
+              <div 
+                className="bg-linear-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+              <span>{currentXp} XP</span>
+              <span>{nextLevelXp} XP FOR LEVEL UP</span>
+            </div>
+          </div>
+
           {/* About Card */}
-          <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-            <h3 className="font-bold text-gray-900 mb-4 text-lg">About</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">{community?.description}</p>
+          <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs">
+            <h3 className="font-black text-gray-900 mb-3 text-base tracking-tight">About Space</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">{community?.description || "A room engineered for reading analytics and cooperative book summaries."}</p>
           </div>
 
           {/* Members List Card */}
           {isMember && (
-            <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
-                <Users size={20} className="text-[#14919B]" /> Community Members
+            <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs">
+              <h3 className="font-black text-gray-900 mb-4 text-base tracking-tight flex items-center gap-2">
+                <Users size={18} className="text-[#14919B]" /> Community Members
               </h3>
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#14919B]/10 flex items-center justify-center font-bold text-[#14919B] text-xs">
+                      <div className="w-8 h-8 rounded-full bg-[#14919B]/10 flex items-center justify-center font-black text-[#14919B] text-xs">
                         {member.name?.[0].toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900 leading-none">{member.name}</p>
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="flex items-center gap-1 mt-1.5">
                           {member.role === 'mentor' && <Crown size={10} className="text-amber-500" />}
                           {member.role === 'moderator' && <ShieldCheck size={10} className="text-[#14919B]" />}
                           <p className={`text-[9px] font-black uppercase tracking-widest ${
