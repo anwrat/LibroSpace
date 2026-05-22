@@ -16,7 +16,7 @@ export const acceptFriendRequest = async(requester_id: number, addressee_id: num
 }
 
 export const cancelFriendRequest = async(requester_id: number, addressee_id: number) =>{
-    const result = await pool.query('DELETE FROM friends.friendships WHERE status = 0 AND ((requester_id = $1 AND addressee_id = $2) OR (requester_id = $2 AND addressee_id = $1)) RETURNING *;',[requester_id, addressee_id]);
+    const result = await pool.query('DELETE FROM friends.friendships WHERE ((requester_id = $1 AND addressee_id = $2) OR (requester_id = $2 AND addressee_id = $1)) RETURNING *;',[requester_id, addressee_id]);
     return result;
 }
 
