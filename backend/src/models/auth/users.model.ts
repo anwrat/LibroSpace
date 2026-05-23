@@ -5,6 +5,11 @@ export const createUser = async (name: string, email: string, password: string)=
     return result.rows[0];
 }
 
+export const removeUser = async (userId: number) =>{
+    await pool.query('DELETE FROM auth.users WHERE id = $1', [userId]);
+    return;
+}
+
 export const findUserByEmail = async (email:string) =>{
     const result = await pool.query('SELECT * FROM auth.users WHERE email = $1', [email]);
     return result.rows[0];

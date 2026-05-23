@@ -1,8 +1,9 @@
 'use client';
+
 import AdminNav from "@/components/Navbar/AdminNav";
-import { getAllUsers } from "@/lib/admin";
+import { getAllUsers, deleteUser } from "@/lib/admin";
 import { useEffect, useState } from "react";
-import { User, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { User, ChevronLeft, ChevronRight, Search, Trash2, Loader2 } from "lucide-react";
 
 interface UserType {
     id: number;
@@ -14,6 +15,7 @@ interface UserType {
 export default function Users() {
     const [users, setUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +26,7 @@ export default function Users() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
+                setLoading(true);
                 const response = await getAllUsers();
                 setUsers(response.data.users);
             } catch (err: any) {
@@ -35,6 +38,33 @@ export default function Users() {
         
         fetchUsers();
     }, []);
+
+    // Handle user deletion execution block
+    const handleDeleteUser = async (userId: number) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this user? This action cannot be undone.");
+        if (!confirmDelete) return;
+
+        try {
+            setDeletingId(userId);
+            setError(''); // Reset any existing errors before trying to delete
+            await deleteUser(userId);
+            
+            // Remove the deleted user instantly from global state
+            setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+            
+            // Adjust pagination window safely if removing the last element of an isolated leaf page
+            const remainingFiltered = filteredUsers.filter(user => user.id !== userId);
+            const maxRemainingPages = Math.ceil(remainingFiltered.length / usersPerPage) || 1;
+            if (currentPage > maxRemainingPages) {
+                setCurrentPage(maxRemainingPages);
+            }
+        } catch (err: any) {
+            console.error("User deletion failure:", err);
+            alert(err.response?.data?.message || 'Failed to delete the user. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
     
     // Filter users based on search
     const filteredUsers = users.filter(user => 
@@ -118,17 +148,17 @@ export default function Users() {
                                 setSearchTerm(e.target.value);
                                 setCurrentPage(1); // Reset to first page on search
                             }}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#14919B] focus:border-transparent font-main"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#14919B] focus:border-transparent font-main bg-white text-gray-900"
                         />
                     </div>
                 </div>
                 
                 {/* Users Table */}
-                <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
                     <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
+                        <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main w-16">
                                     ID
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
@@ -140,12 +170,15 @@ export default function Users() {
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 font-main">
                                     Joined Date
                                 </th>
+                                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 font-main w-24">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {currentUsers.length > 0 ? (
                                 currentUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={user.id} className="hover:bg-gray-50/80 transition-colors">
                                         <td className="px-6 py-4 text-sm text-gray-700 font-main">
                                             {user.id}
                                         </td>
@@ -157,6 +190,20 @@ export default function Users() {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-700 font-main">
                                             {new Date(user.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-center font-main">
+                                            <button
+                                                onClick={() => handleDeleteUser(user.id)}
+                                                disabled={deletingId !== null}
+                                                title="Delete user profile data record"
+                                                className="inline-flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                            >
+                                                {deletingId === user.id ? (
+                                                    <Loader2 size={18} className="animate-spin text-red-600" />
+                                                ) : (
+                                                    <Trash2 size={18} />
+                                                )}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -185,7 +232,7 @@ export default function Users() {
                             <button
                                 onClick={goToPreviousPage}
                                 disabled={currentPage === 1}
-                                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                                 <ChevronLeft size={20} />
                             </button>
@@ -200,7 +247,7 @@ export default function Users() {
                                             px-4 py-2 rounded-lg font-main text-sm font-medium transition-colors cursor-pointer
                                             ${currentPage === page
                                                 ? 'bg-[#14919B] text-white'
-                                                : 'border border-gray-300 hover:bg-gray-50'
+                                                : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
                                             }
                                         `}
                                     >
@@ -213,7 +260,7 @@ export default function Users() {
                             <button
                                 onClick={goToNextPage}
                                 disabled={currentPage === totalPages}
-                                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                                 <ChevronRight size={20} />
                             </button>
