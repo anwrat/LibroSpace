@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { getAllReadingSessions, getAchievementThisMonth } from "@/lib/user"; 
+import { getAllReadingSessions, getAllAchievements } from "@/lib/user"; 
 import { BookOpen, Clock, Calendar, ChevronRight, Loader2, BarChart3, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export default function SessionHistory() {
             try {
                 const [sessionRes, historyRes] = await Promise.all([
                     getAllReadingSessions(),
-                    getAchievementThisMonth() 
+                    getAllAchievements() 
                 ]);
 
                 setSessions(sessionRes.data.data || []);

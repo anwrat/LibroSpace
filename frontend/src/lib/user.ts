@@ -199,8 +199,8 @@ export function updateUserGoal(newGoal: number){
     return api.patch('/api/users/gamification/update-goal', {newGoal});
 }
 
-export function getAchievementThisMonth(){
-    return api.get('/api/users/gamification/daily-goal/month');
+export function getAllAchievements(){
+    return api.get('/api/users/gamification/daily-goal/all');
 }
 
 //For friend challenges

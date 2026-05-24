@@ -22,25 +22,16 @@ export const checkGoalMetYesterday = async(user_id: number, yesterday: string) =
     return result.rows.length > 0; 
 }
 
-export const getDailyGoalsAchievedDateThisMonth = async (user_id: number) => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // JS months are 0-indexed
-
-    // Format as YYYY-MM-DD manually to avoid ISO conversion shifts
-    const start = `${year}-${String(month).padStart(2, '0')}-01`;
-    const end = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
-
+export const getDailyGoalsAchievedDateAllTime = async (user_id: number) => {
     const result = await pool.query(
         `SELECT achieved_date 
          FROM gamification.daily_goals_achieved 
-         WHERE user_id = $1 
-         AND achieved_date >= $2 
-         AND achieved_date <= $3`,
-        [user_id, start, end]
+         WHERE user_id = $1
+         ORDER BY achieved_date ASC`,
+        [user_id]
     );
 
-    // Return an array of dates in YYYY-MM-DD format
+    // Return an array of all unique historical dates in YYYY-MM-DD format
     return result.rows.map((row: any) => {
         const d = new Date(row.achieved_date);
         return [
