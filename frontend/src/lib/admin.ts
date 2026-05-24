@@ -4,6 +4,10 @@ export function getAllUsers(){
     return api.get('/api/admin/users');
 }
 
+export function deleteUser(userId: number){
+    return api.delete(`/api/admin/users/${userId}`);
+}
+
 export function getAllBooks(){
     return api.get('/api/admin/books');
 }

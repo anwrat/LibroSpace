@@ -4,7 +4,7 @@ import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/c
 import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from "../../models/communities/discussions.model.js";
 import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
 import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId } from "../../models/communities/community_members.model.js";
-import { getActiveRoomsByCommunityId, startNewRoom } from "../../models/communities/community_rooms.model.js";
+import { getActiveRoomsByCommunityId, startNewRoom, endRoom } from "../../models/communities/community_rooms.model.js";
 import { awardActivityXP } from "../../services/gamification.service.js";
 
 export const addNewCommunity = async(req: Request, res: Response) =>{
@@ -254,5 +254,20 @@ export const startRoom = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({success: false, message: "Internal Server Error while starting a new room"});
+    }
+}
+
+export const endActiveRoom = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {room_id} = req.params;
+        const room = await endRoom(Number(room_id));
+        return res.status(200).json({success: true, message: "Room ended successfully", data: room});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while ending the room"});
     }
 }

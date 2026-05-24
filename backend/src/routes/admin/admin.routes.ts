@@ -1,7 +1,7 @@
 import { authorizeAdmin } from "../../middleware/auth/admin.middleware.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { Router } from "express";
-import { fetchAllUsers } from "../../controllers/admin/users.controller.js";
+import { fetchAllUsers, deleteUser } from "../../controllers/admin/users.controller.js";
 import { addNewBook,fetchAllBooks, checkifBookExists, addNewGenre, fetchAllGenres, removeGenre, deleteBook, updateBook, addBookQuote, removeBookQuote, getAllQuotes } from "../../controllers/admin/book.controller.js";
 import { getBookDetailsbyID } from "../../controllers/users/books.controller.js";
 import { bookImgUpload } from "../../middleware/imgupload/bookimg.middleware.js";
@@ -13,6 +13,7 @@ import {getAllCommunitiesAdmin} from "../../controllers/admin/communities.contro
 const router = Router();
 
 router.get('/users',authenticateToken, authorizeAdmin, fetchAllUsers);
+router.delete('/users/:id', authenticateToken, authorizeAdmin, deleteUser);
 
 // Books routes
 router.post('/books/add',authenticateToken, authorizeAdmin, bookImgUpload.single('cover'),addNewBook);
