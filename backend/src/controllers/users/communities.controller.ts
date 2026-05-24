@@ -265,6 +265,7 @@ export const endActiveRoom = async(req: Request, res: Response) =>{
         }
         const {room_id} = req.params;
         const room = await endRoom(Number(room_id));
+        await awardActivityXP(user_id, 'COMMUNITY_ROOM', room.community_id);
         return res.status(200).json({success: true, message: "Room ended successfully", data: room});
     }catch(err){
         console.error(err);
