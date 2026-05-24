@@ -35,7 +35,7 @@ export default function SessionDetailPage() {
     return (
         <main className="min-h-scree pt-24 pb-20 px-6 font-main mx-auto max-w-7xl">
             <UserNav />
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 {/* Back Button */}
                 <button 
                     onClick={() => router.back()}
