@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import BookCard from '@/components/Cards/BookCard';
 import UserNav from '@/components/Navbar/UserNav';
 import { getAllBooksforUser } from '@/lib/user';
-import { BookOpen, Layers, SlidersHorizontal, Layers2 } from 'lucide-react';
+import { BookOpen, Layers, SlidersHorizontal, Layers2, User2, X } from 'lucide-react';
 
 interface Book {
   id: number;
@@ -26,6 +26,7 @@ export default function ExplorePage() {
 
   // Filter States
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
+  const [authorSearchTerm, setAuthorSearchTerm] = useState<string>('');
   const [maxPageCount, setMaxPageCount] = useState<number>(1000);
 
   useEffect(() => {
@@ -69,20 +70,30 @@ export default function ExplorePage() {
     return ['All', ...Array.from(genresSet).sort()];
   }, [books]);
 
-  // 2. Filter and Group books contextually based on state parameters
+  // 2. Filter and Group books contextually based on unified matrix parameters
   const groupedAndFilteredBooks = useMemo(() => {
     // Stage A: Filter collections down by metrics first
     const runningFilteredList = books.filter(book => {
       const matchesPageCount = (book.pagecount || 0) <= maxPageCount;
       
-      if (selectedGenre === 'All') return matchesPageCount;
-      if (selectedGenre === 'Uncategorized') {
-        return matchesPageCount && (!book.genres || book.genres.length === 0);
+      // Compute Author Search Filter Match (Case-Insensitive Substring Match)
+      const bookAuthor = book.author || 'Unknown Author';
+      const matchesAuthor = bookAuthor.toLowerCase().includes(authorSearchTerm.toLowerCase().trim());
+
+      // Compute Genre Filter Match
+      let matchesGenre = false;
+      if (selectedGenre === 'All') {
+        matchesGenre = true;
+      } else if (selectedGenre === 'Uncategorized') {
+        matchesGenre = !book.genres || book.genres.length === 0;
+      } else {
+        matchesGenre = book.genres?.includes(selectedGenre) || false;
       }
-      return matchesPageCount && book.genres?.includes(selectedGenre);
+
+      return matchesPageCount && matchesAuthor && matchesGenre;
     });
 
-    // Stage B: Assemble the structured map
+    // Stage B: Assemble the structured map grouping
     const groupings: Record<string, Book[]> = {};
 
     runningFilteredList.forEach(book => {
@@ -103,10 +114,10 @@ export default function ExplorePage() {
     });
 
     return groupings;
-  }, [books, selectedGenre, maxPageCount]);
+  }, [books, selectedGenre, authorSearchTerm, maxPageCount]);
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pt-24 px-4 sm:px-8 pb-12 font-main">
+    <main className="min-h-screen bg-[#F8FAFC] pt-24 px-4 sm:px-8 pb-12 font-main text-gray-900">
       <UserNav />
       <div className="max-w-7xl mx-auto">
         
@@ -130,28 +141,61 @@ export default function ExplorePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-              {/* Genre Filter Pills Strip */}
-              <div className="lg:col-span-2">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Filter By Genre</p>
-                <div className="flex flex-wrap gap-2">
-                  {allAvailableGenres.map(genre => (
-                    <button
-                      key={genre}
-                      onClick={() => setSelectedGenre(genre)}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                        selectedGenre === genre
-                          ? 'bg-[#14919B] text-white shadow-md shadow-[#14919B]/20'
-                          : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-800'
-                      }`}
-                    >
-                      {genre}
-                    </button>
-                  ))}
+              {/* Left Column Stack: Genre & Author Search Fields */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Genre Filter Pills Strip */}
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Filter By Genre</p>
+                  <div className="flex flex-wrap gap-2">
+                    {allAvailableGenres.map(genre => (
+                      <button
+                        key={genre}
+                        onClick={() => setSelectedGenre(genre)}
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          selectedGenre === genre
+                            ? 'bg-[#14919B] text-white shadow-md shadow-[#14919B]/20'
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                        }`}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Author Search Box Input */}
+                <div className="max-w-md">
+                  <label htmlFor="author-search" className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">
+                    Search By Author
+                  </label>
+                  <div className="relative">
+                    <User2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                      id="author-search"
+                      type="text"
+                      placeholder="Type author's name..."
+                      value={authorSearchTerm}
+                      onChange={(e) => {
+                        setAuthorSearchTerm(e.target.value);
+                      }}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-800 py-2.5 pl-10 pr-10 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#14919B]/40 focus:border-[#14919B] transition-all"
+                    />
+                    {authorSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setAuthorSearchTerm('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0.5 rounded-md hover:bg-gray-200/60 cursor-pointer"
+                        title="Clear author query"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Page Count Slider Controls */}
-              <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-100">
+              <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-100 lg:mt-7">
                 <div className="flex justify-between items-center mb-2">
                   <label htmlFor="pagecount-slider" className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Max Length
@@ -227,7 +271,7 @@ export default function ExplorePage() {
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-1">No Books Match Criteria</h3>
             <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto">
-              Try adjusting your filter toggles or changing the length threshold to explore other options.
+              Try adjusting your filter toggles, typing a different author, or modifying your page criteria to find matching assets.
             </p>
           </div>
         )}
