@@ -122,6 +122,10 @@ export function changeMemberRole(communityId: number, member_id: number, role: s
     return api.post(`/api/users/communities/${communityId}/members/role`, {member_id, role});
 }
 
+export function removeMember(communityId: number, member_id: number){
+    return api.delete(`/api/users/communities/${communityId}/members/remove`, {data: {member_id}});
+}
+
 //For all discussions and comments related to communities
 export function startDiscussion(communityId: number, title: string, content: string){
     return api.post(`/api/users/communities/${communityId}/discussions`, {title, content});
