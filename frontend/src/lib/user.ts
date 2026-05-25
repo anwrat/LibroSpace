@@ -49,6 +49,10 @@ export function getOtherUserProfile(targetId: number){
     return api.get(`/api/users/friends/profile/${targetId}`);
 }
 
+export function getOtherDetailsforFriend(targetId: number){
+    return api.get(`/api/users/friends/profile/${targetId}/details`);
+}
+
 export function getAllFriends(){
     return api.get('/api/users/friends');
 }
