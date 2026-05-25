@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acceptAndUpdateFriendRequest, sendFriendRequest, deleteFriendRequest, getPendingFriendRequests, getFriendsList, changeMessageStatus, checkUnreadMessages, getOtherUserProfile } from "../../controllers/users/friends.controller.js";
+import { acceptAndUpdateFriendRequest, sendFriendRequest, deleteFriendRequest, getPendingFriendRequests, getFriendsList, changeMessageStatus, checkUnreadMessages, getOtherUserProfile, getOtherDetailsforFriend } from "../../controllers/users/friends.controller.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { sendFriendRequestSchema, acceptRequestSchema, deleteRequestSchema } from "../../schemas/friends.schema.js";
@@ -13,6 +13,7 @@ router.delete("/",authenticateToken,validate(deleteRequestSchema), deleteFriendR
 router.get("/pending",authenticateToken, getPendingFriendRequests);
 router.get("/",authenticateToken, getFriendsList);
 router.get("/profile/:targetId", authenticateToken, getOtherUserProfile);
+router.get("/profile/:targetId/details", authenticateToken, getOtherDetailsforFriend);
 
 //For messages
 router.get("/messages/:friendId", authenticateToken, getChatHistory);

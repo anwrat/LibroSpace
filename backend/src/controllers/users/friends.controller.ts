@@ -2,6 +2,9 @@ import type{ Request,Response } from "express";
 import { getAllFriends, createFriendRequest,acceptFriendRequest, cancelFriendRequest, getPendingRequests, getRelationshipStatusandDetails } from "../../models/friends/friendships.model.js";
 import { getAllMessagesbetweenTwoUsers, markMessagesAsRead, unreadMessagesStatus } from "../../models/friends/messages.model.js";
 import { getChatHistorySchema, getRelationshipStatusSchema } from "../../schemas/friends.schema.js";
+import {getUserBadges} from "../../models/gamification/user_badges.model.js";
+import {getUserShelves} from "../../models/books/user_shelves.model.js";
+import {getSavedQuotesForUser} from "../../models/books/book_quotes.model.js";
 
 export const sendFriendRequest = async(req:Request, res: Response)=>{
     try{
@@ -144,6 +147,19 @@ export const getOtherUserProfile = async(req: Request, res: Response)=>{
     }catch(err){
         console.error(err);
         res.status(500).json({message: "Internal Server Error while fetching other user's profile"});
+    }
+}
+
+export const getOtherDetailsforFriend = async(req: Request, res: Response)=>{
+    try{
+        const {targetId} = getRelationshipStatusSchema.parse(req.params);
+        const badges = await getUserBadges(Number(targetId));
+        const shelves = await getUserShelves(Number(targetId));
+        const savedQuotes = await getSavedQuotesForUser(Number(targetId));
+        return res.status(200).json({success: true, data: {badges, shelves, savedQuotes}});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error while fetching other details for friend"});
     }
 }
 

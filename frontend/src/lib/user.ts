@@ -49,6 +49,10 @@ export function getOtherUserProfile(targetId: number){
     return api.get(`/api/users/friends/profile/${targetId}`);
 }
 
+export function getOtherDetailsforFriend(targetId: number){
+    return api.get(`/api/users/friends/profile/${targetId}/details`);
+}
+
 export function getAllFriends(){
     return api.get('/api/users/friends');
 }
@@ -120,6 +124,10 @@ export function checkUserRole(communityId: number){
 
 export function changeMemberRole(communityId: number, member_id: number, role: string){
     return api.post(`/api/users/communities/${communityId}/members/role`, {member_id, role});
+}
+
+export function removeMember(communityId: number, member_id: number){
+    return api.delete(`/api/users/communities/${communityId}/members/remove`, {data: {member_id}});
 }
 
 //For all discussions and comments related to communities
@@ -199,8 +207,8 @@ export function updateUserGoal(newGoal: number){
     return api.patch('/api/users/gamification/update-goal', {newGoal});
 }
 
-export function getAchievementThisMonth(){
-    return api.get('/api/users/gamification/daily-goal/month');
+export function getAllAchievements(){
+    return api.get('/api/users/gamification/daily-goal/all');
 }
 
 //For friend challenges

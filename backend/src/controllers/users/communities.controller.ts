@@ -3,7 +3,7 @@ import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID,
 import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/communities.schema.js";
 import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from "../../models/communities/discussions.model.js";
 import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
-import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId } from "../../models/communities/community_members.model.js";
+import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId, removeMemberFromCommunity } from "../../models/communities/community_members.model.js";
 import { getActiveRoomsByCommunityId, startNewRoom, endRoom } from "../../models/communities/community_rooms.model.js";
 import { awardActivityXP } from "../../services/gamification.service.js";
 
@@ -229,6 +229,26 @@ export const changeMemberRole = async(req: Request, res: Response) =>{
     }
 }
 
+export const removeMember = async(req: Request, res: Response) =>{
+    try{
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(400).json({message: "Invalid user"});
+        }
+        const {id} = CommunityIdParamSchema.parse(req.params);
+        const {member_id} = req.body;
+        const removerRole = await checkMemberRole(user_id, id);
+        if(removerRole !== 'mentor'){
+            return res.status(403).json({success: false, message: "Only mentor can remove members"});
+        }
+        const result = await removeMemberFromCommunity(member_id, id);
+        return res.status(200).json({success: true, message: "Member removed successfully"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while removing member from community"});
+    }
+}
+
 // For community rooms related controllers
 export const getActiveRoom = async(req: Request, res: Response) =>{
     try{
@@ -265,6 +285,7 @@ export const endActiveRoom = async(req: Request, res: Response) =>{
         }
         const {room_id} = req.params;
         const room = await endRoom(Number(room_id));
+        await awardActivityXP(user_id, 'COMMUNITY_ROOM', room.community_id);
         return res.status(200).json({success: true, message: "Room ended successfully", data: room});
     }catch(err){
         console.error(err);

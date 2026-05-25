@@ -13,3 +13,7 @@ export const checkMemberRole = async (user_id: number, community_id: number) => 
 export const assignRoleToMember = async (user_id: number, community_id: number, role: string) => {
     await pool.query('UPDATE communities.community_members SET role = $1 WHERE user_id = $2 AND community_id = $3', [role, user_id, community_id]);
 }
+
+export const removeMemberFromCommunity = async (user_id: number, community_id: number) => {
+    await pool.query('DELETE FROM communities.community_members WHERE user_id = $1 AND community_id = $2', [user_id, community_id]);
+}

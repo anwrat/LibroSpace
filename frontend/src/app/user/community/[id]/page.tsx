@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   getCommunitybyId, 
@@ -11,6 +11,7 @@ import {
   getAllMembers, 
   checkUserRole,
   changeMemberRole,
+  removeMember,
   getActiveRoom, 
   startRoom,    
   getAllBooksforUser 
@@ -20,7 +21,7 @@ import Image from "next/image";
 import { 
   Users, ShieldCheck, MessageSquarePlus, 
   Loader2, Crown, Radio, Play, Sparkles,
-  Search, BookOpen, Check
+  Search, BookOpen, Check, Trash2, X
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
 import { toast } from "react-hot-toast";
@@ -51,6 +52,10 @@ export default function CommunityDetailsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sidebar Members List Filter State Matrix
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("All");
 
   const fetchData = async () => {
     try {
@@ -190,18 +195,59 @@ export default function CommunityDetailsPage() {
     }
   };
 
+  // Privileged handler method to completely expel a user record out from the database matrix
+  const handleRemoveMember = async (memberId: number, memberName: string) => {
+    if (!confirm(`Are you absolutely sure you want to remove ${memberName} from this space?`)) return;
+    try {
+      setActionLoading(true);
+      await removeMember(communityId, memberId);
+      toast.success(`${memberName} has been removed.`);
+      fetchMembersList();
+    } catch (err) {
+      toast.error("Failed to remove member");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Compute Hierarchy Rank Weight Score Value Matrix Maps
+  const getRoleWeight = (role: string): number => {
+    switch (role?.toLowerCase()) {
+      case 'mentor': return 3;
+      case 'moderator': return 2;
+      case 'member': return 1;
+      default: return 0;
+    }
+  };
+
+  // Process Sorting, Text Matching Queries, and Structural Sidebar Filtering Loops
+  const filteredAndSortedMembers = useMemo(() => {
+    return members
+      .filter((member) => {
+        const matchesSearch = member.name?.toLowerCase().includes(memberSearchQuery.toLowerCase().trim());
+        const matchesRole = selectedRoleFilter === "All" || member.role?.toLowerCase() === selectedRoleFilter.toLowerCase();
+        return matchesSearch && matchesRole;
+      })
+      .sort((a, b) => {
+        const weightA = getRoleWeight(a.role);
+        const weightB = getRoleWeight(b.role);
+        
+        // Arrange items descending based on weight score; if identical fallback alphabetically
+        if (weightB !== weightA) return weightB - weightA;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+  }, [members, memberSearchQuery, selectedRoleFilter]);
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
       <Loader2 className="animate-spin text-[#14919B]" size={40} />
     </div>
   );
 
-  // Experience progression bar calculation configurations
   const currentXp = community?.xp || 0;
   const nextLevelXp = community?.next_level_xp || 1000;
   const progressPercentage = Math.min(Math.max((currentXp / nextLevelXp) * 100, 0), 100);
 
-  // Filter books down by matching string titles layout view layers
   const filteredBooks = availableBooks.filter((book) =>
     book.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -209,7 +255,7 @@ export default function CommunityDetailsPage() {
   const currentSelectedBook = availableBooks.find(b => String(b.id) === selectedBookId);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-main">
+    <div className="min-h-screen bg-gray-50 font-main text-gray-900">
       <UserNav />
 
       {/* Header Container Dashboard Area */}
@@ -232,7 +278,6 @@ export default function CommunityDetailsPage() {
                 {community?.member_count || 0} Members
               </span>
 
-              {/* Enhanced Interactive Level Indicator Layout */}
               <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-xl uppercase tracking-wider">
                 <Sparkles size={13} fill="currentColor" />
                 Level {community?.level || 1}
@@ -240,7 +285,6 @@ export default function CommunityDetailsPage() {
             </div>
           </div>
 
-          {/* Action Callout Interface Logic Router */}
           <div className="shrink-0 mt-4 md:mt-0">
             {isMember && userRole === 'mentor' ? (
               <div className="flex items-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 text-white px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-md shadow-amber-500/20">
@@ -256,7 +300,7 @@ export default function CommunityDetailsPage() {
               <button 
                 onClick={handleMembershipToggle}
                 disabled={actionLoading}
-                className={`px-8 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
+                className={`px-8 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
                   isMember 
                     ? "bg-white text-gray-500 border border-gray-200/80 hover:bg-red-50 hover:text-red-600 hover:border-red-100" 
                     : "bg-[#14919B] text-white hover:bg-[#11767e] shadow-lg shadow-[#14919B]/20"
@@ -295,14 +339,13 @@ export default function CommunityDetailsPage() {
                 {activeRoom ? (
                   <button 
                     onClick={() => router.push(`/user/community/${communityId}/live`)}
-                    className="bg-white text-[#14919B] px-8 py-3 rounded-xl font-black hover:scale-105 transition-transform"
+                    className="bg-white text-[#14919B] px-8 py-3 rounded-xl font-black hover:scale-105 transition-transform cursor-pointer"
                   >
                     Join Room
                   </button>
                 ) : (userRole === 'mentor' || userRole === 'moderator') ? (
                   <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto relative" ref={searchContainerRef}>
                     
-                    {/* Interactive Book Search Field Input Layout Box */}
                     <div className="w-full sm:w-64 relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <Search size={16} />
@@ -316,7 +359,6 @@ export default function CommunityDetailsPage() {
                         onFocus={() => setIsSearchFocused(true)}
                       />
                       
-                      {/* Search Results Filter Box Dropdown Container Overlay */}
                       {isSearchFocused && (
                         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200/80 shadow-xl max-h-56 overflow-y-auto z-50 p-1.5 space-y-0.5">
                           {filteredBooks.length > 0 ? (
@@ -329,7 +371,7 @@ export default function CommunityDetailsPage() {
                                   setSearchQuery(book.title);
                                   setIsSearchFocused(false);
                                 }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                                className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                                   selectedBookId === String(book.id)
                                     ? "bg-[#14919B]/10 text-[#14919B]"
                                     : "text-gray-600 hover:bg-gray-50"
@@ -354,7 +396,7 @@ export default function CommunityDetailsPage() {
                     <button 
                       onClick={handleStartRoom}
                       disabled={roomLoading}
-                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75] transition-colors whitespace-nowrap shrink-0"
+                      className="w-full sm:w-auto bg-[#14919B] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0d6e75] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       {roomLoading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} fill="white" />}
                       Start Room
@@ -376,7 +418,7 @@ export default function CommunityDetailsPage() {
                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Discussions</h2>
                 <button 
                   onClick={() => setIsModalOpen(true)}
-                  className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline"
+                  className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline cursor-pointer"
                 >
                   <MessageSquarePlus size={20} /> New Post
                 </button>
@@ -425,7 +467,6 @@ export default function CommunityDetailsPage() {
               </span>
             </div>
             
-            {/* Custom Interactive Linear Progress Bar */}
             <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden border border-gray-200/40 relative">
               <div 
                 className="bg-linear-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-500 ease-out"
@@ -445,47 +486,118 @@ export default function CommunityDetailsPage() {
             <p className="text-gray-500 text-sm leading-relaxed">{community?.description || "A room engineered for reading analytics and cooperative book summaries."}</p>
           </div>
 
-          {/* Members List Card */}
+          {/* ENHANCED MEMBERS LIST CARD PANEL */}
           {isMember && (
-            <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs">
-              <h3 className="font-black text-gray-900 mb-4 text-base tracking-tight flex items-center gap-2">
-                <Users size={18} className="text-[#14919B]" /> Community Members
-              </h3>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#14919B]/10 flex items-center justify-center font-black text-[#14919B] text-xs">
-                        {member.name?.[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 leading-none">{member.name}</p>
-                        <div className="flex items-center gap-1 mt-1.5">
-                          {member.role === 'mentor' && <Crown size={10} className="text-amber-500" />}
-                          {member.role === 'moderator' && <ShieldCheck size={10} className="text-[#14919B]" />}
-                          <p className={`text-[9px] font-black uppercase tracking-widest ${
-                            member.role === 'mentor' ? 'text-amber-500' : 
-                            member.role === 'moderator' ? 'text-[#14919B]' : 'text-gray-400'
-                          }`}>
-                            {member.role}
-                          </p>
+            <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs flex flex-col gap-4">
+              <div>
+                <h3 className="font-black text-gray-900 mb-1 text-base tracking-tight flex items-center gap-2">
+                  <Users size={18} className="text-[#14919B]" /> Community Members
+                </h3>
+                <p className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                  Total Members • {members.length}
+                </p>
+              </div>
+
+              {/* Search Bar Block Context View */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Find member by name..."
+                  value={memberSearchQuery}
+                  onChange={(e) => setMemberSearchQuery(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-800 py-2 pl-9 pr-8 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#14919B]/30 focus:border-[#14919B] transition-all"
+                />
+                {memberSearchQuery && (
+                  <button
+                    onClick={() => setMemberSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0.5 rounded-md hover:bg-gray-200/50 cursor-pointer"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Role Categorization Pill Switches */}
+              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                {["All", "Mentor", "Moderator", "Member"].map((roleTab) => (
+                  <button
+                    key={roleTab}
+                    type="button"
+                    onClick={() => setSelectedRoleFilter(roleTab)}
+                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                      selectedRoleFilter === roleTab
+                        ? "bg-white text-[#14919B] shadow-xs border border-gray-100"
+                        : "text-gray-400 hover:text-gray-700"
+                    }`}
+                  >
+                    {roleTab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Core Dynamic Array Mapping Matrix Layout */}
+              <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+                {filteredAndSortedMembers.length > 0 ? (
+                  filteredAndSortedMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between gap-2 border-b border-gray-50/40 pb-2 last:border-none last:pb-0 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
+                          member.role === 'mentor' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          member.role === 'moderator' ? 'bg-[#14919B]/10 text-[#14919B]' : 'bg-gray-50 text-gray-500'
+                        }`}>
+                          {member.name?.[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-gray-900 leading-none truncate">{member.name}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            {member.role === 'mentor' && <Crown size={10} className="text-amber-500" />}
+                            {member.role === 'moderator' && <ShieldCheck size={10} className="text-[#14919B]" />}
+                            <p className={`text-[9px] font-black uppercase tracking-widest ${
+                              member.role === 'mentor' ? 'text-amber-500' : 
+                              member.role === 'moderator' ? 'text-[#14919B]' : 'text-gray-400'
+                            }`}>
+                              {member.role}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {userRole === 'mentor' && member.role !== 'mentor' && (
-                      <select 
-                        className="text-[10px] font-bold bg-gray-50 border-none rounded-lg focus:ring-0 cursor-pointer p-1"
-                        value={member.role}
-                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                        disabled={actionLoading}
-                      >
-                        <option value="member">Member</option>
-                        <option value="moderator">Moderator</option>
-                      </select>
-                    )}
+                      {/* Interactive Configuration Action Toggles Stack */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Manage Role Select Component Array Mapping Rules */}
+                        {userRole === 'mentor' && member.role !== 'mentor' && (
+                          <select 
+                            className="text-[10px] font-black bg-gray-50 border border-gray-200/60 rounded-lg focus:ring-0 focus:border-[#14919B]/40 cursor-pointer py-1 px-1.5 text-gray-600"
+                            value={member.role}
+                            onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                            disabled={actionLoading}
+                          >
+                            <option value="member">Member</option>
+                            <option value="moderator">Moderator</option>
+                          </select>
+                        )}
+
+                        {/* Expel/Remove User Action Component Button */}
+                        {userRole === 'mentor' && member.role !== 'mentor' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(member.id, member.name)}
+                            disabled={actionLoading}
+                            className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title={`Remove ${member.name} from group`}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-xs font-bold text-gray-400 italic">
+                    No matching members found
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../middleware/validation/validate.middleware.js";
 import { CreateCommunitySchema, CreateDiscussionSchema, AddCommentSchema, ChangeMemberRoleSchema, StartNewRoomSchema } from "../../schemas/communities.schema.js";
-import { addNewCommunity, joinCommunityasMember, leaveACommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership, startDiscussion, getAllDiscussionsByCommunityId, addCommentToDiscussion, getAllComments, getDiscussionDetailsById, getAllMembersByCommunity, changeMemberRole, checkUserRole, getActiveRoom, startRoom, endActiveRoom} from "../../controllers/users/communities.controller.js";
+import { addNewCommunity, joinCommunityasMember, leaveACommunity, fetchAllCommunities, fetchJoinedCommunities, getCommunityDetailsbyID, checkUserMembership, startDiscussion, getAllDiscussionsByCommunityId, addCommentToDiscussion, getAllComments, getDiscussionDetailsById, getAllMembersByCommunity, changeMemberRole, checkUserRole, getActiveRoom, startRoom, endActiveRoom, removeMember} from "../../controllers/users/communities.controller.js";
 import { authenticateToken } from "../../middleware/auth/auth.middleware.js";
 import { communityImgUpload } from "../../middleware/imgupload/communityimg.middleware.js";
 
@@ -19,6 +19,7 @@ router.delete('/:id/membership', authenticateToken, leaveACommunity);
 router.get('/:id/members/all', authenticateToken, getAllMembersByCommunity);
 router.get('/:id/members/role', authenticateToken, checkUserRole);
 router.post('/:id/members/role', authenticateToken, validate(ChangeMemberRoleSchema), changeMemberRole);
+router.delete('/:id/members/remove', authenticateToken, removeMember);
 
 //Discussions
 router.post('/:id/discussions',authenticateToken, validate(CreateDiscussionSchema), startDiscussion);
