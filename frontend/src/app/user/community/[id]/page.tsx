@@ -21,7 +21,7 @@ import Image from "next/image";
 import { 
   Users, ShieldCheck, MessageSquarePlus, 
   Loader2, Crown, Radio, Play, Sparkles,
-  Search, BookOpen, Check, Trash2, X
+  Search, BookOpen, Check, Trash2, X, MessageSquare, Clock
 } from "lucide-react";
 import NewPostModal from "@/components/User/Community/NewPostModal";
 import { toast } from "react-hot-toast";
@@ -57,6 +57,9 @@ export default function CommunityDetailsPage() {
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("All");
 
+  // Discussions Filter Tab State
+  const [discSortType, setDiscSortType] = useState<"recent" | "popular">("recent");
+
   const fetchData = async () => {
     try {
       const res = await getCommunitybyId(communityId);
@@ -76,7 +79,7 @@ export default function CommunityDetailsPage() {
     } catch (err) {
       console.error("Error fetching community data:", err);
     } finally {
-      setLoading(false);
+      loading && setLoading(false);
     }
   };
 
@@ -195,7 +198,7 @@ export default function CommunityDetailsPage() {
     }
   };
 
-  // Privileged handler method to completely expel a user record out from the database matrix
+  // Privileged handler method to completely expel a user record out from the database
   const handleRemoveMember = async (memberId: number, memberName: string) => {
     if (!confirm(`Are you absolutely sure you want to remove ${memberName} from this space?`)) return;
     try {
@@ -238,6 +241,17 @@ export default function CommunityDetailsPage() {
       });
   }, [members, memberSearchQuery, selectedRoleFilter]);
 
+  // Compute dynamic client-side sorting configuration for the discussions matrix loop arrays
+  const sortedDiscussions = useMemo(() => {
+    return [...discussions].sort((a, b) => {
+      if (discSortType === "popular") {
+        return (b.comment_count || 0) - (a.comment_count || 0);
+      }
+      // Fallback Default Matrix Ordering Rule: "recent" 
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [discussions, discSortType]);
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
       <Loader2 className="animate-spin text-[#14919B]" size={40} />
@@ -260,7 +274,7 @@ export default function CommunityDetailsPage() {
 
       {/* Header Container Dashboard Area */}
       <div className="bg-white border-b border-gray-200/80 pt-28 pb-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-end gap-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-end gap-6">
           <div className="relative h-32 w-32 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl bg-gray-100 shrink-0">
             {community?.photo_url ? (
               <Image src={community.photo_url} alt={community.name} fill className="object-cover" />
@@ -414,11 +428,42 @@ export default function CommunityDetailsPage() {
           {/* Discussions Section */}
           {isMember ? (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Discussions</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Discussions</h2>
+                  
+                  {/* Sorting Filter Selector Tabs */}
+                  <div className="flex items-center gap-3 mt-2 bg-gray-200/60 p-1 rounded-xl w-fit border border-gray-200/20">
+                    <button
+                      type="button"
+                      onClick={() => setDiscSortType("recent")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        discSortType === "recent"
+                          ? "bg-white text-gray-900 shadow-xs"
+                          : "text-gray-500 hover:text-gray-800"
+                      }`}
+                    >
+                      <Clock size={13} />
+                      Most Recent
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscSortType("popular")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        discSortType === "popular"
+                          ? "bg-white text-[#14919B] shadow-xs"
+                          : "text-gray-500 hover:text-gray-800"
+                      }`}
+                    >
+                      <MessageSquare size={13} />
+                      Most Popular
+                    </button>
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => setIsModalOpen(true)}
-                  className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline cursor-pointer"
+                  className="flex items-center gap-2 text-[#14919B] font-bold text-sm hover:underline cursor-pointer self-start sm:self-auto shrink-0"
                 >
                   <MessageSquarePlus size={20} /> New Post
                 </button>
@@ -428,14 +473,32 @@ export default function CommunityDetailsPage() {
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#14919B]" /></div>
               ) : (
                 <div className="space-y-4">
-                  {discussions.length > 0 ? discussions.map((post) => (
+                  {sortedDiscussions.length > 0 ? sortedDiscussions.map((post) => (
                     <div 
                       key={post.id} 
                       onClick={() => router.push(`/user/community/${communityId}/discussions/${post.id}`)}
-                      className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+                      className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[140px]"
                     >
-                      <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
-                      <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
+                      <div>
+                        <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-[#14919B] transition-colors">{post.title}</h3>
+                        <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.content}</p>
+                      </div>
+
+                      {/* Created At Metadata and Comment Count Structural Indicators Footer Block */}
+                      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <span className="flex items-center gap-1">
+                          <Clock size={13} />
+                          {post.created_at ? new Date(post.created_at).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          }) : "Unknown Date"}
+                        </span>
+                        <span className="flex items-center gap-1 text-[#14919B] bg-[#14919B]/5 px-2 py-0.5 rounded-md">
+                          <MessageSquare size={12} className="fill-current" />
+                          {post.comment_count || 0} Comments
+                        </span>
+                      </div>
                     </div>
                   )) : (
                     <p className="text-center text-gray-400 py-10 font-medium">No discussions yet. Be the first to post!</p>
