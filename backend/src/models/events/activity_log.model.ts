@@ -13,7 +13,7 @@ export const getTodaysLeaderboard = async () => {
         WHERE al.created_at >= CURRENT_DATE 
           AND al.created_at < CURRENT_DATE + INTERVAL '1 day'
         GROUP BY u.id
-        ORDER BY total_points DESC
+        ORDER BY total_points DESC, u.name ASC
         LIMIT 10;
     `;
     
