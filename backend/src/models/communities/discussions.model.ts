@@ -14,3 +14,7 @@ export const getDiscussionById = async(discussion_id: number)=>{
     const result = await pool.query('SELECT d.*, u.name as initiator, u.picture_url as initiator_pfp FROM communities.discussions d JOIN auth.users u ON d.user_id = u.id WHERE d.id = $1', [discussion_id]);
     return result.rows[0];
 }
+
+export const deleteDiscussion = async(discussion_id: number)=>{
+    await pool.query('DELETE FROM communities.discussions WHERE id = $1', [discussion_id]);
+}

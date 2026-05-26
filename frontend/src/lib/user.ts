@@ -143,12 +143,20 @@ export function getDiscussionDetailsbyId(communityId: number, discussionId: numb
     return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}`);
 }
 
+export function deleteDiscussion(communityId: number, discussionId: number){
+    return api.delete(`/api/users/communities/${communityId}/discussions/${discussionId}`);
+}
+
 export function addComment(communityId: number, discussionId: number, content: string){
     return api.post(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`, {content});
 }
 
 export function getAllComments(communityId: number, discussionId: number){
     return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`);
+}
+
+export function deleteComment(communityId: number, discussionId: number, commentId: number){
+    return api.delete(`/api/users/communities/${communityId}/discussions/${discussionId}/comments/${commentId}`);
 }
 
 //For community rooms related functions

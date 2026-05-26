@@ -1,8 +1,8 @@
 import type{ Request,Response } from "express";
 import { createCommunity,getAllCommunities, joinedCommunities, getCommunitybyID, isUserMember, addMemberToCommunity, leaveCommunity } from "../../models/communities/communities.model.js";
 import { CommunityIdParamSchema, DiscussionIdParamSchema } from "../../schemas/communities.schema.js";
-import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById } from "../../models/communities/discussions.model.js";
-import { addComment, getCommentsbyDiscussionId } from "../../models/communities/comments.model.js";
+import { createDiscussion, getDiscussionsByCommunityId, getDiscussionById, deleteDiscussion } from "../../models/communities/discussions.model.js";
+import { addComment, getCommentsbyDiscussionId, deleteComment } from "../../models/communities/comments.model.js";
 import { assignRoleToMember, checkMemberRole, getAllMembersByCommunityId, removeMemberFromCommunity } from "../../models/communities/community_members.model.js";
 import { getActiveRoomsByCommunityId, startNewRoom, endRoom } from "../../models/communities/community_rooms.model.js";
 import { awardActivityXP } from "../../services/gamification.service.js";
@@ -156,6 +156,17 @@ export const getDiscussionDetailsById = async(req: Request, res: Response) =>{
     }
 }
 
+export const deleteADiscussion = async(req: Request, res: Response) =>{
+    try{
+        const {id} = req.params;
+        await deleteDiscussion(Number(id));
+        return res.status(200).json({success: true, message: "Discussion deleted successfully"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while deleting discussion"});
+    }
+}
+
 export const addCommentToDiscussion = async(req: Request, res: Response) =>{
     try{
         const user_id = req.user?.id;
@@ -180,6 +191,17 @@ export const getAllComments = async(req: Request, res: Response) =>{
     }catch(err){
         console.error(err);
         res.status(500).json({success: false, message: "Internal Server Error while fetching comments"});
+    }
+}
+
+export const deleteACommentfromDiscussion = async(req: Request, res: Response) =>{
+    try{
+        const {id} = req.params;
+        await deleteComment(Number(id));
+        return res.status(200).json({success: true, message: "Comment deleted successfully"});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({success: false, message: "Internal Server Error while deleting comment"});
     }
 }
 

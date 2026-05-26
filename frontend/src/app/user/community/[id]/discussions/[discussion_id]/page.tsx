@@ -5,7 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { 
   getAllComments, 
   addComment, 
-  getDiscussionDetailsbyId 
+  getDiscussionDetailsbyId,
+  checkUserRole,
+  deleteDiscussion,
+  deleteComment
 } from "@/lib/user";
 import UserNav from "@/components/Navbar/UserNav";
 import Image from "next/image";
@@ -15,16 +18,18 @@ import {
   Send, 
   Loader2, 
   Calendar,
-  Sparkles,
   Bookmark,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function DiscussionDetailPage() {
     const params = useParams();
     const router = useRouter();
     const communityId = Number(params.id);
     const discussionId = Number(params.discussion_id);
+    const { user } = useAuthContext();
 
     const [discussion, setDiscussion] = useState<any>(null);
     const [comments, setComments] = useState<any[]>([]);
@@ -32,6 +37,8 @@ export default function DiscussionDetailPage() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [deletingDiscussion, setDeletingDiscussion] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -42,6 +49,10 @@ export default function DiscussionDetailPage() {
             const commentRes = await getAllComments(communityId, discussionId);
             setComments(commentRes.data.data || []);
             
+            if (user) {
+                const roleRes = await checkUserRole(communityId);
+                setUserRole(roleRes.data.data);
+            }
         } catch (err) {
             console.error("Error fetching discussion details:", err);
         } finally {
@@ -53,11 +64,10 @@ export default function DiscussionDetailPage() {
         if (discussionId && communityId) {
             fetchData();
         }
-    }, [discussionId, communityId]);
+    }, [discussionId, communityId, user]);
 
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setNewComment(e.target.value);
-        // Clear error as the user types
         if (validationError) {
             setValidationError(null);
         }
@@ -69,7 +79,6 @@ export default function DiscussionDetailPage() {
         const cleanComment = newComment.trim();
         if (!cleanComment) return;
 
-        // Validation for comment length
         if (cleanComment.length < 10) {
             setValidationError("Comment must be at least 10 characters long.");
             return;
@@ -91,6 +100,39 @@ export default function DiscussionDetailPage() {
             setSubmitting(false);
         }
     };
+
+    const handleDeleteDiscussion = async () => {
+        if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) return;
+        
+        try {
+            setDeletingDiscussion(true);
+            await deleteDiscussion(communityId, discussionId);
+            router.push(`/user/community/${communityId}`); 
+        } catch (err) {
+            console.error("Failed to delete discussion:", err);
+            alert("Could not delete discussion. Please try again.");
+            setDeletingDiscussion(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId: number) => {
+        if (!window.confirm("Are you sure you want to delete this reply?")) return;
+
+        try {
+            await deleteComment(communityId, discussionId, commentId);
+            // Refresh comments
+            const commentRes = await getAllComments(communityId, discussionId);
+            setComments(commentRes.data.data || []);
+        } catch (err) {
+            console.error("Failed to delete comment:", err);
+            alert("Could not delete comment. Please try again.");
+        }
+    };
+
+    // Authorization checks
+    const isStaff = userRole === 'mentor' || userRole === 'moderator';
+    const isDiscussionOwner = user && discussion && (user.id === discussion.user_id);
+    const canDeleteDiscussion = isStaff || isDiscussionOwner;
 
     if (loading) {
         return (
@@ -118,7 +160,7 @@ export default function DiscussionDetailPage() {
         <div className="min-h-screen bg-gray-50 font-main">
             <UserNav />
             
-            <main className="max-w-6xl mx-auto pt-28 pb-20 px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <main className="max-w-7xl mx-auto pt-28 pb-20 px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Side: Discussion & Replies */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Navigation Header */}
@@ -130,6 +172,22 @@ export default function DiscussionDetailPage() {
                             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                             Back to Community
                         </button>
+
+                        {/* Top-level Discussion Delete Action */}
+                        {canDeleteDiscussion && (
+                            <button
+                                onClick={handleDeleteDiscussion}
+                                disabled={deletingDiscussion}
+                                className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-2xl text-xs font-black transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {deletingDiscussion ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                    <Trash2 size={14} />
+                                )}
+                                Delete Post
+                            </button>
+                        )}
                     </div>
 
                     {/* Main Discussion Post Card */}
@@ -218,13 +276,17 @@ export default function DiscussionDetailPage() {
                         <div className="space-y-4">
                             {comments.length > 0 ? (
                                 comments.map((comment) => {
-                                    const avatarUrl = comment.userpfp || comment.user_photo_url || comment.avatar;
+                                    const avatarUrl = comment.userpfp;
                                     const authorName = comment.user || comment.username || "Anonymous";
+                                    
+                                    // Evaluate permissions for individual comment deletions
+                                    const isCommentOwner = user && (user.id === comment.user_id);
+                                    const canDeleteComment = isStaff || isCommentOwner;
 
                                     return (
                                         <div 
                                             key={comment.id} 
-                                            className="flex gap-4 p-6 bg-white rounded-[2rem] border border-gray-100 shadow-2xs hover:border-gray-200/80 transition-colors"
+                                            className="flex gap-4 p-6 bg-white rounded-[2rem] border border-gray-100 shadow-2xs hover:border-gray-200/80 transition-colors relative group"
                                         >
                                             <div className="relative w-10 h-10 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-200/60 flex items-center justify-center font-bold text-gray-400 text-sm">
                                                 {avatarUrl ? (
@@ -240,7 +302,7 @@ export default function DiscussionDetailPage() {
                                                 )}
                                             </div>
                                             
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 pr-8">
                                                 <div className="flex items-center gap-2 mb-1.5">
                                                     <span className="font-bold text-gray-900 text-sm truncate">
                                                         {authorName}
@@ -256,6 +318,17 @@ export default function DiscussionDetailPage() {
                                                     {comment.content}
                                                 </p>
                                             </div>
+
+                                            {/* Action Layer for Inline Comment Deletion */}
+                                            {canDeleteComment && (
+                                                <button
+                                                    onClick={() => handleDeleteComment(comment.id)}
+                                                    className="absolute right-6 top-6 text-gray-300 hover:text-red-500 transition-colors p-1"
+                                                    title="Delete reply"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })
@@ -273,7 +346,6 @@ export default function DiscussionDetailPage() {
                     {/* Guild Rules/Information Card */}
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xs">
                         <h3 className="font-black text-gray-900 mb-3 text-base tracking-tight flex items-center gap-2">
-                            <Sparkles size={16} className="text-[#14919B]" />
                             Discussion Guidelines
                         </h3>
                         <p className="text-gray-500 text-xs leading-relaxed mb-2">
@@ -295,8 +367,8 @@ export default function DiscussionDetailPage() {
                             </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-400 font-bold uppercase tracking-wider">Total Actions</span>
-                            <span className="font-black text-gray-700">{comments.length + 1} Logged</span>
+                            <span className="text-gray-400 font-bold uppercase tracking-wider">Total Comments</span>
+                            <span className="font-black text-gray-700">{comments.length}</span>
                         </div>
                     </div>
                 </div>
