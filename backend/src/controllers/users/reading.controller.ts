@@ -1,5 +1,5 @@
 import type{ Request,Response } from "express";
-import { checkforActiveSession,insertInReadingSession, updateNotes, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions, ReadingInsights} from "../../models/reading/reading_sessions.model.js";
+import { checkforActiveSession,insertInReadingSession, updateNotes, deleteSession, endAndCalculateDuration, getSessionDetails, getLatestSessionEndPage, getAllUserSessions, ReadingInsights} from "../../models/reading/reading_sessions.model.js";
 import { updateProgress, addtoShelf } from "../../models/books/user_shelves.model.js";
 import { getBookbyID } from "../../models/books/booklist.model.js";
 import pool from '../../config/db.js';
@@ -55,6 +55,24 @@ export const updateSessionNotes = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: "Internal Server Error saving notes" });
     }
 };
+
+export const deleteReadingSession = async(req: Request, res: Response) =>{
+    try{
+        const { session_id } = req.params;
+        if(!session_id){
+            return res.status(400).json({success: false, message: "Session Id is missing"});
+        }
+        const user_id = req.user?.id;
+        if(!user_id){
+            return res.status(401).json({success: false, message: "Unauthorized: User not found"});
+        }
+        const result = await deleteSession(Number(session_id), user_id);
+        res.status(200).json({ success: true, message: "Session deleted succesfully", data: result });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({ success: false, message: "Internal Server Error while deleting session" });
+    }
+}
 
 export const endReadingSession = async(req: Request, res: Response) =>{
     try{
@@ -126,14 +144,25 @@ export const getReadingInsights = async (req: Request, res: Response) => {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-        const weeklyData = await ReadingInsights(userId);
+        const { weeklyData, rawBookStats, stats } = await ReadingInsights(userId);
 
-        // Calculate Derived Insights
+        // Compute Base Aggregates
         const totalMinutes = weeklyData.reduce((acc: number, curr: any) => acc + Number(curr.minutes), 0);
         const totalPages = weeklyData.reduce((acc: number, curr: any) => acc + Number(curr.pages), 0);
-        
-        // Reading Velocity (Pages per Minute)
         const velocity = totalMinutes > 0 ? (totalPages / totalMinutes).toFixed(2) : 0;
+        const activeDays = weeklyData.filter((d: any) => d.minutes > 0).length || 1;
+
+        // Extract Advanced Book Stats safely
+        let bookMostSessions = null;
+        let bookLongestSession = null;
+
+        if (rawBookStats && rawBookStats.length > 0) {
+            // Find book with the highest frequency of sessions
+            bookMostSessions = [...rawBookStats].sort((a, b) => Number(b.session_count) - Number(a.session_count))[0];
+            
+            // Find book with the absolute longest single session peak duration
+            bookLongestSession = [...rawBookStats].sort((a, b) => Number(b.max_session_minutes) - Number(a.max_session_minutes))[0];
+        }
 
         res.status(200).json({
             success: true,
@@ -143,7 +172,27 @@ export const getReadingInsights = async (req: Request, res: Response) => {
                     totalMinutesWeek: totalMinutes,
                     totalPagesWeek: totalPages,
                     velocity: velocity, 
-                    averageSession: totalMinutes > 0 ? (totalMinutes / weeklyData.filter((d:any) => d.minutes > 0).length || 1).toFixed(0) : 0
+                    averageSession: totalMinutes > 0 ? (totalMinutes / activeDays).toFixed(0) : 0
+                },
+                milestones: {
+                    bookMostSessions: bookMostSessions ? {
+                        title: bookMostSessions.title,
+                        author: bookMostSessions.author,
+                        coverUrl: bookMostSessions.cover_url,
+                        sessions: Number(bookMostSessions.session_count),
+                        totalMinutes: Math.round(Number(bookMostSessions.total_minutes))
+                    } : null,
+                    bookLongestSession: bookLongestSession ? {
+                        title: bookLongestSession.title,
+                        author: bookLongestSession.author,
+                        coverUrl: bookLongestSession.cover_url,
+                        maxSessionMinutes: Math.round(Number(bookLongestSession.max_session_minutes)),
+                        totalPagesRead: Number(bookLongestSession.total_pages_read)
+                    } : null
+                },
+                totalStats:{
+                    totalSessions: Number(stats.total_sessions),
+                    totalMinutes: Math.round(Number(stats.total_minutes))
                 }
             }
         });

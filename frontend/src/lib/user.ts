@@ -185,6 +185,10 @@ export function endReadingSession(session_id: number, end_page: number, notes: s
     return api.post('/api/users/reading/end',{session_id,end_page,notes,book_id});
 }
 
+export function deleteReadingSession(session_id: number){
+    return api.delete(`/api/users/reading/sessions/${session_id}`);
+}
+
 export function getSessionDetails(session_id: number){
     return api.get(`/api/users/reading/${session_id}`);
 }
