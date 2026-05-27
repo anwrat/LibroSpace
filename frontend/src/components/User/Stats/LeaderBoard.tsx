@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getTodaysUserLeaderBoardbyXp } from '@/lib/user';
-import { Loader2, Crown, Trophy, Medal, Flame } from "lucide-react";
+import { Loader2, Crown, Medal, Flame } from "lucide-react";
 import Image from "next/image";
 
 export default function Leaderboard() {
@@ -121,7 +121,7 @@ export default function Leaderboard() {
                     </div>
                 ) : (
                     <div className="p-10 text-center text-gray-400 text-sm font-medium">
-                        Only the Top 3 are currently leading. Join the list!
+                        Only the Top 3 are currently leading.
                     </div>
                 )}
             </div>

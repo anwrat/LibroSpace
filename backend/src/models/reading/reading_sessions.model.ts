@@ -15,6 +15,11 @@ export const updateNotes = async(notes: string, session_id: number,user_id: numb
     return result;
 }
 
+export const deleteSession = async(session_id: number, user_id: number) =>{
+    const result = await pool.query('DELETE FROM reading.reading_sessions WHERE id = $1 AND user_id = $2',[session_id, user_id]);
+    return result;
+}
+
 export const endAndCalculateDuration = async(end_page:number, notes: string, session_id: number, user_id: number)=>{
     const result = await pool.query('UPDATE reading.reading_sessions SET end_time = CURRENT_TIMESTAMP, end_page = $1, notes = $2, status = $3, duration_seconds = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - start_time)) WHERE id = $4 AND user_id = $5 RETURNING *',[end_page, notes, 'completed', session_id, user_id]);
     return result;
@@ -64,21 +69,59 @@ export const getTotalReadingTimeToday = async(user_id: number, today: string)=>{
     return result.rows[0].total_time;
 }
 
-export const ReadingInsights = async(userId: number)=>{
-        const query = `
-            WITH dates AS (
-                SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date AS day
-            )
-            SELECT 
-                to_char(d.day, 'Dy') as label, -- 'Mon', 'Tue', etc.
-                COALESCE(SUM(rs.duration_seconds), 0) / 60 as minutes,
-                COALESCE(SUM(rs.end_page - rs.start_page), 0) as pages
-            FROM dates d
-            LEFT JOIN reading.reading_sessions rs ON DATE(rs.end_time) = d.day AND rs.user_id = $1
-            GROUP BY d.day, d.day
-            ORDER BY d.day ASC;
-        `;
+export const ReadingInsights = async (userId: number) => {
+    // 1. Core Weekly Time-Series Aggregation Query
+    const graphQuery = `
+        WITH dates AS (
+            SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date AS day
+        )
+        SELECT 
+            to_char(d.day, 'Dy') as label,
+            COALESCE(SUM(rs.duration_seconds), 0) / 60 as minutes,
+            COALESCE(SUM(rs.end_page - rs.start_page), 0) as pages
+        FROM dates d
+        LEFT JOIN reading.reading_sessions rs ON DATE(rs.end_time) = d.day AND rs.user_id = $1
+        GROUP BY d.day
+        ORDER BY d.day ASC;
+    `;
 
-        const result = await pool.query(query, [userId]);
-        return result.rows;
-}
+    // 2. Deep Dive Analytics for Top and Most Dedicated Book Targets
+    const bookStatsQuery = `
+        SELECT 
+            b.id as book_id,
+            b.title,
+            b.author,
+            b.cover_url,
+            COUNT(rs.id) as session_count,
+            SUM(rs.duration_seconds) / 60 as total_minutes,
+            MAX(rs.duration_seconds) / 60 as max_session_minutes,
+            SUM(rs.end_page - rs.start_page) as total_pages_read
+        FROM reading.reading_sessions rs
+        JOIN books.booklist b ON rs.book_id = b.id
+        WHERE rs.user_id = $1
+        GROUP BY b.id, b.title, b.author, b.cover_url;
+    `;
+
+    const totalMinutesandSessionsQuery = `SELECT 
+        COUNT(*) as total_sessions,
+        COALESCE(SUM(duration_seconds), 0) / 60 as total_minutes
+    FROM reading.reading_sessions
+    WHERE user_id = $1 AND status = 'completed';`;
+
+    try {
+        const [graphRes, bookRes, totalRes] = await Promise.all([
+            pool.query(graphQuery, [userId]),
+            pool.query(bookStatsQuery, [userId]),
+            pool.query(totalMinutesandSessionsQuery, [userId])
+        ]);
+
+        return {
+            weeklyData: graphRes.rows,
+            rawBookStats: bookRes.rows,
+            stats: totalRes.rows[0]
+        };
+    } catch (err) {
+        console.error("Error fetching multi-tier reading insights:", err);
+        throw err;
+    }
+};

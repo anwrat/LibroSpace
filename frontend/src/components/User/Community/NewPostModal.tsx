@@ -23,9 +23,14 @@ export default function NewPostModal({
 
   if (!isOpen) return null;
 
+  // Validation rules check
+  const isTitleValid = title.trim().length > 0;
+  const isContentValid = content.trim().length >= 10;
+  const showContentError = content.length > 0 && !isContentValid;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+    if (!isTitleValid || !isContentValid) return;
 
     setLoading(true);
     try {
@@ -84,17 +89,24 @@ export default function NewPostModal({
               Content
             </label>
             <textarea 
-              placeholder="What's on your mind?"
+              placeholder="What's on your mind? (Minimum 10 characters)"
               className="w-full min-h-[200px] text-gray-600 border-none outline-none resize-none whitespace-pre-wrap leading-relaxed placeholder:text-gray-200"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
+            
+            {/* Conditional Inline Framework Error Message Element */}
+            {showContentError && (
+              <p className="text-xs font-bold text-red-500 mt-1 px-1 animate-in fade-in duration-150">
+                Content must be at least 10 characters long.
+              </p>
+            )}
           </div>
 
           <button 
             type="submit"
-            disabled={loading || !title.trim() || !content.trim()}
-            className="w-full bg-[#14919B] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#0f7178] transition-all shadow-lg shadow-[#14919B]/20 disabled:opacity-50 disabled:shadow-none"
+            disabled={loading || !isTitleValid || !isContentValid}
+            className="w-full bg-[#14919B] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#0f7178] transition-all shadow-lg shadow-[#14919B]/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
           >
             {loading ? (
               <Loader2 className="animate-spin" size={20} />

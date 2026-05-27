@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Bold, Italic, List, Quote, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Bold, Italic, List, Mic, Loader2 } from 'lucide-react';
 
 // Declaration for TypeScript to recognize the Speech API
 declare global {
@@ -70,18 +70,21 @@ const MenuBar = ({ editor }: { editor: any }) => {
     <div className="flex flex-wrap gap-2 mb-4 p-2 bg-gray-50 rounded-xl border border-gray-100 items-center">
       <div className="flex gap-1 border-r border-gray-200 pr-2">
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`p-2 rounded-lg transition-colors ${editor.isActive('bold') ? 'bg-[#14919B] text-white' : 'text-gray-400 hover:bg-gray-200'}`}
         >
           <Bold size={18} />
         </button>
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={`p-2 rounded-lg transition-colors ${editor.isActive('italic') ? 'bg-[#14919B] text-white' : 'text-gray-400 hover:bg-gray-200'}`}
         >
           <Italic size={18} />
         </button>
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`p-2 rounded-lg transition-colors ${editor.isActive('bulletList') ? 'bg-[#14919B] text-white' : 'text-gray-400 hover:bg-gray-200'}`}
         >
@@ -111,7 +114,7 @@ export default function ReadingEditor({ content, onChange, editable = true }: { 
     content: content,
     editable: editable,
     onUpdate: ({ editor }) => {
-      if(onChange) onChange(editor.getHTML());
+      if (onChange) onChange(editor.getHTML());
     },
     immediatelyRender: false,
     editorProps: {
@@ -121,10 +124,29 @@ export default function ReadingEditor({ content, onChange, editable = true }: { 
     },
   });
 
+  // Keep Tiptap content synchronized when 'content' or 'editable' props change dynamically
+  useEffect(() => {
+    if (!editor) return;
+
+    // Check if the coming content is truly different to prevent infinite re-rendering loops
+    if (editor.getHTML() !== content) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
+  // Keep editable state synced up
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(editable);
+  }, [editable, editor]);
+
   return (
     <div className="w-full transition-all">
       {editable && <MenuBar editor={editor} />}
-      <div className="min-h-[300px] cursor-text" onClick={() => editor?.commands.focus()}>
+      <div 
+        className={`min-h-[300px] ${editable ? 'cursor-text border border-gray-200 rounded-xl bg-white' : ''}`} 
+        onClick={() => editable && editor?.commands.focus()}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>
