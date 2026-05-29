@@ -6,7 +6,6 @@ import { generateOTP } from '../../utils/otp.js';
 import { saveOTP } from '../../models/auth/otp.model.js';
 import { sendOTPMail } from '../../utils/email.js';
 import { createRegisterSession } from '../../models/auth/registerSessions.model.js';
-import { file, success } from 'zod';
 
 export const registerUser = async (req: Request,res: Response)=>{
     try{
