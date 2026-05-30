@@ -353,6 +353,10 @@ export function completeSwap(request_id: number) {
   return api.post("/api/users/events/bookexchange/complete", { request_id });
 }
 
+export function getCompletedSwaps() {
+  return api.get("/api/users/events/bookexchange/completed");
+}
+
 //For activity log related functions
 export function getTodaysUserLeaderBoardbyXp() {
   return api.get("/api/users/events/leaderboard/today");

@@ -1,188 +1,286 @@
-import type{ Request, Response } from "express";
-import { listBookForExchange, checkIfAlreadyJoined, getBooksListedForExchange, getReceiverId, createExchangeRequest, checkExistingRequest, getSwapRequests, updateSwapStatus, getAcceptedSwaps, setBookToSwappedAndRequestToCompleted} from "../../models/events/book_exchanges.model.js";
-import { newQuoteRequest, getAllQuoteRequestsbyUserId } from "../../models/events/quote_requests.model.js";
-import {getTodaysLeaderboard} from '../../models/events/activity_log.model.js'
+import type { Request, Response } from "express";
+import {
+  listBookForExchange,
+  checkIfAlreadyJoined,
+  getBooksListedForExchange,
+  getReceiverId,
+  createExchangeRequest,
+  checkExistingRequest,
+  getSwapRequests,
+  updateSwapStatus,
+  getAcceptedSwaps,
+  setBookToSwappedAndRequestToCompleted,
+  getCompletedSwaps,
+} from "../../models/events/book_exchanges.model.js";
+import {
+  newQuoteRequest,
+  getAllQuoteRequestsbyUserId,
+} from "../../models/events/quote_requests.model.js";
+import { getTodaysLeaderboard } from "../../models/events/activity_log.model.js";
 
-export const joinBookExchange = async(req: Request, res: Response)=>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const { book_title, book_author, condition, location_city, description } = req.body;
-        const file = req.file;
-        if(!file){
-            return res.status(400).json({message:"Book cover is required"});
-        }
-        const image_url = file.path;
-        const checkIfJoined = await checkIfAlreadyJoined(userId);
-        //A user can only have 1 book for exchange currently available
-        //Check if the user has already joined the book exchange
-        if(checkIfJoined.length>=1){
-            return res.status(400).json({success: false, message: "User already joined the exchange event."})
-        }
-        const result = await listBookForExchange(userId, book_title, book_author, condition, location_city, description, image_url);
-        return res.status(201).json({success: true, message: "User joined book exchange!!!", data: result});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({ message: "Internal server error while joining book exchange" });
+export const joinBookExchange = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
-
-export const getAllAvailableBooks = async(req: Request, res: Response) =>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const books = await getBooksListedForExchange();
-        return res.status(200).json({success: true, data: books});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({ message: "Internal server error while fetching all available books" });
+    const { book_title, book_author, condition, location_city, description } =
+      req.body;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "Book cover is required" });
     }
-}
-
-export const requestSwap = async(req: Request, res: Response)=>{
-    try{
-        const { listing_id} = req.body;
-        const senderId = req.user?.id;
-        if(!senderId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const receiverId = await getReceiverId(listing_id);
-        if (!receiverId) {
-            return res.status(404).json({ message: "The book listing no longer exists." });
-        }
-        if (senderId === receiverId) {
-            return res.status(400).json({ message: "You cannot request your own book." });
-        }
-        // Prevent Duplicate Requests
-        const alreadyRequested = await checkExistingRequest(senderId, listing_id);
-        if (alreadyRequested) {
-        return res.status(409).json({ 
-            success: false, 
-            message: "You have already sent a request for this book." 
+    const image_url = file.path;
+    const checkIfJoined = await checkIfAlreadyJoined(userId);
+    //A user can only have 1 book for exchange currently available
+    //Check if the user has already joined the book exchange
+    if (checkIfJoined.length >= 1) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "User already joined the exchange event.",
         });
-        }
-        await createExchangeRequest(senderId, receiverId, listing_id);
-        return res.status(201).json({success: true, message: "Swap request sent"});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({ message: "Internal server error while requesting for swap" });
     }
-}
+    const result = await listBookForExchange(
+      userId,
+      book_title,
+      book_author,
+      condition,
+      location_city,
+      description,
+      image_url,
+    );
+    return res
+      .status(201)
+      .json({
+        success: true,
+        message: "User joined book exchange!!!",
+        data: result,
+      });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal server error while joining book exchange" });
+  }
+};
 
-export const checkifUserJoined = async(req: Request, res: Response) =>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const checkIfJoined = await checkIfAlreadyJoined(userId);
-        return res.status(200).json({success: true, joined: checkIfJoined.length>0});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({ message: "Internal server error checking user joined status" });
+export const getAllAvailableBooks = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const books = await getBooksListedForExchange();
+    return res.status(200).json({ success: true, data: books });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while fetching all available books",
+      });
+  }
+};
 
-export const getOngoingSwapRequests = async(req: Request, res: Response)=>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const requests = await getSwapRequests(userId);
-        return res.status(200).json({success: true, data: requests});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while fetching ongoing swap requests"});
+export const requestSwap = async (req: Request, res: Response) => {
+  try {
+    const { listing_id } = req.body;
+    const senderId = req.user?.id;
+    if (!senderId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const receiverId = await getReceiverId(listing_id);
+    if (!receiverId) {
+      return res
+        .status(404)
+        .json({ message: "The book listing no longer exists." });
+    }
+    if (senderId === receiverId) {
+      return res
+        .status(400)
+        .json({ message: "You cannot request your own book." });
+    }
+    // Prevent Duplicate Requests
+    const alreadyRequested = await checkExistingRequest(senderId, listing_id);
+    if (alreadyRequested) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already sent a request for this book.",
+      });
+    }
+    await createExchangeRequest(senderId, receiverId, listing_id);
+    return res
+      .status(201)
+      .json({ success: true, message: "Swap request sent" });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal server error while requesting for swap" });
+  }
+};
 
-export const getAcceptedSwapsForUser = async(req: Request, res: Response) => {
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const acceptedSwaps = await getAcceptedSwaps(userId);
-        return res.status(200).json({success: true, data: acceptedSwaps});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while fetching accepted swaps"});
+export const checkifUserJoined = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const checkIfJoined = await checkIfAlreadyJoined(userId);
+    return res
+      .status(200)
+      .json({ success: true, joined: checkIfJoined.length > 0 });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal server error checking user joined status" });
+  }
+};
 
-export const updateSwapRequestStatus = async(req: Request, res: Response)=>{
-    try{
-        const { request_id, new_status } = req.body;
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const updatedRequest = await updateSwapStatus(request_id, new_status);
-        return res.status(200).json({success: true, data: updatedRequest});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while updating swap request status"});
+export const getOngoingSwapRequests = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const requests = await getSwapRequests(userId);
+    return res.status(200).json({ success: true, data: requests });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while fetching ongoing swap requests",
+      });
+  }
+};
 
-export const completeSwapRequest = async(req: Request, res: Response) =>{
-    try{
-        const { request_id } = req.body;
-        const completedRequest = await setBookToSwappedAndRequestToCompleted(request_id);
-        return res.status(200).json({success: true, data: completedRequest});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while completing swap request"});
+export const getAcceptedSwapsForUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const acceptedSwaps = await getAcceptedSwaps(userId);
+    return res.status(200).json({ success: true, data: acceptedSwaps });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal server error while fetching accepted swaps" });
+  }
+};
 
-//For quotes request related 
-export const submitQuoteRequest = async(req: Request, res: Response) =>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const { bookId, text, pageNumber } = req.body;
-        const newRequest = await newQuoteRequest(userId, bookId, text, pageNumber);
-        return res.status(201).json({success: true, message: "Quote request submitted successfully", data: newRequest});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while submitting quote request"});
+export const updateSwapRequestStatus = async (req: Request, res: Response) => {
+  try {
+    const { request_id, new_status } = req.body;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const updatedRequest = await updateSwapStatus(request_id, new_status);
+    return res.status(200).json({ success: true, data: updatedRequest });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while updating swap request status",
+      });
+  }
+};
 
-export const getQuoteRequests = async(req: Request, res: Response)=>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const requests = await getAllQuoteRequestsbyUserId(userId);
-        return res.status(200).json({success: true, data: requests});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal server error while fetching user quote requests"});
+export const completeSwapRequest = async (req: Request, res: Response) => {
+  try {
+    const { request_id } = req.body;
+    const completedRequest =
+      await setBookToSwappedAndRequestToCompleted(request_id);
+    return res.status(200).json({ success: true, data: completedRequest });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal server error while completing swap request" });
+  }
+};
+
+export const getCompletedSwapsForUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
     }
-}
+    const completedSwaps = await getCompletedSwaps(userId);
+    return res.status(200).json({ success: true, data: completedSwaps });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while fetching completed swaps",
+      });
+  }
+};
+
+//For quotes request related
+export const submitQuoteRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
+    }
+    const { bookId, text, pageNumber } = req.body;
+    const newRequest = await newQuoteRequest(userId, bookId, text, pageNumber);
+    return res
+      .status(201)
+      .json({
+        success: true,
+        message: "Quote request submitted successfully",
+        data: newRequest,
+      });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while submitting quote request",
+      });
+  }
+};
+
+export const getQuoteRequests = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
+    }
+    const requests = await getAllQuoteRequestsbyUserId(userId);
+    return res.status(200).json({ success: true, data: requests });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error while fetching user quote requests",
+      });
+  }
+};
 
 //For activity logs related functions
 export const getDailyLeaderboard = async (req: Request, res: Response) => {
-    try {
-        const leaderboard = await getTodaysLeaderboard();
-        return res.status(200).json({
-            success: true,
-            data: leaderboard
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch leaderboard"
-        });
-    }
+  try {
+    const leaderboard = await getTodaysLeaderboard();
+    return res.status(200).json({
+      success: true,
+      data: leaderboard,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch leaderboard",
+    });
+  }
 };
