@@ -1,7 +1,7 @@
 import pool from "../../config/db.js";
 
 export const getTodaysLeaderboard = async () => {
-    const query = `
+  const query = `
         SELECT 
             u.id, 
             u.name, 
@@ -13,26 +13,16 @@ export const getTodaysLeaderboard = async () => {
         WHERE al.created_at >= CURRENT_DATE 
           AND al.created_at < CURRENT_DATE + INTERVAL '1 day'
         GROUP BY u.id
+        HAVING SUM(al.user_xp_earned) > 0
         ORDER BY total_points DESC, u.name ASC
         LIMIT 10;
     `;
-    
-    try {
-        const { rows } = await pool.query(query);
-        return rows;
-    } catch (err) {
-        console.error("Error fetching leaderboard:", err);
-        throw err;
-    }
+
+  try {
+    const { rows } = await pool.query(query);
+    return rows;
+  } catch (err) {
+    console.error("Error fetching leaderboard:", err);
+    throw err;
+  }
 };
-
-//There is a inset new activity log function in gamification service, so this file is not used for now, but we can keep it for future use if we want to log more specific activities that are not related to XP awarding
-
-// export const logActivity = async(user_id: number, activity_type: string, xp_earned: number, is_community_contribution: boolean)=>{
-//     const newlog = await pool.query(
-//             `INSERT INTO events.activity_log (user_id, activity_type, xp_earned, is_community_contribution) 
-//              VALUES ($1, $2, $3, $4) RETURNING *`,
-//             [user_id, activity_type, xp_earned, is_community_contribution]
-//         );
-//     return newlog.rows[0];
-// }
