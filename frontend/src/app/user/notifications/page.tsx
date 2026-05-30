@@ -1,11 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { getUserFriendChallenges, getSwapRequests, getAcceptedSwaps } from '@/lib/user';
-import { Bell, Sword, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
-import Link from 'next/link';
-import UserNav from '@/components/Navbar/UserNav';
-import { useAuthContext } from '@/context/AuthContext';
+import { useState, useEffect } from "react";
+import {
+  getUserFriendChallenges,
+  getSwapRequests,
+  getAcceptedSwaps,
+} from "@/lib/user";
+import { Bell, Sword, ArrowRight, Loader2, MessageSquare } from "lucide-react";
+import Link from "next/link";
+import UserNav from "@/components/Navbar/UserNav";
+import { useAuthContext } from "@/context/AuthContext";
 import { io } from "socket.io-client";
 
 export default function NotificationsPage() {
@@ -21,42 +25,45 @@ export default function NotificationsPage() {
         const [challengeRes, swapRes, acceptedRes] = await Promise.all([
           getUserFriendChallenges(),
           getSwapRequests(),
-          getAcceptedSwaps()
+          getAcceptedSwaps(),
         ]);
 
         // 1. Pending Challenges
         const challenges = (challengeRes.data.data || [])
-          .filter((c: any) => c.status === 'pending' && c.challenged_id === user?.id)
+          .filter(
+            (c: any) => c.status === "pending" && c.challenged_id === user?.id,
+          )
           .map((c: any) => ({
             ...c,
-            type: 'challenge',
+            type: "challenge",
             display_name: c.challenger_name,
             display_book: c.book_title,
-            created_at: c.created_at
+            created_at: c.created_at,
           }));
 
         // 2. Incoming Book Requests (Pending)
         const bookRequests = (swapRes.data.data.received || [])
-          .filter((s: any) => s.status === 'pending')
+          .filter((s: any) => s.status === "pending")
           .map((s: any) => ({
             ...s,
-            type: 'book_request',
+            type: "book_request",
             display_name: s.sender_name,
             display_book: s.target_book_title,
-            created_at: s.created_at
+            created_at: s.created_at,
           }));
 
         // 3. Accepted Swaps (Updated with your new backend format)
         const swapResponses = (acceptedRes.data.data || []).map((s: any) => ({
           ...s,
-          type: 'swap_response',
+          type: "swap_response",
           display_name: s.partner_name, // Now correctly shows the "other" person
           display_book: s.target_book_title,
-          created_at: s.created_at
+          created_at: s.created_at,
         }));
 
-        const all = [...challenges, ...bookRequests, ...swapResponses].sort((a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        const all = [...challenges, ...bookRequests, ...swapResponses].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
 
         setNotifications(all);
@@ -69,35 +76,40 @@ export default function NotificationsPage() {
 
     fetchAllNotifications();
 
-    const socket = io(process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000", {
-      withCredentials: true
-    });
+    const socket = io(
+      process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000",
+      {
+        withCredentials: true,
+      },
+    );
 
-    socket.on('receive_book_request', (data) => {
+    socket.on("receive_book_request", (data) => {
       const newNotif = {
         ...data,
-        type: 'book_request',
+        type: "book_request",
         display_name: data.senderName,
         display_book: data.bookTitle,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
-      setNotifications(prev => [newNotif, ...prev]);
+      setNotifications((prev) => [newNotif, ...prev]);
     });
 
-    socket.on('receive_swap_update', (data) => {
-      if (data.status === 'accepted') {
+    socket.on("receive_swap_update", (data) => {
+      if (data.status === "accepted") {
         const newResponse = {
-          type: 'swap_response',
+          type: "swap_response",
           display_name: data.senderName,
           display_book: data.bookTitle,
           status: data.status,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
-        setNotifications(prev => [newResponse, ...prev]);
+        setNotifications((prev) => [newResponse, ...prev]);
       }
     });
 
-    return () => { socket.disconnect(); };
+    return () => {
+      socket.disconnect();
+    };
   }, [user]);
 
   return (
@@ -120,8 +132,9 @@ export default function NotificationsPage() {
             {notifications.map((item, idx) => {
               // Determine where to send the user based on notification type
               const getHref = () => {
-                if (item.type === 'challenge') return "/user/challenges";
-                if (item.type === 'swap_response') return "/user/friends/messages";
+                if (item.type === "challenge") return "/user/challenges";
+                if (item.type === "swap_response")
+                  return "/user/friends/messages";
                 return "/user/events";
               };
 
@@ -133,32 +146,54 @@ export default function NotificationsPage() {
                 >
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-5">
-                      <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 duration-300 ${
-                        item.type === 'challenge' ? 'bg-amber-50 text-amber-600' : 
-                        item.type === 'swap_response' ? 'bg-green-50 text-green-600' : 
-                        'bg-[#14919B]/10 text-[#14919B]'
-                      }`}>
-                        {item.type === 'challenge' && <Sword size={22} />}
-                        {item.type === 'book_request' && <MessageSquare size={22} />}
-                        {item.type === 'swap_response' && <MessageSquare size={22} />}
+                      <div
+                        className={`p-4 rounded-2xl transition-transform group-hover:scale-110 duration-300 ${
+                          item.type === "challenge"
+                            ? "bg-amber-50 text-amber-600"
+                            : item.type === "swap_response"
+                              ? "bg-green-50 text-green-600"
+                              : "bg-[#14919B]/10 text-[#14919B]"
+                        }`}
+                      >
+                        {item.type === "challenge" && <Sword size={22} />}
+                        {item.type === "book_request" && (
+                          <MessageSquare size={22} />
+                        )}
+                        {item.type === "swap_response" && (
+                          <MessageSquare size={22} />
+                        )}
                       </div>
                       <div className="max-w-[85%]">
                         <p className="font-black text-gray-900 text-lg leading-tight italic">
-                          {item.type === 'challenge' && `${item.display_name} challenged you!`}
-                          {item.type === 'book_request' && `${item.display_name} wants to swap books!`}
+                          {item.type === "challenge" &&
+                            `${item.display_name} challenged you!`}
+                          {item.type === "book_request" &&
+                            `${item.display_name} wants to swap books!`}
                           {/* Updated text logic for both users */}
-                          {item.type === 'swap_response' && (
+                          {item.type === "swap_response" && (
                             <>
-                              Visit messages to talk with <span className="text-[#14919B]">{item.display_name}</span> about swapping <span className="underline underline-offset-4">"{item.display_book}"</span>
+                              Visit messages to talk with{" "}
+                              <span className="text-[#14919B]">
+                                {item.display_name}
+                              </span>{" "}
+                              about swapping{" "}
+                              <span className="underline underline-offset-4">
+                                "{item.display_book}"
+                              </span>
                             </>
                           )}
                         </p>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mt-2">
-                          {item.type === 'swap_response' ? 'Conversation Ready' : `Book: ${item.display_book}`}
+                          {item.type === "swap_response"
+                            ? "Conversation Ready"
+                            : `Reading Challenge`}
                         </p>
                       </div>
                     </div>
-                    <ArrowRight className="text-gray-200 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all shrink-0" size={24} />
+                    <ArrowRight
+                      className="text-gray-200 group-hover:text-[#14919B] group-hover:translate-x-1 transition-all shrink-0"
+                      size={24}
+                    />
                   </div>
                   {/* Decorative background element */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50/50 rounded-full -mr-16 -mt-16 group-hover:bg-[#14919B]/5 transition-colors" />
@@ -169,8 +204,12 @@ export default function NotificationsPage() {
         ) : (
           <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
             <Bell size={48} className="mx-auto text-gray-100 mb-4" />
-            <p className="text-gray-400 font-black text-xl italic">Silence is golden...</p>
-            <p className="text-gray-300 text-[10px] font-black uppercase tracking-widest mt-2">No new updates right now</p>
+            <p className="text-gray-400 font-black text-xl italic">
+              Silence is golden...
+            </p>
+            <p className="text-gray-300 text-[10px] font-black uppercase tracking-widest mt-2">
+              No new updates right now
+            </p>
           </div>
         )}
       </main>
