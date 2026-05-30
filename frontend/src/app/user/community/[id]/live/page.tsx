@@ -1,13 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import io from 'socket.io-client';
-import Peer from 'simple-peer';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, BookOpen, Info, LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import io from "socket.io-client";
+import Peer from "simple-peer";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  BookOpen,
+  Info,
+  LogOut,
+} from "lucide-react";
 import UserNav from "@/components/Navbar/UserNav";
-import { getActiveRoom, endRoom } from '@/lib/user';
-import { useAuthContext } from '@/context/AuthContext';
+import { getActiveRoom, endRoom } from "@/lib/user";
+import { useAuthContext } from "@/context/AuthContext";
 
 interface BookDetails {
   book_title: string;
@@ -15,9 +24,15 @@ interface BookDetails {
   author?: string;
   description?: string;
   pagecount?: number | string;
-  host_id?: number; // Capturing host mapping identifier from join schema
-  room_id?: number; // Room identification key for termination
-  [key: string]: any; 
+  host_id?: number;
+  room_id?: number;
+  [key: string]: any;
+}
+
+interface PeerObject {
+  peerID: string;
+  userName: string;
+  peer: any;
 }
 
 export default function LiveRoomPage() {
@@ -25,32 +40,33 @@ export default function LiveRoomPage() {
   const params = useParams();
   const router = useRouter();
   const communityId = params.id;
-  
+
   const [micOn, setMicOn] = useState(true);
   const [videoOn, setVideoOn] = useState(true);
   const [peers, setPeers] = useState<any[]>([]);
   const [bookDetails, setBookDetails] = useState<BookDetails | null>(null);
   const [loadingRoom, setLoadingRoom] = useState(true);
-  
+
   const userVideo = useRef<HTMLVideoElement>(null);
-  const peersRef = useRef<any[]>([]);
+  const peersRef = useRef<PeerObject[]>([]);
   const userStream = useRef<MediaStream | null>(null);
   const socketRef = useRef<any>(null);
 
-  const isHost = user && bookDetails && Number(user.id) === Number(bookDetails.host_id);
+  const isHost =
+    user && bookDetails && Number(user.id) === Number(bookDetails.host_id);
 
-  // Helper helper to turn off media tracks cleanly
   const stopLocalMediaTracks = () => {
     if (userStream.current) {
-      userStream.current.getTracks().forEach(track => {
+      userStream.current.getTracks().forEach((track) => {
         track.stop();
-        console.log(`Track ${track.kind} stopped successfully.`);
       });
       userStream.current = null;
     }
+    if (userVideo.current) {
+      userVideo.current.srcObject = null;
+    }
   };
 
-  // 1. Fetch Room Metadata
   useEffect(() => {
     if (!communityId) return;
 
@@ -58,141 +74,214 @@ export default function LiveRoomPage() {
       try {
         setLoadingRoom(true);
         const response = await getActiveRoom(Number(communityId));
-        
+
         if (response?.data?.data && response.data.data.length > 0) {
-          console.log(response.data.data[0]);
           setBookDetails(response.data.data[0]);
-        } else if (response && !Array.isArray(response)) {
+        } else {
           setBookDetails(null);
+          router.replace(`/user/community/${communityId}`);
         }
       } catch (error) {
         console.error("Error retrieving live room book details:", error);
+        router.replace(`/user/community/${communityId}`);
       } finally {
         setLoadingRoom(false);
       }
     };
 
     fetchRoomData();
-  }, [communityId]);
+  }, [communityId, router]);
 
-  // 2. Real-Time WebRTC Connection Management
   useEffect(() => {
-    if (!communityId) return;
+    if (!communityId || !user) return;
 
-    const baseApi = process.env.NEXT_PUBLIC_API_BASE ;
-    
-    const socket = io(`${baseApi}/live`, {
-      transports: ['websocket', 'polling'],
-      withCredentials: true
-    });
-    
-    socketRef.current = socket;
+    let isComponentMounted = true;
+    const baseApi = process.env.NEXT_PUBLIC_API_BASE;
+    let socket: any = null;
 
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
+        if (!isComponentMounted) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
         userStream.current = stream;
         if (userVideo.current) {
           userVideo.current.srcObject = stream;
+          userVideo.current.play().catch((err) => {
+            console.error(
+              "Failed executing local source element play playbacks:",
+              err,
+            );
+          });
         }
 
-        socket.emit("join-room", { communityId });
+        socket = io(`${baseApi}/live`, {
+          transports: ["websocket", "polling"],
+          withCredentials: true,
+        });
+        socketRef.current = socket;
 
-        socket.on("all-users", (users: string[]) => {
-          console.log("Existing users inside this call space:", users);
-          const peersList: any[] = [];
-          
-          users.forEach((socketId) => {
-            const peer = createPeer(socketId, socket.id!, stream);
-            
+        socket.emit("join-room", {
+          communityId,
+          userName: user?.name || "Anonymous",
+          userId: user?.id,
+        });
+
+        socket.on(
+          "all-users",
+          (
+            users: {
+              socketId: string;
+              userName: string;
+              userId?: string | number;
+            }[],
+          ) => {
+            const peersList: any[] = [];
+
+            users.forEach(({ socketId, userName, userId }) => {
+              const peer = createPeer(socketId, socket.id!, stream);
+
+              peersRef.current.push({
+                peerID: socketId,
+                userName,
+                peer,
+              });
+
+              peersList.push({
+                peerID: socketId,
+                userName,
+                userId,
+                peer,
+              });
+            });
+            setPeers(peersList);
+          },
+        );
+
+        socket.on(
+          "user-joined",
+          (payload: {
+            signal: any;
+            callerID: string;
+            userName: string;
+            userId?: string | number;
+          }) => {
+            const existingPeer = peersRef.current.find(
+              (p) => p.peerID === payload.callerID,
+            );
+            if (existingPeer) return;
+
+            const peer = addPeer(payload.signal, payload.callerID, stream);
+
             peersRef.current.push({
-              peerID: socketId,
+              peerID: payload.callerID,
+              userName: payload.userName,
               peer,
             });
-            
-            peersList.push({
-              peerID: socketId,
-              peer,
-            });
-          });
-          setPeers(peersList);
-        });
 
-        socket.on("user-joined", (payload: { signal: any; callerID: string }) => {
-          console.log("Processing incoming peer join request from:", payload.callerID);
-          
-          const existingPeer = peersRef.current.find(p => p.peerID === payload.callerID);
-          if (existingPeer) return;
+            setPeers((prevPeers) => [
+              ...prevPeers,
+              {
+                peerID: payload.callerID,
+                userName: payload.userName,
+                userId: payload.userId,
+                peer,
+              },
+            ]);
+          },
+        );
 
-          const peer = addPeer(payload.signal, payload.callerID, stream);
-          
-          peersRef.current.push({
-            peerID: payload.callerID,
-            peer,
-          });
-          
-          setPeers((prevPeers) => [...prevPeers, { peerID: payload.callerID, peer }]);
-        });
-
-        socket.on("receiving-returned-signal", (payload: { signal: any; id: string }) => {
-          console.log("WebRTC Loopback handshake complete for peer:", payload.id);
-          const item = peersRef.current.find((p) => p.peerID === payload.id);
-          if (item) {
-            item.peer.signal(payload.signal);
-          }
-        });
+        socket.on(
+          "receiving-returned-signal",
+          (payload: { signal: any; id: string }) => {
+            const item = peersRef.current.find((p) => p.peerID === payload.id);
+            if (item) {
+              item.peer.signal(payload.signal);
+            }
+          },
+        );
 
         socket.on("user-disconnected", (disconnectedSocketId: string) => {
-          console.log("Peer disconnected from call:", disconnectedSocketId);
-          const peerObj = peersRef.current.find((p) => p.peerID === disconnectedSocketId);
+          const peerObj = peersRef.current.find(
+            (p) => p.peerID === disconnectedSocketId,
+          );
           if (peerObj) {
-            peerObj.peer.destroy(); 
+            peerObj.peer.destroy();
           }
-          
-          peersRef.current = peersRef.current.filter((p) => p.peerID !== disconnectedSocketId);
-          setPeers((prevPeers) => prevPeers.filter((p) => p.peerID !== disconnectedSocketId));
+
+          peersRef.current = peersRef.current.filter(
+            (p) => p.peerID !== disconnectedSocketId,
+          );
+          setPeers((prevPeers) =>
+            prevPeers.filter((p) => p.peerID !== disconnectedSocketId),
+          );
         });
 
-        // 3. Kickout Execution Event Broadcasted by Server Namespace when room ends
         socket.on("room-ended", () => {
-          console.log("The room has been closed by the host. Evicting and stopping hardware links...");
           stopLocalMediaTracks();
-          router.push(`/user/community/${communityId}`); // Redirect back to community page
+          router.replace(`/user/community/${communityId}`);
         });
       })
       .catch((err) => {
         console.error("Failed to access local media devices:", err);
       });
 
-    function createPeer(userToSignal: string, callerID: string, stream: MediaStream) {
+    function createPeer(
+      userToSignal: string,
+      callerID: string,
+      stream: MediaStream,
+    ) {
       const peer = new Peer({ initiator: true, trickle: false, stream });
 
       peer.on("signal", (signal) => {
-        socket.emit("sending-signal", { userToSignal, callerID, signal });
+        if (socketRef.current) {
+          socketRef.current.emit("sending-signal", {
+            userToSignal,
+            callerID,
+            signal,
+            userName: user?.name || "Anonymous",
+            userId: user?.id,
+          });
+        }
       });
 
       return peer;
     }
 
-    function addPeer(incomingSignal: any, callerID: string, stream: MediaStream) {
+    function addPeer(
+      incomingSignal: any,
+      callerID: string,
+      stream: MediaStream,
+    ) {
       const peer = new Peer({ initiator: false, trickle: false, stream });
 
       peer.on("signal", (signal) => {
-        socket.emit("returning-signal", { signal, callerID });
+        if (socketRef.current) {
+          socketRef.current.emit("returning-signal", { signal, callerID });
+        }
       });
 
-      peer.signal(incomingSignal);
+      setTimeout(() => {
+        peer.signal(incomingSignal);
+      }, 50);
       return peer;
     }
 
     return () => {
+      isComponentMounted = false;
       stopLocalMediaTracks();
-      if (socketRef.current) {
-        console.log("Teardown active room session links...");
-        socketRef.current.emit("leave-room", { communityId });
-        socketRef.current.disconnect();
+      if (socket) {
+        socket.emit("leave-room", { communityId });
+        socket.disconnect();
       }
+      peersRef.current.forEach((p) => p.peer.destroy());
+      peersRef.current = [];
+      setPeers([]);
     };
-  }, [communityId, router]);
+  }, [communityId, router, user]);
 
   const toggleMic = () => {
     if (userStream.current) {
@@ -214,35 +303,32 @@ export default function LiveRoomPage() {
     }
   };
 
-  // Explicit termination engine orchestrating standard exit or total workspace dismantling
   const handleExitSession = async () => {
     if (isHost && bookDetails?.room_id) {
       try {
-        // 1. Terminate the room entry record across db structures via HTTP Data Bridge Layer
         await endRoom(Number(bookDetails.room_id));
-        
-        // 2. Alert WS Server namespace to push out all streaming listeners concurrently
+
         if (socketRef.current) {
           socketRef.current.emit("host-ended-room", { communityId });
         }
       } catch (err) {
-        console.error("Failed to cleanly collapse the database session entry:", err);
+        console.error(
+          "Failed to cleanly collapse the database session entry:",
+          err,
+        );
       }
     }
-    
-    // Stop local hardware devices and leave room layout execution view
+
     stopLocalMediaTracks();
-    router.push(`/user/community/${communityId}`);
+    router.replace(`/user/community/${communityId}`);
   };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white font-main overflow-hidden">
       <UserNav />
-      
+
       <div className="pt-24 px-6 w-full max-w-7xl mx-auto h-[calc(100vh-20px)] flex flex-col">
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-180px)] overflow-hidden">
-          
-          {/* LEFT PANEL: Book Showcase */}
           <div className="lg:col-span-4 bg-gray-900/60 border border-white/5 backdrop-blur-md rounded-3xl p-6 flex flex-col overflow-y-auto custom-scrollbar">
             {loadingRoom ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-3 text-gray-400">
@@ -259,8 +345,8 @@ export default function LiveRoomPage() {
                 <div className="relative aspect-3/4 w-48 mx-auto rounded-2xl overflow-hidden shadow-2xl bg-gray-800 border border-white/10 group">
                   {bookDetails.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={bookDetails.cover_url} 
+                    <img
+                      src={bookDetails.cover_url}
                       alt={bookDetails.book_title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -278,7 +364,10 @@ export default function LiveRoomPage() {
                   </h1>
                   {bookDetails.author && (
                     <p className="text-gray-400 text-sm font-medium">
-                      by <span className="text-gray-200">{bookDetails.author}</span>
+                      by{" "}
+                      <span className="text-gray-200">
+                        {bookDetails.author}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -288,15 +377,21 @@ export default function LiveRoomPage() {
                 <div className="grid grid-cols-1 gap-3">
                   {bookDetails.pagecount && (
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <span className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">Length</span>
-                      <span className="text-xs font-semibold text-gray-300">{bookDetails.pagecount} pages</span>
+                      <span className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">
+                        Length
+                      </span>
+                      <span className="text-xs font-semibold text-gray-300">
+                        {bookDetails.pagecount} pages
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {bookDetails.description && (
                   <div className="space-y-2">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">Synopsis</span>
+                    <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">
+                      Synopsis
+                    </span>
                     <p className="text-sm text-gray-400 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5 max-h-48 overflow-y-auto custom-scrollbar">
                       {bookDetails.description}
                     </p>
@@ -306,57 +401,72 @@ export default function LiveRoomPage() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-500">
                 <Info size={40} className="mb-2 text-gray-600 stroke-[1.5]" />
-                <p className="text-sm">No book details linked to this call session.</p>
+                <p className="text-sm">
+                  No book details linked to this call session.
+                </p>
               </div>
             )}
           </div>
 
-          {/* RIGHT PANEL: Video Grid Streams */}
           <div className="lg:col-span-8 bg-gray-900/20 rounded-3xl flex flex-col overflow-y-auto pb-12 custom-scrollbar">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 auto-rows-max">
-              
-              {/* Local Feed */}
               <div className="relative bg-gray-900 rounded-2xl overflow-hidden aspect-video border-2 border-[#14919B] shadow-lg">
-                <video muted ref={userVideo} autoPlay playsInline className="w-full h-full object-cover" />
+                <video
+                  muted
+                  ref={userVideo}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold tracking-wide text-white">
-                  You {isHost && <span className="text-[#14919B] ml-1">(Host)</span>}
+                  You{" "}
+                  {isHost && (
+                    <span className="text-[#14919B] ml-1">(Host)</span>
+                  )}
                 </div>
               </div>
 
-              {/* Connected Streaming Peers */}
               {peers.map((peerObj) => (
-                <VideoCard key={peerObj.peerID} peer={peerObj.peer} peerID={peerObj.peerID} />
+                <VideoCard
+                  key={peerObj.peerID}
+                  peer={peerObj.peer}
+                  peerID={peerObj.peerID}
+                  userName={peerObj.userName}
+                  isPeerHost={
+                    bookDetails &&
+                    peerObj.userId &&
+                    Number(peerObj.userId) === Number(bookDetails.host_id)
+                  }
+                />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Floating Action Controls Panel */}
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur-xl border border-white/10 px-8 py-4 rounded-[2.5rem] flex items-center gap-6 shadow-2xl z-50">
-          <button 
-            onClick={toggleMic} 
-            className={`p-4 rounded-2xl transition-all active:scale-95 ${micOn ? 'bg-white/5 hover:bg-white/10 text-gray-200' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}
+          <button
+            onClick={toggleMic}
+            className={`p-4 rounded-2xl transition-all active:scale-95 ${micOn ? "bg-white/5 hover:bg-white/10 text-gray-200" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
           >
             {micOn ? <Mic size={22} /> : <MicOff size={22} />}
           </button>
-          
-          <button 
-            onClick={toggleVideo} 
-            className={`p-4 rounded-2xl transition-all active:scale-95 ${videoOn ? 'bg-white/5 hover:bg-white/10 text-gray-200' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}
+
+          <button
+            onClick={toggleVideo}
+            className={`p-4 rounded-2xl transition-all active:scale-95 ${videoOn ? "bg-white/5 hover:bg-white/10 text-gray-200" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
           >
             {videoOn ? <Video size={22} /> : <VideoOff size={22} />}
           </button>
 
           <div className="h-8 w-px bg-white/10 mx-1" />
 
-          {/* Dynamic Button UI configuration changing colors/icon dynamically based on Host Context */}
-          <button 
+          <button
             onClick={handleExitSession}
             title={isHost ? "End call for everyone" : "Leave conversation"}
             className={`active:scale-95 p-4 rounded-2xl text-white transition-all shadow-lg flex items-center gap-2 ${
-              isHost 
-                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' 
-                : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+              isHost
+                ? "bg-red-600 hover:bg-red-700 shadow-red-600/20"
+                : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/20"
             }`}
           >
             {isHost ? <PhoneOff size={22} /> : <LogOut size={22} />}
@@ -370,15 +480,31 @@ export default function LiveRoomPage() {
   );
 }
 
-function VideoCard({ peer, peerID }: { peer: any; peerID: string }) {
+function VideoCard({
+  peer,
+  peerID,
+  userName,
+  isPeerHost,
+}: {
+  peer: any;
+  peerID: string;
+  userName: string;
+  isPeerHost?: boolean;
+}) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (!peer) return;
-    
+
     const handleStream = (stream: MediaStream) => {
       if (ref.current) {
         ref.current.srcObject = stream;
+        ref.current.play().catch((err) => {
+          console.error(
+            "Failed executing remote card source element play playback streams:",
+            err,
+          );
+        });
       }
     };
 
@@ -390,9 +516,15 @@ function VideoCard({ peer, peerID }: { peer: any; peerID: string }) {
 
   return (
     <div className="relative bg-gray-900 rounded-2xl overflow-hidden aspect-video border border-white/5 shadow-md hover:border-white/10 transition-colors">
-      <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
+      <video
+        ref={ref}
+        autoPlay
+        playsInline
+        className="w-full h-full object-cover"
+      />
       <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold text-gray-300 tracking-wide">
-        Peer ({peerID.substring(0, 5)})
+        {userName}
+        {isPeerHost && <span className="text-[#14919B] ml-1">(Host)</span>}
       </div>
     </div>
   );
