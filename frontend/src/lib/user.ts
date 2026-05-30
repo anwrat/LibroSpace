@@ -1,287 +1,369 @@
 import { api } from "./axios";
 
-export function changeProfilePic(formData: any){
-    return api.post('/api/auth/profilepic/update', formData);
+export function changeProfilePic(formData: any) {
+  return api.post("/api/auth/profilepic/update", formData);
 }
 
-export function getAllBooksforUser(){
-    return api.get('/api/users/books');
+export function getAllBooksforUser() {
+  return api.get("/api/users/books");
 }
 
 export function getUserShelves() {
-    return api.get('/api/users/shelf');
+  return api.get("/api/users/shelf");
 }
 
-export function getBookbyID(id: number){
-    return api.get(`/api/users/books/${id}`);
+export function getBookbyID(id: number) {
+  return api.get(`/api/users/books/${id}`);
 }
 
-export function checkBookInShelf(bookId: number){
-    return api.get(`/api/users/shelf/${bookId}`);
+export function checkBookInShelf(bookId: number) {
+  return api.get(`/api/users/shelf/${bookId}`);
 }
 
-export function addBooktoShelf(bookId: number, shelf: string){
-    return api.post('/api/users/shelf',{bookId, shelf});
+export function addBooktoShelf(bookId: number, shelf: string) {
+  return api.post("/api/users/shelf", { bookId, shelf });
 }
 
-export function getQuotesForBook(bookId: number){
-    return api.get(`/api/users/books/quotes/book/${bookId}`);
+export function getQuotesForBook(bookId: number) {
+  return api.get(`/api/users/books/quotes/book/${bookId}`);
 }
 
-export function toggleSaveQuote(quoteId: number){
-    return api.post(`/api/users/books/quotes/save/${quoteId}`);
+export function toggleSaveQuote(quoteId: number) {
+  return api.post(`/api/users/books/quotes/save/${quoteId}`);
 }
 
-export function getSavedQuotes(){
-    return api.get('/api/users/books/quotes/saved');
+export function getSavedQuotes() {
+  return api.get("/api/users/books/quotes/saved");
 }
 
-export function submitQuoteRequest(bookId: number, text: string, pageNumber: number){
-    return api.post('/api/users/events/quoterequest', {bookId, text, pageNumber});
+export function submitQuoteRequest(
+  bookId: number,
+  text: string,
+  pageNumber: number,
+) {
+  return api.post("/api/users/events/quoterequest", {
+    bookId,
+    text,
+    pageNumber,
+  });
 }
 
-export function getAllQuoteRequests(){
-    return api.get('/api/users/events/quoterequests');
+export function getAllQuoteRequests() {
+  return api.get("/api/users/events/quoterequests");
 }
 
 //For friends related functions
-export function getOtherUserProfile(targetId: number){
-    return api.get(`/api/users/friends/profile/${targetId}`);
+export function getOtherUserProfile(targetId: number) {
+  return api.get(`/api/users/friends/profile/${targetId}`);
 }
 
-export function getOtherDetailsforFriend(targetId: number){
-    return api.get(`/api/users/friends/profile/${targetId}/details`);
+export function getOtherDetailsforFriend(targetId: number) {
+  return api.get(`/api/users/friends/profile/${targetId}/details`);
 }
 
-export function getAllFriends(){
-    return api.get('/api/users/friends');
+export function getAllFriends() {
+  return api.get("/api/users/friends");
 }
 
-export function getPendingFriendRequests(){
-    return api.get('/api/users/friends/pending');
+export function getPendingFriendRequests() {
+  return api.get("/api/users/friends/pending");
 }
 
-export function addFriend(targetId: number){
-    return api.post('/api/users/friends',{addresseeId: targetId});
+export function addFriend(targetId: number) {
+  return api.post("/api/users/friends", { addresseeId: targetId });
 }
 
-export function acceptFriendRequest(requesterId: number){
-    return api.put('/api/users/friends',{requesterId});
+export function acceptFriendRequest(requesterId: number) {
+  return api.put("/api/users/friends", { requesterId });
 }
 
-export function deleteFriendRequest(targetId: number){
-    return api.delete('/api/users/friends',{data: {targetId}});
+export function deleteFriendRequest(targetId: number) {
+  return api.delete("/api/users/friends", { data: { targetId } });
 }
 
 //For message related functions
-export function getChatHistory(friendId: number){
-    return api.get(`/api/users/friends/messages/${friendId}`);
+export function getChatHistory(friendId: number) {
+  return api.get(`/api/users/friends/messages/${friendId}`);
 }
 
-export function markMessagesAsRead(friendId: number){
-    return api.put(`/api/users/friends/messages/${friendId}`);
+export function markMessagesAsRead(friendId: number) {
+  return api.put(`/api/users/friends/messages/${friendId}`);
 }
 
-export function getUnreadStatus(){
-    return api.get('/api/users/friends/messages/check/unread');
+export function getUnreadStatus() {
+  return api.get("/api/users/friends/messages/check/unread");
 }
 //For all community related functions
-export function getAllCommunities(){
-    return api.get('/api/users/communities');
+export function getAllCommunities() {
+  return api.get("/api/users/communities");
 }
 
-export function getJoinedCommunities(){
-    return api.get('/api/users/communities/joined');
+export function getJoinedCommunities() {
+  return api.get("/api/users/communities/joined");
 }
 
-export function checkCommunityMembership(communityId: number){
-    return api.get(`/api/users/communities/${communityId}/membership`);
+export function checkCommunityMembership(communityId: number) {
+  return api.get(`/api/users/communities/${communityId}/membership`);
 }
 
-export function createCommunity(data: FormData){
-    return api.post('/api/users/communities', data);
+export function checkCommunityExistence(name: string) {
+  return api.post("/api/users/communities/check-existence", { name });
 }
 
-export function getCommunitybyId(id: number){
-    return api.get(`/api/users/communities/${id}`);
+export function createCommunity(data: FormData) {
+  return api.post("/api/users/communities", data);
 }
 
-export function joinCommunity(communityId: number){
-    return api.post(`/api/users/communities/${communityId}/membership`);
+export function getCommunitybyId(id: number) {
+  return api.get(`/api/users/communities/${id}`);
 }
 
-export function leaveCommunity(communityId: number){
-    return api.delete(`/api/users/communities/${communityId}/membership`);
+export function joinCommunity(communityId: number) {
+  return api.post(`/api/users/communities/${communityId}/membership`);
 }
 
-export function getAllMembers(communityId: number){
-    return api.get(`/api/users/communities/${communityId}/members/all`);
+export function leaveCommunity(communityId: number) {
+  return api.delete(`/api/users/communities/${communityId}/membership`);
 }
 
-export function checkUserRole(communityId: number){
-    return api.get(`/api/users/communities/${communityId}/members/role`);
+export function getAllMembers(communityId: number) {
+  return api.get(`/api/users/communities/${communityId}/members/all`);
 }
 
-export function changeMemberRole(communityId: number, member_id: number, role: string){
-    return api.post(`/api/users/communities/${communityId}/members/role`, {member_id, role});
+export function checkUserRole(communityId: number) {
+  return api.get(`/api/users/communities/${communityId}/members/role`);
 }
 
-export function removeMember(communityId: number, member_id: number){
-    return api.delete(`/api/users/communities/${communityId}/members/remove`, {data: {member_id}});
+export function changeMemberRole(
+  communityId: number,
+  member_id: number,
+  role: string,
+) {
+  return api.post(`/api/users/communities/${communityId}/members/role`, {
+    member_id,
+    role,
+  });
+}
+
+export function removeMember(communityId: number, member_id: number) {
+  return api.delete(`/api/users/communities/${communityId}/members/remove`, {
+    data: { member_id },
+  });
 }
 
 //For all discussions and comments related to communities
-export function startDiscussion(communityId: number, title: string, content: string){
-    return api.post(`/api/users/communities/${communityId}/discussions`, {title, content});
+export function startDiscussion(
+  communityId: number,
+  title: string,
+  content: string,
+) {
+  return api.post(`/api/users/communities/${communityId}/discussions`, {
+    title,
+    content,
+  });
 }
 
-export function getAllDiscussions(communityId: number){
-    return api.get(`/api/users/communities/${communityId}/discussions`);
+export function getAllDiscussions(communityId: number) {
+  return api.get(`/api/users/communities/${communityId}/discussions`);
 }
 
-export function getDiscussionDetailsbyId(communityId: number, discussionId: number){
-    return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}`);
+export function getDiscussionDetailsbyId(
+  communityId: number,
+  discussionId: number,
+) {
+  return api.get(
+    `/api/users/communities/${communityId}/discussions/${discussionId}`,
+  );
 }
 
-export function deleteDiscussion(communityId: number, discussionId: number){
-    return api.delete(`/api/users/communities/${communityId}/discussions/${discussionId}`);
+export function deleteDiscussion(communityId: number, discussionId: number) {
+  return api.delete(
+    `/api/users/communities/${communityId}/discussions/${discussionId}`,
+  );
 }
 
-export function addComment(communityId: number, discussionId: number, content: string){
-    return api.post(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`, {content});
+export function addComment(
+  communityId: number,
+  discussionId: number,
+  content: string,
+) {
+  return api.post(
+    `/api/users/communities/${communityId}/discussions/${discussionId}/comments`,
+    { content },
+  );
 }
 
-export function getAllComments(communityId: number, discussionId: number){
-    return api.get(`/api/users/communities/${communityId}/discussions/${discussionId}/comments`);
+export function getAllComments(communityId: number, discussionId: number) {
+  return api.get(
+    `/api/users/communities/${communityId}/discussions/${discussionId}/comments`,
+  );
 }
 
-export function deleteComment(communityId: number, discussionId: number, commentId: number){
-    return api.delete(`/api/users/communities/${communityId}/discussions/${discussionId}/comments/${commentId}`);
+export function deleteComment(
+  communityId: number,
+  discussionId: number,
+  commentId: number,
+) {
+  return api.delete(
+    `/api/users/communities/${communityId}/discussions/${discussionId}/comments/${commentId}`,
+  );
 }
 
 //For community rooms related functions
-export function getActiveRoom(communityId: number){
-    return api.get(`/api/users/communities/${communityId}/rooms/active`);
+export function getActiveRoom(communityId: number) {
+  return api.get(`/api/users/communities/${communityId}/rooms/active`);
 }
 
-export function startRoom(communityId: number, bookId: number){
-    return api.post(`/api/users/communities/${communityId}/rooms`, {book_id: bookId});
+export function startRoom(communityId: number, bookId: number) {
+  return api.post(`/api/users/communities/${communityId}/rooms`, {
+    book_id: bookId,
+  });
 }
 
-export function endRoom(roomId: number){
-    return api.post(`/api/users/communities/rooms/${roomId}/end`);
+export function endRoom(roomId: number) {
+  return api.post(`/api/users/communities/rooms/${roomId}/end`);
 }
 
 //For all reading sessions related functions
-export function startReadingSession(book_id: number, start_page: number){
-    return api.post('/api/users/reading/start', {book_id, start_page});
+export function startReadingSession(book_id: number, start_page: number) {
+  return api.post("/api/users/reading/start", { book_id, start_page });
 }
 
-export function updateSessionNotes(session_id: number, notes: string){
-    return api.patch('/api/users/reading/notes',{session_id,notes});
+export function updateSessionNotes(session_id: number, notes: string) {
+  return api.patch("/api/users/reading/notes", { session_id, notes });
 }
 
-export function endReadingSession(session_id: number, end_page: number, notes: string, book_id: number){
-    return api.post('/api/users/reading/end',{session_id,end_page,notes,book_id});
+export function endReadingSession(
+  session_id: number,
+  end_page: number,
+  notes: string,
+  book_id: number,
+) {
+  return api.post("/api/users/reading/end", {
+    session_id,
+    end_page,
+    notes,
+    book_id,
+  });
 }
 
-export function deleteReadingSession(session_id: number){
-    return api.delete(`/api/users/reading/sessions/${session_id}`);
+export function deleteReadingSession(session_id: number) {
+  return api.delete(`/api/users/reading/sessions/${session_id}`);
 }
 
-export function getSessionDetails(session_id: number){
-    return api.get(`/api/users/reading/${session_id}`);
+export function getSessionDetails(session_id: number) {
+  return api.get(`/api/users/reading/${session_id}`);
 }
 
-export function getAllReadingSessions(){
-    return api.get('/api/users/reading/sessions/all');
+export function getAllReadingSessions() {
+  return api.get("/api/users/reading/sessions/all");
 }
 
-export function getReadingInsights(){
-    return api.get('/api/users/reading/insights/all');
+export function getReadingInsights() {
+  return api.get("/api/users/reading/insights/all");
 }
 
 //For all gamification related functions
 
-export function evaluateDailyGoal(){
-    return api.post('/api/users/gamification/daily-goal');
+export function evaluateDailyGoal() {
+  return api.post("/api/users/gamification/daily-goal");
 }
 
-export function syncStreak(){
-    return api.post('/api/users/gamification/sync-streak');
+export function syncStreak() {
+  return api.post("/api/users/gamification/sync-streak");
 }
 
-export function getUserStreakandGoal(){
-    return api.get('/api/users/gamification/info');
+export function getUserStreakandGoal() {
+  return api.get("/api/users/gamification/info");
 }
 
-export function updateUserGoal(newGoal: number){
-    return api.patch('/api/users/gamification/update-goal', {newGoal});
+export function updateUserGoal(newGoal: number) {
+  return api.patch("/api/users/gamification/update-goal", { newGoal });
 }
 
-export function getAllAchievements(){
-    return api.get('/api/users/gamification/daily-goal/all');
+export function getAllAchievements() {
+  return api.get("/api/users/gamification/daily-goal/all");
 }
 
 //For friend challenges
-export function challengeFriend(challengedId: number, challengeType: string, goalValue: number, durationDays: number){
-    return api.post('/api/users/gamification/challenge-friend', {challengedId, challengeType, goalValue, durationDays});
+export function challengeFriend(
+  challengedId: number,
+  challengeType: string,
+  goalValue: number,
+  durationDays: number,
+) {
+  return api.post("/api/users/gamification/challenge-friend", {
+    challengedId,
+    challengeType,
+    goalValue,
+    durationDays,
+  });
 }
 
-export function getUserFriendChallenges(){
-    return api.get('/api/users/gamification/challenges');
+export function getUserFriendChallenges() {
+  return api.get("/api/users/gamification/challenges");
 }
 
-export function respondToChallenge(challengeId: number, action: string){
-    return api.post('/api/users/gamification/respond-to-challenge', {challengeId, action});
+export function respondToChallenge(challengeId: number, action: string) {
+  return api.post("/api/users/gamification/respond-to-challenge", {
+    challengeId,
+    action,
+  });
 }
 
 //For badges related functions
-export function getUserBadges(){
-    return api.get('/api/users/gamification/badges');
+export function getUserBadges() {
+  return api.get("/api/users/gamification/badges");
 }
 
 //For events related functions
 
-export function getAllExchanges(){
-    return api.get('/api/users/events/bookexchange/books');
+export function getAllExchanges() {
+  return api.get("/api/users/events/bookexchange/books");
 }
 
-export function getJoinStatus(){
-    return api.get('/api/users/events/bookexchange');
+export function getJoinStatus() {
+  return api.get("/api/users/events/bookexchange");
 }
 
-export function joinExchange(formData: any){
-    return api.post('/api/users/events/bookexchange/join', formData);
-};
-
-export function requestSwap(listing_id: number){
-    return api.post('/api/users/events/bookexchange/request', {listing_id});
+export function joinExchange(formData: any) {
+  return api.post("/api/users/events/bookexchange/join", formData);
 }
 
-export function getSwapRequests(){
-    return api.get('/api/users/events/bookexchange/requests');
+export function requestSwap(listing_id: number) {
+  return api.post("/api/users/events/bookexchange/request", { listing_id });
 }
 
-export function respondToSwap(request_id: number, new_status: string){
-    return api.patch('/api/users/events/bookexchange/requests/update', {request_id, new_status});
+export function getSwapRequests() {
+  return api.get("/api/users/events/bookexchange/requests");
 }
 
-export function getAcceptedSwaps(){
-    return api.get('/api/users/events/bookexchange/accepted');
+export function respondToSwap(request_id: number, new_status: string) {
+  return api.patch("/api/users/events/bookexchange/requests/update", {
+    request_id,
+    new_status,
+  });
 }
 
-export function completeSwap(request_id: number){
-    return api.post('/api/users/events/bookexchange/complete', {request_id});
+export function getAcceptedSwaps() {
+  return api.get("/api/users/events/bookexchange/accepted");
+}
+
+export function completeSwap(request_id: number) {
+  return api.post("/api/users/events/bookexchange/complete", { request_id });
+}
+
+export function getCompletedSwaps() {
+  return api.get("/api/users/events/bookexchange/completed");
 }
 
 //For activity log related functions
-export function getTodaysUserLeaderBoardbyXp(){
-    return api.get('/api/users/events/leaderboard/today');
+export function getTodaysUserLeaderBoardbyXp() {
+  return api.get("/api/users/events/leaderboard/today");
 }
 
 //For search related functions
 
-export function getGlobalSearchResults(query: string){
-    return api.get(`/api/users/reading/search/global?q=${query}`);
+export function getGlobalSearchResults(query: string) {
+  return api.get(`/api/users/reading/search/global?q=${query}`);
 }

@@ -6,9 +6,15 @@ import SessionHistory from "@/components/User/Stats/SessionHistory";
 import UserBadges from "@/components/User/Stats/UserBadges";
 import ReadingInsights from "@/components/User/Stats/Insights";
 import Leaderboard from "@/components/User/Stats/LeaderBoard";
-import { History, BarChart3, PieChart, Trophy } from "lucide-react";
+import ExchangeHistory from "@/components/User/Stats/ExchangeHistory";
+import { History, BarChart3, PieChart, Trophy, RefreshCw } from "lucide-react";
 
-type TabType = "history" | "insights" | "achievements" | "leaderboard";
+type TabType =
+  | "history"
+  | "insights"
+  | "achievements"
+  | "leaderboard"
+  | "exchanges";
 
 export default function StatsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("history");
@@ -16,6 +22,7 @@ export default function StatsPage() {
   const tabs = [
     { id: "history", label: "History", icon: History },
     { id: "insights", label: "Insights", icon: BarChart3 },
+    { id: "exchanges", label: "Exchanges", icon: RefreshCw },
     { id: "achievements", label: "Achievements", icon: PieChart },
     { id: "leaderboard", label: "Daily Rank", icon: Trophy },
   ];
@@ -34,15 +41,14 @@ export default function StatsPage() {
           </p>
         </header>
 
-        {/* --- TAB SWITCHER --- */}
-        <div className="flex p-1.5 bg-gray-100 rounded-[2rem] mb-8 w-fit">
+        <div className="flex p-1.5 bg-gray-100 rounded-[2rem] mb-8 w-fit overflow-x-auto max-w-full custom-scrollbar">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] font-bold text-sm transition-all
+                className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] font-bold text-sm transition-all whitespace-nowrap
                                     ${
                                       activeTab === tab.id
                                         ? "bg-white text-[#14919B] shadow-sm"
@@ -56,7 +62,6 @@ export default function StatsPage() {
           })}
         </div>
 
-        {/* --- CONTENT AREA --- */}
         <section>
           {activeTab === "history" && <SessionHistory />}
 
@@ -79,7 +84,10 @@ export default function StatsPage() {
               <UserBadges />
             </div>
           )}
+
           {activeTab === "leaderboard" && <Leaderboard />}
+
+          {activeTab === "exchanges" && <ExchangeHistory />}
         </section>
       </div>
     </main>

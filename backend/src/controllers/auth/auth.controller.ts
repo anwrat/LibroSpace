@@ -1,109 +1,153 @@
-import type{Request, Response} from 'express'; //This is a type-only import
-import {hashPassword,comparePassword} from '../../utils/hash.js';
-import { signToken } from '../../utils/jwt.js';
-import {findUserByEmail, findUserByName, loginByEmailorName, updateProfilePic} from '../../models/auth/users.model.js';
-import { generateOTP } from '../../utils/otp.js';
-import { saveOTP } from '../../models/auth/otp.model.js';
-import { sendOTPMail } from '../../utils/email.js';
-import { createRegisterSession } from '../../models/auth/registerSessions.model.js';
+import type { Request, Response } from "express"; //This is a type-only import
+import { hashPassword, comparePassword } from "../../utils/hash.js";
+import { signToken } from "../../utils/jwt.js";
+import {
+  findUserByEmail,
+  findUserByName,
+  loginByEmailorName,
+  updateProfilePic,
+} from "../../models/auth/users.model.js";
+import { generateOTP } from "../../utils/otp.js";
+import { saveOTP } from "../../models/auth/otp.model.js";
+import { sendOTPMail } from "../../utils/email.js";
+import { createRegisterSession } from "../../models/auth/registerSessions.model.js";
 
-export const registerUser = async (req: Request,res: Response)=>{
-    try{
-        const {name, email, password} = req.body;
-        const existingEmail = await findUserByEmail(email);
-        if(existingEmail){
-            return res.status(500).json({message:"User with this email already exists"});
-        }
-        const existingUser = await findUserByName(name);
-        if(existingUser){
-            return res.status(500).json({message:"Username already taken"});
-        }
-        const otp = generateOTP();
-        await saveOTP(email,otp,"REGISTER");
-        await sendOTPMail(email,otp);
-        const hashed = await hashPassword(password);
-        const sessionId = await createRegisterSession(name,email,hashed);
-        return res.status(201).json({
-            message:"OTP sent to email",
-            sessionId
-        })
-    }catch(err){
-        console.error("Error while registering user: ",err);
-        res.status(500).json({message: "Internal Server Error while registering user"});
+export const registerUser = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+    const existingEmail = await findUserByEmail(email);
+    if (existingEmail) {
+      return res
+        .status(500)
+        .json({ message: "User with this email already exists" });
     }
-
-}
-
-export const loginUser = async (req:Request, res:Response)=>{
-    try{
-        const {loginID, password} = req.body;
-        const user = await loginByEmailorName(loginID);
-        if(!user){
-            return res.status(401).json({message: "Invalid credentials. User not found."});
-        }
-        const checkPassword = await comparePassword(password,user.password);
-        if(!checkPassword){
-            return res.status(401).json({messaage:"Invalid credentials. Incorrect password."})
-        }
-        const token = signToken({id:user.id,name:user.name,email:user.email,role:user.role});
-        //Using http only cookies to store JWT token
-        res.cookie("token",token,{
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge:  2 * 24 * 60 * 60 * 1000 //2 days in milliseconds
-        });
-        return res.status(200).json({
-            message: "User logged in successfully",
-            user:{
-                id: user.id,
-                name: user.name,
-                email: user.email
-            }
-        })
-    }catch(err){
-        console.error("Error while logging in: ",err);
-        res.status(500).json({message: "Internal Server Error while logging user"});
+    const existingUser = await findUserByName(name);
+    if (existingUser) {
+      return res.status(500).json({ message: "Username already taken" });
     }
-}
-
-export const getCurrentUser = async (req: Request, res: Response) =>{
-    try{
-        const user = await findUserByEmail(req.user!.email);
-        if(!user){
-            return res.status(404).json({message:'User not found'});
-        }
-        const {password, ...userwithoutPassword} = user;
-        return res.status(200).json({user: userwithoutPassword});
-    }catch(err){
-        console.error("Error while fetching current user: ",err);
-        res.status(500).json({message:'Internal Server Error while fetching current user'});
-    }
-}
-
-export const logOutUser = async (req: Request, res: Response) =>{
-    res.clearCookie('token',{
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+    const otp = generateOTP();
+    await saveOTP(email, otp, "REGISTER");
+    await sendOTPMail(email, otp);
+    const hashed = await hashPassword(password);
+    const sessionId = await createRegisterSession(name, email, hashed);
+    return res.status(201).json({
+      message: "OTP sent to email",
+      sessionId,
     });
-    return res.status(200).json({message: 'User logged out successfully'});
-}
+  } catch (err) {
+    console.error("Error while registering user: ", err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while registering user" });
+  }
+};
 
-export const updateProfilePicture = async(req: Request, res: Response) =>{
-    try{
-        const userId = req.user?.id;
-        if(!userId){
-            return res.status(401).json({message: "Unauthorized: User not found"});
-        }
-        const image = req.file;
-        if(!image){
-            return res.status(400).json({message:"Profile photo is required for updating"});
-        }
-        const image_url = image.path;
-        const changePic = await updateProfilePic(userId,image_url);
-        return res.status(201).json({success: true, message: "Profile picture updated successfully"});
-    }catch(err){
-        console.error(err);
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const { loginID, password } = req.body;
+    const user = await loginByEmailorName(loginID);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "Invalid credentials. User not found." });
     }
-}
+    const checkPassword = await comparePassword(password, user.password);
+    if (!checkPassword) {
+      return res
+        .status(401)
+        .json({ messaage: "Invalid credentials. Incorrect password." });
+    }
+    const token = signToken({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+    //Using http only cookies to store JWT token
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 2 * 24 * 60 * 60 * 1000, //2 days in milliseconds
+    });
+    return res.status(200).json({
+      message: "User logged in successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error("Error while logging in: ", err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while logging user" });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const otp = generateOTP();
+    await saveOTP(email, otp, "FORGOT_PASSWORD");
+    await sendOTPMail(email, otp);
+    return res.status(200).json({ message: "OTP sent to email" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Internal Server Error while processing forgot password request",
+    });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const user = await findUserByEmail(req.user!.email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const { password, ...userwithoutPassword } = user;
+    return res.status(200).json({ user: userwithoutPassword });
+  } catch (err) {
+    console.error("Error while fetching current user: ", err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while fetching current user" });
+  }
+};
+
+export const logOutUser = async (req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+  return res.status(200).json({ message: "User logged out successfully" });
+};
+
+export const updateProfilePicture = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
+    }
+    const image = req.file;
+    if (!image) {
+      return res
+        .status(400)
+        .json({ message: "Profile photo is required for updating" });
+    }
+    const image_url = image.path;
+    const changePic = await updateProfilePic(userId, image_url);
+    return res
+      .status(201)
+      .json({ success: true, message: "Profile picture updated successfully" });
+  } catch (err) {
+    console.error(err);
+  }
+};

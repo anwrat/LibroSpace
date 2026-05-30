@@ -1,45 +1,74 @@
 import pool from "../../config/db.js";
 
-export const listBookForExchange = async(userId: number, book_title: string, book_author: string, condition: string, location_city: string, description: string, image_url: string) =>{
-    const query = `
+export const listBookForExchange = async (
+  userId: number,
+  book_title: string,
+  book_author: string,
+  condition: string,
+  location_city: string,
+  description: string,
+  image_url: string,
+) => {
+  const query = `
             INSERT INTO events.book_exchanges 
             (user_id, book_title, book_author, condition, location_city, description, image_url)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *;
         `;
-    const result = await pool.query(query, [userId, book_title, book_author, condition, location_city, description, image_url]);
-    return result.rows[0];
-}
+  const result = await pool.query(query, [
+    userId,
+    book_title,
+    book_author,
+    condition,
+    location_city,
+    description,
+    image_url,
+  ]);
+  return result.rows[0];
+};
 
-export const checkIfAlreadyJoined = async(userId: number)=>{
-    const checkActive = await pool.query(
-            'SELECT id FROM events.book_exchanges WHERE user_id = $1 AND status = $2',
-            [userId, 'available']
-    );
-    return checkActive.rows;
-}
+export const checkIfAlreadyJoined = async (userId: number) => {
+  const checkActive = await pool.query(
+    "SELECT id FROM events.book_exchanges WHERE user_id = $1 AND status = $2",
+    [userId, "available"],
+  );
+  return checkActive.rows;
+};
 
-export const getBooksListedForExchange = async() =>{
-    const result = await pool.query("SELECT be.*, u.name as owner_name, u.picture_url as owner_picture FROM events.book_exchanges be JOIN auth.users u ON be.user_id = u.id WHERE be.status = $1 ORDER BY be.created_at DESC",['available']);
-    return result.rows;
-}
+export const getBooksListedForExchange = async () => {
+  const result = await pool.query(
+    "SELECT be.*, u.name as owner_name, u.picture_url as owner_picture FROM events.book_exchanges be JOIN auth.users u ON be.user_id = u.id WHERE be.status = $1 ORDER BY be.created_at DESC",
+    ["available"],
+  );
+  return result.rows;
+};
 
-export const getReceiverId = async(listing_id: number) =>{
-    const listing = await pool.query('SELECT user_id FROM events.book_exchanges WHERE id = $1', [listing_id]);
-    return listing.rows[0]?.user_id || null;
-}
+export const getReceiverId = async (listing_id: number) => {
+  const listing = await pool.query(
+    "SELECT user_id FROM events.book_exchanges WHERE id = $1",
+    [listing_id],
+  );
+  return listing.rows[0]?.user_id || null;
+};
 
-export const createExchangeRequest = async(senderId: number, receiverId: number, listing_id: number)=>{
-    const query = `
+export const createExchangeRequest = async (
+  senderId: number,
+  receiverId: number,
+  listing_id: number,
+) => {
+  const query = `
             INSERT INTO events.exchange_requests (sender_id, receiver_id, listing_id)
             VALUES ($1, $2, $3)
             RETURNING *;
         `;
-    const exchange = await pool.query(query, [senderId, receiverId, listing_id]);
-    return exchange.rows[0];
-}
+  const exchange = await pool.query(query, [senderId, receiverId, listing_id]);
+  return exchange.rows[0];
+};
 
-export const checkExistingRequest = async (senderId: number, listingId: number) => {
+export const checkExistingRequest = async (
+  senderId: number,
+  listingId: number,
+) => {
   const query = `
     SELECT id FROM events.exchange_requests 
     WHERE sender_id = $1 AND listing_id = $2 AND status = 'pending'
@@ -49,8 +78,9 @@ export const checkExistingRequest = async (senderId: number, listingId: number) 
 };
 
 export const getSwapRequests = async (userId: number) => {
-    // Fetch Received Requests (Someone wants your book)
-    const received = await pool.query(`
+  // Fetch Received Requests (Someone wants your book)
+  const received = await pool.query(
+    `
         SELECT 
             er.*, 
             target_be.book_title as target_book_title, 
@@ -66,10 +96,13 @@ export const getSwapRequests = async (userId: number) => {
         JOIN auth.users u ON er.sender_id = u.id
         WHERE target_be.user_id = $1 AND er.status = 'pending'
         ORDER BY er.created_at DESC
-    `, [userId]);
+    `,
+    [userId],
+  );
 
-    // Fetch Sent Requests (You want someone else's book)
-    const sent = await pool.query(`
+  // Fetch Sent Requests (You want someone else's book)
+  const sent = await pool.query(
+    `
         SELECT 
             er.*, 
             target_be.book_title as target_book_title, 
@@ -84,13 +117,15 @@ export const getSwapRequests = async (userId: number) => {
         JOIN auth.users u ON target_be.user_id = u.id
         WHERE er.sender_id = $1 AND er.status = 'pending'
         ORDER BY er.created_at DESC
-    `, [userId]);
+    `,
+    [userId],
+  );
 
-    return { received: received.rows, sent: sent.rows };
-}
+  return { received: received.rows, sent: sent.rows };
+};
 
 export const getAcceptedSwaps = async (userId: number) => {
-    const query = `
+  const query = `
         SELECT 
             er.id,
             er.sender_id,
@@ -129,68 +164,127 @@ export const getAcceptedSwaps = async (userId: number) => {
         ORDER BY er.created_at DESC
     `;
 
-    const result = await pool.query(query, [userId, 'accepted']);
+  const result = await pool.query(query, [userId, "accepted"]);
+  return result.rows;
+};
+
+export const getCompletedSwaps = async (userId: number) => {
+  const query = `
+        SELECT 
+            er.id,
+            er.sender_id,
+            er.receiver_id,
+            er.status,
+            er.created_at,
+            
+            -- Receiver's book details (The primary listing)
+            receiver_be.id as receiver_book_id,
+            receiver_be.book_title as receiver_book_title,
+            receiver_be.image_url as receiver_book_image,
+            
+            -- Sender's book details (Traded listing)
+            sender_be.id as sender_book_id,
+            sender_be.book_title as sender_book_title,
+            sender_be.image_url as sender_book_image,
+
+            -- Partner profiling details
+            CASE 
+                WHEN er.sender_id = $1 THEN r_user.name 
+                ELSE s_user.name 
+            END as partner_name,
+
+            CASE 
+                WHEN er.sender_id = $1 THEN er.receiver_id 
+                ELSE er.sender_id 
+            END as partner_id
+        FROM events.exchange_requests er
+        JOIN events.book_exchanges receiver_be ON er.listing_id = receiver_be.id
+        LEFT JOIN events.book_exchanges sender_be ON er.sender_id = sender_be.user_id 
+            AND sender_be.status = 'swapped'
+            AND ABS(EXTRACT(EPOCH FROM (sender_be.created_at - er.created_at))) < 86400
+        JOIN auth.users s_user ON er.sender_id = s_user.id
+        JOIN auth.users r_user ON er.receiver_id = r_user.id
+        WHERE (er.sender_id = $1 OR er.receiver_id = $1) 
+          AND er.status = $2
+        ORDER BY er.created_at DESC;
+    `;
+
+  try {
+    const result = await pool.query(query, [userId, "completed"]);
     return result.rows;
-}
+  } catch (err) {
+    console.error("Error executing completed swaps query retrieval:", err);
+    throw err;
+  }
+};
 
-export const updateSwapStatus = async(requestId: number, newStatus: string) =>{
-    const result = await pool.query('UPDATE events.exchange_requests SET status = $1 WHERE id = $2 RETURNING *', [newStatus, requestId]);
-    return result.rows[0];
-}
+export const updateSwapStatus = async (
+  requestId: number,
+  newStatus: string,
+) => {
+  const result = await pool.query(
+    "UPDATE events.exchange_requests SET status = $1 WHERE id = $2 RETURNING *",
+    [newStatus, requestId],
+  );
+  return result.rows[0];
+};
 
-export const setBookToSwappedAndRequestToCompleted = async (requestId: number) => {
-    const client = await pool.connect();
+export const setBookToSwappedAndRequestToCompleted = async (
+  requestId: number,
+) => {
+  const client = await pool.connect();
 
-    try {
-        await client.query('BEGIN');
+  try {
+    await client.query("BEGIN");
 
-        // 1. Fetch the Request details to identify the Sender and the Target Book
-        const requestResult = await client.query(
-            'SELECT listing_id, sender_id FROM events.exchange_requests WHERE id = $1',
-            [requestId]
-        );
+    // 1. Fetch the Request details to identify the Sender and the Target Book
+    const requestResult = await client.query(
+      "SELECT listing_id, sender_id FROM events.exchange_requests WHERE id = $1",
+      [requestId],
+    );
 
-        if (requestResult.rows.length === 0) {
-            throw new Error("Exchange request not found.");
-        }
-
-        const { listing_id: targetBookId, sender_id: senderId } = requestResult.rows[0];
-
-        // 2. Find the Sender's book that is currently 'available'
-        // Logic: The book that the sender listed for this exchange event
-        const senderBookResult = await client.query(
-            'SELECT id FROM events.book_exchanges WHERE user_id = $1 AND status = $2 LIMIT 1',
-            [senderId, 'available']
-        );
-
-        const senderBookId = senderBookResult.rows[0]?.id;
-
-        // 3. Update BOTH books to 'swapped'
-
-        const bookIdsToUpdate = [targetBookId];
-        if (senderBookId) {
-            bookIdsToUpdate.push(senderBookId);
-        }
-
-        await client.query(
-            'UPDATE events.book_exchanges SET status = $1 WHERE id = ANY($2)',
-            ['swapped', bookIdsToUpdate]
-        );
-
-        // 4. Update the Exchange Request to 'completed'
-        const res = await client.query(
-            'UPDATE events.exchange_requests SET status = $1 WHERE id = $2 RETURNING *',
-            ['completed', requestId]
-        );
-
-        await client.query('COMMIT');
-        
-        return res.rows[0]; 
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error("Transaction Error:", error);
-        throw error;
-    } finally {
-        client.release();
+    if (requestResult.rows.length === 0) {
+      throw new Error("Exchange request not found.");
     }
+
+    const { listing_id: targetBookId, sender_id: senderId } =
+      requestResult.rows[0];
+
+    // 2. Find the Sender's book that is currently 'available'
+    // Logic: The book that the sender listed for this exchange event
+    const senderBookResult = await client.query(
+      "SELECT id FROM events.book_exchanges WHERE user_id = $1 AND status = $2 LIMIT 1",
+      [senderId, "available"],
+    );
+
+    const senderBookId = senderBookResult.rows[0]?.id;
+
+    // 3. Update BOTH books to 'swapped'
+
+    const bookIdsToUpdate = [targetBookId];
+    if (senderBookId) {
+      bookIdsToUpdate.push(senderBookId);
+    }
+
+    await client.query(
+      "UPDATE events.book_exchanges SET status = $1 WHERE id = ANY($2)",
+      ["swapped", bookIdsToUpdate],
+    );
+
+    // 4. Update the Exchange Request to 'completed'
+    const res = await client.query(
+      "UPDATE events.exchange_requests SET status = $1 WHERE id = $2 RETURNING *",
+      ["completed", requestId],
+    );
+
+    await client.query("COMMIT");
+
+    return res.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Transaction Error:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
 };
