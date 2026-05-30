@@ -1,176 +1,258 @@
-import type{ Request, Response } from "express";
-import { createBook,getAllBooks, findBookByTitleandAuthor, deleteBookByID, updateBookDetails } from "../../models/books/booklist.model.js";
-import { createGenre, checkIfGenreExists, getAllGenres, deleteGenre } from "../../models/books/genres.model.js";
-import { deleteGenreSchema, deleteBookQuoteSchema } from "../../schemas/book.schema.js";
-import { createBookQuote, deleteBookQuote, getAllBookQuotes} from "../../models/books/book_quotes.model.js";
+import type { Request, Response } from "express";
+import {
+  createBook,
+  getAllBooks,
+  findBookByTitleandAuthor,
+  deleteBookByID,
+  updateBookDetails,
+  getCurrentBookCover,
+} from "../../models/books/booklist.model.js";
+import {
+  createGenre,
+  checkIfGenreExists,
+  getAllGenres,
+  deleteGenre,
+} from "../../models/books/genres.model.js";
+import {
+  deleteGenreSchema,
+  deleteBookQuoteSchema,
+} from "../../schemas/book.schema.js";
+import {
+  createBookQuote,
+  deleteBookQuote,
+  getAllBookQuotes,
+} from "../../models/books/book_quotes.model.js";
+import { extractAndDestroyCloudinaryImage } from "../../utils/deleteimage.js";
 
 export const addNewBook = async (req: Request, res: Response) => {
-    try {
-        // genres should be sent as an array of IDs, e.g., [1, 5, 12]
-        const { title, author, description, published_date, pageCount, genres } = req.body;
-        const file = req.file;
+  try {
+    // genres should be sent as an array of IDs, e.g., [1, 5, 12]
+    const { title, author, description, published_date, pageCount, genres } =
+      req.body;
+    const file = req.file;
 
-        if (!file) {
-            return res.status(400).json({ message: "Book cover is required" });
-        }
-
-        const cover_url = file.path;
-        const created_by = req.user?.id;
-
-        if (!created_by) {
-            return res.status(400).json({ message: "Invalid user" });
-        }
-
-        // Parse genres if they come as a string (common with multi-part form data)
-        const genreIds = typeof genres === 'string' ? JSON.parse(genres) : genres;
-
-        const newBook = await createBook(
-            title, 
-            author, 
-            description, 
-            cover_url, 
-            published_date, 
-            pageCount, 
-            created_by,
-            genreIds
-        );
-
-        return res.status(201).json({ 
-            message: "New book added successfully", 
-            details: newBook 
-        });
-
-    } catch (err: any) {
-        console.error(err);
-        res.status(500).json({ message: "Internal Server Error while adding new book" });
+    if (!file) {
+      return res.status(400).json({ message: "Book cover is required" });
     }
-}
 
-export const checkifBookExists = async(req: Request, res: Response) => {
-    try {
-        const { title, author } = req.body;
-        const book = await findBookByTitleandAuthor(title, author);
-        return res.status(200).json({ 
-            message: book ? "Book already exists" : "Book does not exist", 
-            exists: !!book 
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Internal Server Error while checking if book exists" });
+    const cover_url = file.path;
+    const created_by = req.user?.id;
+
+    if (!created_by) {
+      return res.status(400).json({ message: "Invalid user" });
     }
-}
 
-export const fetchAllBooks = async(req: Request, res: Response) => {
-    try {
-        const books = await getAllBooks();
-        return res.status(200).json({ books });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Internal Server Error while fetching books" });
-    }
-}
+    // Parse genres if they come as a string (common with multi-part form data)
+    const genreIds = typeof genres === "string" ? JSON.parse(genres) : genres;
 
-export const updateBook = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const { title, author, description, published_date, pageCount, genres } = req.body;
-        const file = req.file; 
-        
-        const cover_url = file ? file.path : null;
-        const genreIds = typeof genres === 'string' ? JSON.parse(genres) : genres;
+    const newBook = await createBook(
+      title,
+      author,
+      description,
+      cover_url,
+      published_date,
+      pageCount,
+      created_by,
+      genreIds,
+    );
 
-        await updateBookDetails(Number(id), title, author, description, cover_url, published_date, pageCount, genreIds);
-        
-        res.status(200).json({ message: "Book updated successfully" });
-    } catch (err) {
-        res.status(500).json({ message: "Error updating book" });
-    }
+    return res.status(201).json({
+      message: "New book added successfully",
+      details: newBook,
+    });
+  } catch (err: any) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while adding new book" });
+  }
 };
 
-export const deleteBook = async(req: Request, res: Response) => {
-    try{
-        const {id} = req.params;
-        const deletedBook = await deleteBookByID(Number(id));
-        return res.status(200).json({success: true, message: "Book deleted successfully", data: deletedBook});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while deleting book"});
+export const checkifBookExists = async (req: Request, res: Response) => {
+  try {
+    const { title, author } = req.body;
+    const book = await findBookByTitleandAuthor(title, author);
+    return res.status(200).json({
+      message: book ? "Book already exists" : "Book does not exist",
+      exists: !!book,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while checking if book exists" });
+  }
+};
+
+export const fetchAllBooks = async (req: Request, res: Response) => {
+  try {
+    const books = await getAllBooks();
+    return res.status(200).json({ books });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while fetching books" });
+  }
+};
+
+export const updateBook = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, author, description, published_date, pageCount, genres } =
+      req.body;
+    const file = req.file;
+
+    const cover_url = file ? file.path : null;
+    const genreIds = typeof genres === "string" ? JSON.parse(genres) : genres;
+
+    if (cover_url) {
+      const oldCover = await getCurrentBookCover(Number(id));
+      if (oldCover) {
+        await extractAndDestroyCloudinaryImage(oldCover);
+      }
     }
-}
+
+    await updateBookDetails(
+      Number(id),
+      title,
+      author,
+      description,
+      cover_url,
+      published_date,
+      pageCount,
+      genreIds,
+    );
+
+    res.status(200).json({ message: "Book updated successfully" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ message: "Error updating book. Please check for duplicates" });
+  }
+};
+
+export const deleteBook = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const oldCover = await getCurrentBookCover(Number(id));
+    if (oldCover) {
+      await extractAndDestroyCloudinaryImage(oldCover);
+    }
+
+    const deletedBook = await deleteBookByID(Number(id));
+    return res.status(200).json({
+      success: true,
+      message: "Book deleted successfully",
+      data: deletedBook,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while deleting book" });
+  }
+};
 
 // For genre related functions
-export const fetchAllGenres = async(req: Request, res: Response)=>{
-    try{
-        const genres = await getAllGenres();
-        return res.status(200).json({data: genres});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while fetching genres"});
-    }
-}
+export const fetchAllGenres = async (req: Request, res: Response) => {
+  try {
+    const genres = await getAllGenres();
+    return res.status(200).json({ data: genres });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while fetching genres" });
+  }
+};
 
-export const addNewGenre = async(req: Request, res: Response)=>{
-    try{
-        const {name} = req.body;
-        const existingGenre = await checkIfGenreExists(name);
-        if(existingGenre){
-            return res.status(400).json({message: "Genre already exists"});
-        }
-        const newGenre = await createGenre(name);
-        return res.status(201).json({success: true, message: "New genre added successfully", data: newGenre});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while adding new genre"});
+export const addNewGenre = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.body;
+    const existingGenre = await checkIfGenreExists(name);
+    if (existingGenre) {
+      return res.status(400).json({ message: "Genre already exists" });
     }
-}
+    const newGenre = await createGenre(name);
+    return res.status(201).json({
+      success: true,
+      message: "New genre added successfully",
+      data: newGenre,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while adding new genre" });
+  }
+};
 
-export const removeGenre = async(req: Request, res: Response)=>{
-    try{
-        const {id} = deleteGenreSchema.parse(req.params);
-        const deletedGenre = await deleteGenre(Number(id));
-        if(!deletedGenre){
-            return res.status(404).json({message: "Genre not found"});
-        }
-        return res.status(200).json({success: true, message: "Genre deleted successfully", data: deletedGenre});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while deleting genre"});
-    }   
-}
+export const removeGenre = async (req: Request, res: Response) => {
+  try {
+    const { id } = deleteGenreSchema.parse(req.params);
+    const deletedGenre = await deleteGenre(Number(id));
+    if (!deletedGenre) {
+      return res.status(404).json({ message: "Genre not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Genre deleted successfully",
+      data: deletedGenre,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while deleting genre" });
+  }
+};
 
 //For book quotes related functions
-export const addBookQuote = async(req: Request, res: Response)=>{
-    try{
-        const {book_id, quote, pageNumber} = req.body;
-        const newQuote = await createBookQuote(book_id, quote, pageNumber);
-        return res.status(201).json({success: true, message: "Book quote added successfully"});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while adding book quote"});
-    }
-}
+export const addBookQuote = async (req: Request, res: Response) => {
+  try {
+    const { book_id, quote, pageNumber } = req.body;
+    const newQuote = await createBookQuote(book_id, quote, pageNumber);
+    return res
+      .status(201)
+      .json({ success: true, message: "Book quote added successfully" });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while adding book quote" });
+  }
+};
 
-export const removeBookQuote = async(req: Request, res: Response)=>{
-    try{
-        const {id} = deleteBookQuoteSchema.parse(req.params);
-        const deletedQuote = await deleteBookQuote(Number(id));
-        if(!deletedQuote){
-            return res.status(404).json({message: "Book quote not found"});
-        }
-        return res.status(200).json({success: true, message: "Book quote deleted successfully", data: deletedQuote});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while deleting book quote"});
+export const removeBookQuote = async (req: Request, res: Response) => {
+  try {
+    const { id } = deleteBookQuoteSchema.parse(req.params);
+    const deletedQuote = await deleteBookQuote(Number(id));
+    if (!deletedQuote) {
+      return res.status(404).json({ message: "Book quote not found" });
     }
-}
+    return res.status(200).json({
+      success: true,
+      message: "Book quote deleted successfully",
+      data: deletedQuote,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while deleting book quote" });
+  }
+};
 
-export const getAllQuotes = async(req: Request, res: Response)=>{
-    try{
-        const quotes = await getAllBookQuotes();
-        return res.status(200).json({success: true,data: quotes});
-    }catch(err){
-        console.error(err);
-        res.status(500).json({message: "Internal Server Error while fetching book quotes"});
-    }
-}
-
+export const getAllQuotes = async (req: Request, res: Response) => {
+  try {
+    const quotes = await getAllBookQuotes();
+    return res.status(200).json({ success: true, data: quotes });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error while fetching book quotes" });
+  }
+};
