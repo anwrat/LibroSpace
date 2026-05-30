@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
@@ -22,10 +23,10 @@ declare global {
   }
 }
 
-// Pass a forced re-render hook or pass down the active state checks directly from the parent context
 const MenuBar = ({ editor }: { editor: any }) => {
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
+  // Use a stable mutable reference instead of state to track the hardware stream loop safely
+  const recognitionRef = useRef<any>(null);
 
   // Dummy state to force menu re-renders when the editor selection changes
   const [, setSelectionUpdate] = useState(0);
@@ -47,11 +48,12 @@ const MenuBar = ({ editor }: { editor: any }) => {
     };
   }, [editor]);
 
+  // Handle Speech Recognition Instance Lifecycle Configuration cleanly
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (SpeechRecognition && editor) {
+    if (SpeechRecognition && editor && !recognitionRef.current) {
       const recog = new SpeechRecognition();
       recog.continuous = true;
       recog.interimResults = true;
@@ -74,20 +76,32 @@ const MenuBar = ({ editor }: { editor: any }) => {
         setIsListening(false);
       };
 
+      recog.onstart = () => setIsListening(true);
       recog.onend = () => setIsListening(false);
-      setRecognition(recog);
+
+      recognitionRef.current = recog;
     }
   }, [editor]);
 
+  // Clean closure toggling layout rule execution framework
   const toggleListening = () => {
-    if (!recognition)
-      return alert("Speech recognition not supported in this browser.");
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      return alert("Speech recognition not supported or not initialized yet.");
+    }
 
     if (isListening) {
+      // Hardware instructions command to actively terminate current voice processing stream
       recognition.stop();
     } else {
-      setIsListening(true);
-      recognition.start();
+      try {
+        recognition.start();
+      } catch (err) {
+        console.warn(
+          "Recognition already running or restarting active session loops:",
+          err,
+        );
+      }
     }
   };
 
@@ -212,7 +226,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
         ) : (
           <Mic size={16} />
         )}
-        {isListening ? "Listening..." : "Dictate Note"}
+        {isListening ? "Stop Dictation" : "Dictate Note"}
       </button>
     </div>
   );
@@ -249,7 +263,6 @@ export default function ReadingEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        // Formatted class matrix using explicit Tailwind tag targeting styles to overcome Preflight Reset rules
         class:
           "focus:outline-hidden min-h-[300px] p-6 text-gray-700 font-main max-w-none " +
           "[&_h1]:text-3xl [&_h1]:font-black [&_h1]:text-gray-900 [&_h1]:mt-4 [&_h1]:mb-2 " +
