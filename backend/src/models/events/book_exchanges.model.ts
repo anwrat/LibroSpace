@@ -91,8 +91,8 @@ export const getSwapRequests = async (userId: number) => {
             u.picture_url as sender_picture
         FROM events.exchange_requests er
         JOIN events.book_exchanges target_be ON er.listing_id = target_be.id
-        -- Join again to find the sender's current listing for the event
-        LEFT JOIN events.book_exchanges sender_be ON er.sender_id = sender_be.user_id 
+        -- FIXED: Join on the specific offered listing ID instead of just the user_id
+        LEFT JOIN events.book_exchanges sender_be ON er.sender_id = sender_be.user_id AND sender_be.status = 'available'
         JOIN auth.users u ON er.sender_id = u.id
         WHERE target_be.user_id = $1 AND er.status = 'pending'
         ORDER BY er.created_at DESC
@@ -113,7 +113,8 @@ export const getSwapRequests = async (userId: number) => {
             target_be.location_city
         FROM events.exchange_requests er
         JOIN events.book_exchanges target_be ON er.listing_id = target_be.id
-        LEFT JOIN events.book_exchanges sender_be ON er.sender_id = sender_be.user_id
+        -- FIXED: Join on the specific offered listing ID instead of just the user_id
+        LEFT JOIN events.book_exchanges sender_be ON er.sender_id = sender_be.user_id AND sender_be.status = 'available'
         JOIN auth.users u ON target_be.user_id = u.id
         WHERE er.sender_id = $1 AND er.status = 'pending'
         ORDER BY er.created_at DESC

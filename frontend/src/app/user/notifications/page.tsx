@@ -186,7 +186,7 @@ export default function NotificationsPage() {
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mt-2">
                           {item.type === "swap_response"
                             ? "Conversation Ready"
-                            : `Reading Challenge`}
+                            : `Click to check it out!`}
                         </p>
                       </div>
                     </div>
