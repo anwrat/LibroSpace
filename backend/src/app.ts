@@ -1,18 +1,19 @@
-import express from 'express';
-import authRoutes from './routes/auth/auth.routes.js';
-import oauthRoutes from './routes/auth/oauth.routes.js';
-import otpRoutes from './routes/auth/otp.routes.js';
-import adminRoutes from './routes/admin/admin.routes.js';
-import userBookRoutes from './routes/users/books.routes.js';
-import userShelfRoutes from './routes/users/shelf.routes.js';
-import friendRoutes from './routes/users/friends.routes.js';
-import communityRoutes from './routes/users/communities.routes.js';
-import readingRoutes from './routes/users/reading.routes.js';
-import gamificationRoutes from './routes/users/gamification.routes.js';
-import eventRoutes from './routes/users/events.routes.js';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import passport from './middleware/auth/passport.middleware.js';
+import express from "express";
+import authRoutes from "./routes/auth/auth.routes.js";
+import oauthRoutes from "./routes/auth/oauth.routes.js";
+import otpRoutes from "./routes/auth/otp.routes.js";
+import adminRoutes from "./routes/admin/admin.routes.js";
+import userBookRoutes from "./routes/users/books.routes.js";
+import userShelfRoutes from "./routes/users/shelf.routes.js";
+import friendRoutes from "./routes/users/friends.routes.js";
+import communityRoutes from "./routes/users/communities.routes.js";
+import readingRoutes from "./routes/users/reading.routes.js";
+import gamificationRoutes from "./routes/users/gamification.routes.js";
+import eventRoutes from "./routes/users/events.routes.js";
+import aiRoutes from "./routes/users/ollama.routes.js";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import passport from "./middleware/auth/passport.middleware.js";
 
 const app = express();
 app.use(express.json());
@@ -20,33 +21,36 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 //For CORS
-app.use(cors({
-    origin:process.env.CLIENT_URL,
-    credentials:true,
-}));
-
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }),
+);
 
 //Authentication
-app.use('/api/auth',authRoutes); 
+app.use("/api/auth", authRoutes);
 //OAuth Routes
-app.use('/api/oauth',oauthRoutes); 
+app.use("/api/oauth", oauthRoutes);
 //OTP Routes
-app.use('/api/otp',otpRoutes);
+app.use("/api/otp", otpRoutes);
 //Admin Routes
-app.use('/api/admin',adminRoutes);
+app.use("/api/admin", adminRoutes);
 //User Book Routes
-app.use('/api/users/books',userBookRoutes);
+app.use("/api/users/books", userBookRoutes);
 //User Shelf Routes
-app.use('/api/users/shelf',userShelfRoutes);
+app.use("/api/users/shelf", userShelfRoutes);
 //Friend Routes
-app.use('/api/users/friends',friendRoutes);
+app.use("/api/users/friends", friendRoutes);
 //Community Routes
-app.use('/api/users/communities',communityRoutes);
+app.use("/api/users/communities", communityRoutes);
 //Reading Routes
-app.use('/api/users/reading',readingRoutes);
+app.use("/api/users/reading", readingRoutes);
 //Gamification Routes
-app.use('/api/users/gamification',gamificationRoutes);
+app.use("/api/users/gamification", gamificationRoutes);
 //Event Routes
-app.use('/api/users/events',eventRoutes);
+app.use("/api/users/events", eventRoutes);
+//Ollama Routes
+app.use("/api/ollama", aiRoutes);
 
 export default app;

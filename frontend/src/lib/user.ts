@@ -367,3 +367,13 @@ export function getTodaysUserLeaderBoardbyXp() {
 export function getGlobalSearchResults(query: string) {
   return api.get(`/api/users/reading/search/global?q=${query}`);
 }
+
+//For ollama api related functions
+
+export function getCharacterGreeting(bookname: string, author: string) {
+  return api.post("/api/ollama/greeting", { bookname, author });
+}
+
+export function getCharacterResponse(prompt: string) {
+  return api.post("/api/ollama/response", { prompt });
+}
