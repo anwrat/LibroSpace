@@ -80,7 +80,7 @@ export default function AdminCommunitiesPage() {
         {/* --- TOP BAR / HEADER --- */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight font-main">
+            <h1 className="text-3xl font-bold text-gray-800 tracking-tight font-main">
               Communities
             </h1>
             <p className="text-gray-500 font-medium mt-1">
