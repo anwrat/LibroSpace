@@ -24,7 +24,6 @@ export default function ExplorePage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter States
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
   const [authorSearchTerm, setAuthorSearchTerm] = useState<string>('');
   const [maxPageCount, setMaxPageCount] = useState<number>(1000);
@@ -43,13 +42,11 @@ export default function ExplorePage() {
     getBooks();
   }, []);
 
-  // Compute absolute dynamic bounds from raw data records
   const dynamicMaxPages = useMemo(() => {
     if (books.length === 0) return 1000;
     return Math.max(...books.map(b => b.pagecount || 0), 1000);
   }, [books]);
 
-  // Set the structural fallback cap whenever new dynamic loads finalize
   useEffect(() => {
     if (books.length > 0) {
       const highestPage = Math.max(...books.map(b => b.pagecount || 0));
@@ -57,7 +54,6 @@ export default function ExplorePage() {
     }
   }, [books]);
 
-  // 1. Extract Unique Available Genres for the Filtering Panel
   const allAvailableGenres = useMemo(() => {
     const genresSet = new Set<string>();
     books.forEach(book => {
@@ -70,17 +66,12 @@ export default function ExplorePage() {
     return ['All', ...Array.from(genresSet).sort()];
   }, [books]);
 
-  // 2. Filter and Group books contextually based on unified matrix parameters
   const groupedAndFilteredBooks = useMemo(() => {
-    // Stage A: Filter collections down by metrics first
     const runningFilteredList = books.filter(book => {
       const matchesPageCount = (book.pagecount || 0) <= maxPageCount;
-      
-      // Compute Author Search Filter Match (Case-Insensitive Substring Match)
       const bookAuthor = book.author || 'Unknown Author';
       const matchesAuthor = bookAuthor.toLowerCase().includes(authorSearchTerm.toLowerCase().trim());
 
-      // Compute Genre Filter Match
       let matchesGenre = false;
       if (selectedGenre === 'All') {
         matchesGenre = true;
@@ -93,20 +84,17 @@ export default function ExplorePage() {
       return matchesPageCount && matchesAuthor && matchesGenre;
     });
 
-    // Stage B: Assemble the structured map grouping
     const groupings: Record<string, Book[]> = {};
 
     runningFilteredList.forEach(book => {
       const targetGenres = book.genres && book.genres.length > 0 ? book.genres : ['Uncategorized'];
       
       targetGenres.forEach(genre => {
-        // Skip map allocation if it doesn't align with explicit filter selection states
         if (selectedGenre !== 'All' && selectedGenre !== genre) return;
 
         if (!groupings[genre]) {
           groupings[genre] = [];
         }
-        // Protect grouping collection against double assignments inside multi-genre tags
         if (!groupings[genre].some(b => b.id === book.id)) {
           groupings[genre].push(book);
         }
@@ -121,7 +109,6 @@ export default function ExplorePage() {
       <UserNav />
       <div className="max-w-7xl mx-auto">
         
-        {/* --- HEADER BLOCK --- */}
         <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -132,7 +119,6 @@ export default function ExplorePage() {
           </div>
         </header>
 
-        {/* --- DYNAMIC FILTER CONTROLS CONSOLE --- */}
         {!loading && books.length > 0 && (
           <section className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xs mb-10 flex flex-col gap-6">
             <div className="flex items-center gap-2 text-gray-700 font-black text-sm uppercase tracking-wider">
@@ -141,9 +127,7 @@ export default function ExplorePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-              {/* Left Column Stack: Genre & Author Search Fields */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Genre Filter Pills Strip */}
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Filter By Genre</p>
                   <div className="flex flex-wrap gap-2">
@@ -163,7 +147,6 @@ export default function ExplorePage() {
                   </div>
                 </div>
 
-                {/* Author Search Box Input */}
                 <div className="max-w-md">
                   <label htmlFor="author-search" className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">
                     Search By Author
@@ -175,9 +158,7 @@ export default function ExplorePage() {
                       type="text"
                       placeholder="Type author's name..."
                       value={authorSearchTerm}
-                      onChange={(e) => {
-                        setAuthorSearchTerm(e.target.value);
-                      }}
+                      onChange={(e) => setAuthorSearchTerm(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-800 py-2.5 pl-10 pr-10 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#14919B]/40 focus:border-[#14919B] transition-all"
                     />
                     {authorSearchTerm && (
@@ -194,7 +175,6 @@ export default function ExplorePage() {
                 </div>
               </div>
 
-              {/* Page Count Slider Controls */}
               <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-100 lg:mt-7">
                 <div className="flex justify-between items-center mb-2">
                   <label htmlFor="pagecount-slider" className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -222,9 +202,7 @@ export default function ExplorePage() {
           </section>
         )}
 
-        {/* --- MAIN DISPLAY FIELD VIEW --- */}
         {loading ? (
-          /* Loading Skeleton Grid Component Blueprint */
           <div className="space-y-10">
             {[1, 2].map((groupIndex) => (
               <div key={groupIndex} className="space-y-4">
@@ -238,12 +216,10 @@ export default function ExplorePage() {
             ))}
           </div>
         ) : Object.keys(groupedAndFilteredBooks).length > 0 ? (
-          /* Segmented Categorized Book Grid Layout Loop */
           <div className="space-y-12">
             {Object.entries(groupedAndFilteredBooks).map(([genre, genreBooks]) => (
               <section key={genre} className="space-y-5 animate-in fade-in duration-300">
                 
-                {/* Segment Divider Label Header */}
                 <div className="flex items-center gap-2 border-b border-gray-200/60 pb-2">
                   <Layers size={18} className="text-[#14919B]" />
                   <h2 className="text-xl font-black text-gray-800 tracking-tight capitalize">
@@ -254,17 +230,20 @@ export default function ExplorePage() {
                   </span>
                 </div>
 
-                {/* Sub Grid Mapping Array */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="flex flex-row overflow-x-auto gap-6 pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent snap-x snap-mandatory">
                   {genreBooks.map((book) => (
-                    <BookCard key={book.id} {...book} />
+                    <div 
+                      key={book.id} 
+                      className="w-[calc((100%-1.5rem)/2)] sm:w-[calc((100%-3rem)/3)] md:w-[calc((100%-4.5rem)/4)] lg:w-[calc((100%-6rem)/5)] shrink-0 snap-start"
+                    >
+                      <BookCard {...book} />
+                    </div>
                   ))}
                 </div>
               </section>
             ))}
           </div>
         ) : (
-          /* Dynamic Empty Structural Result State Screen */
           <div className="py-24 text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-xs max-w-xl mx-auto">
             <div className="bg-gray-50 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 text-gray-300">
               <Layers2 size={28} />
